@@ -10,4 +10,4 @@ History: (please help fill in the gaps!)
 TO-DO list:
 - Is the 1+1 approach used (a constant gravitational field) in any way sensible or rigourous?
 - Can we extend to 1+1 with a point mass on the 1D space line?
-- Can we extend to 2+1 in any useful way? Perhaps by considering a single geodesic (e.g. an elliptic orbit) and drawing the rest of the universe as a (possibly very strange) distorted grid around that geodesic?
+- Can we extend to 2+1 in any useful way? Perhaps by considering a single geodesic (e.g. an elliptic orbit) as a straight line and drawing the rest of the universe as a (possibly very strange) distorted grid around that geodesic?
