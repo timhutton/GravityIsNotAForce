@@ -104,17 +104,24 @@ function init() {
     ctx = canvas.getContext('2d');
 
     g = 9.8; // metres per second per second
-    time_range = range(-4, 4, 1);
-    space_range = range(0, 50, 10);
     
     var frameAccelerationSlider = document.getElementById("frameAccelerationSlider");
-    var frameAccelerationValue = document.getElementById("frameAccelerationValue");
     frameAcceleration = g - g * frameAccelerationSlider.value / 100.0;
-
     frameAccelerationSlider.oninput = function() {
         frameAcceleration = g - g * this.value / 100.0;
         draw();
     }
+
+    var timeTranslationSlider = document.getElementById("timeTranslationSlider");
+    var timeTranslation = -2 + 4 * timeTranslationSlider.value / 100.0;
+    time_range = range(-4 + timeTranslation, 4 + timeTranslation, 1);
+    timeTranslationSlider.oninput = function() {
+        var timeTranslation = -2 + 4 * timeTranslationSlider.value / 100.0;
+        time_range = range(-4 + timeTranslation, 4 + timeTranslation, 1);
+        draw();
+    }
+
+    space_range = range(0, 50, 10);
 
     currentTime = 0.0;
     isAnimating = false;
@@ -149,11 +156,14 @@ function draw() {
 }
 
 function drawSpaceTime(screen_rect, frame_acceleration) {
+    ctx.save(); // save the clip region for the moment
+
     // fill background with white
     ctx.fillStyle = 'rgb(255,255,255)';
     ctx.beginPath();
     ctx.rect(screen_rect.x, screen_rect.y, screen_rect.width, screen_rect.height);
     ctx.fill();
+    ctx.clip(); // clip to this rect until reset
 
     var transform = findBestFitTransform(screen_rect, frame_acceleration);
     // draw minor axes
@@ -175,6 +185,8 @@ function drawSpaceTime(screen_rect, frame_acceleration) {
     for(var i = 0; i < objects.length; i++) {
         drawGeodesic(objects[i].start, objects[i].end, frame_acceleration, transform);
     }
+        
+    ctx.restore(); // reset the clip
 
     // show the frame acceleration as text
     ctx.fillStyle = 'rgb(0,0,0)';
@@ -271,9 +283,13 @@ instructions how to enable JavaScript in your web browser</a>.
 </p></noscript>
 
 <style>
-.slidecontainer {
+.frameAccelerationSlider {
   width: 25%;
   margin: auto;
+}
+
+.timeTranslationSlider {
+  width: 25%;
 }
 
 .slider {
@@ -306,20 +322,37 @@ instructions how to enable JavaScript in your web browser</a>.
   background: #4CAF50;
   cursor: pointer;
 }
+
+.sansserif {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
 </style>
 
 </head>
 
-<body>
+<body class="sansserif">
 <p align="center">
-<canvas id="canvas" width="1360" height="480">(Canvas drawing not supported by your browser.)</canvas>
-<div class="slidecontainer">
+<canvas class="canvas" id="canvas" width="1360" height="480">(Canvas drawing not supported by your browser.)</canvas>
+<div class="frameAccelerationSlider">
   <input type="range" min="0" max="100" value="50" class="slider" id="frameAccelerationSlider">
 </div>
 </p>
 
+<p>
+<div class="timeTranslationSlider">
+  Translate time window: <input type="range" min="0" max="100" value="50" class="slider" id="timeTranslationSlider">
+</div>
+</p>
+
 <h4>About:</h4>
-Work in progress. Code: <a href="https://github.com/timhutton/GravityIsNotAForce">https://github.com/timhutton/GravityIsNotAForce</a>
+<p>
+Work in progress.
+</p>
+
+<p>
+Code: <a href="https://github.com/timhutton/GravityIsNotAForce">https://github.com/timhutton/GravityIsNotAForce</a>
+</p>
 </body>
 
 </html>
