@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<script>
+
+<!-- Visualisation of 1+1 spacetime -->
+
+var currentTime;
+var isAnimating;
+var objects;
+var g;
+
+// classes:
+
+function pos(x, y) {
+    return { x:x, y:y };
+}
+
+function rect(x, y, width, height) {
+    return { x:x, y:y, width:width, height:height };
+}
+
+function range(min, max, step=1.0) {
+    return { min:min, max:max, step:step };
+}
+
+function object(start_height, start_time, start_speed) {
+    return { height:start_height, time:start_time, start_height:start_height, start_time:start_time };
+}
+
+function linearTransform(mult_x, offset_x, mult_y, offset_y) {
+    return { mult_x:mult_x, offset_x:offset_x, mult_y:mult_y, offset_y:offset_y };
+}
+
+// functions:
+
+function moveTo(p) {
+    ctx.moveTo(p.x, p.y);
+}
+
+function lineTo(p) {
+    ctx.lineTo(p.x, p.y);
+}
+
+function applyLinearTranform(p, transform) {
+    return pos(transform.offset_x + transform.mult_x*p.x, transform.offset_y + transform.mult_y*p.y);
+}
+
+function computeLinearTransform(from_rect, to_rect) {
+    mult_x = to_rect.width / from_rect.width;
+    offset_x = to_rect.x - mult_x * from_rect.x;
+    mult_y = to_rect.height / from_rect.height;
+    offset_y = to_rect.y - mult_y * from_rect.y;
+    return linearTransform(mult_x, offset_x, mult_y, offset_y);
+}
+
+function boundingRect(points) {
+    var left = Number.MAX_VALUE;
+    var right = -Number.MAX_VALUE;
+    var top = Number.MAX_VALUE;
+    var bottom = -Number.MAX_VALUE;
+    for(var i = 0; i < points.length; i++) {
+        left = Math.min(left, points[i].x);
+        right = Math.max(right, points[i].x);
+        top = Math.min(top, points[i].y);
+        bottom = Math.max(bottom, points[i].y);
+    }
+    return rect(left, top, right-left, bottom-top);
+}
+
+function onMouseMove( evt ) {
+}
+
+function onTouchMove( evt ) {
+    evt.preventDefault();
+}
+
+function onTouchStart( evt ) {
+}
+
+function onMouseDown( evt ) {
+}
+
+function clientToCanvas( clientPos ) {
+    var rect = canvas.getBoundingClientRect();
+    return p2( clientPos.x - rect.left, clientPos.y - rect.top );
+}
+
+function pointInRect( p, rect ) {
+    return p.x > rect.x && p.x < ( rect.x + rect.width ) &&
+           p.y > rect.y && p.y < ( rect.y + rect.height );
+}
+
+function init() {
+    canvas = document.getElementById('canvas');
+    ctx = canvas.getContext('2d');
+    
+    currentTime = 0.0;
+    isAnimating = false;
+    g = 9.8; // metres per second per second
+    
+    objects = [];
+    objects.push(object(44.1,0,0));
+
+    draw();
+
+    canvas.addEventListener( 'mousemove',   onMouseMove, false );
+    canvas.addEventListener( 'touchmove',   onTouchMove, false );
+
+    canvas.addEventListener( 'mousedown',   onMouseDown, false );
+    canvas.addEventListener( 'touchstart',  onTouchStart, false );
+
+    animate();
+}
+
+function draw() {
+    ctx.fillStyle = 'rgb(240,240,240)';
+    ctx.beginPath();
+    ctx.rect(0,0,canvas.width, canvas.height);
+    ctx.fill();
+    
+    ctx.fillStyle = 'rgb(255,255,255)';
+    ctx.beginPath();
+    var area1 = rect(40,440,400,-400);
+    var area2 = rect(480,440,400,-400);
+    ctx.rect(area1.x, area1.y, area1.width, area1.height);
+    ctx.rect(area2.x, area2.y, area2.width, area2.height);
+    ctx.fill();
+    
+    drawSpaceTime(area1, range(-3, 3, 1), range(0, 44.1, 2), 0.0);
+    drawSpaceTime(area2, range(-3, 3, 1), range(0, 44.1, 2), 1.0);
+}
+
+function drawSpaceTime(screen_rect, time_range, space_range, floor_acceleration) {
+    var transform = findBestFitTransform(screen_rect, time_range, space_range, floor_acceleration);
+    // draw stuff
+    ctx.strokeStyle = 'rgb(200,200,200)';
+    drawCurvingLine(time_range.min, space_range.min, time_range.max, space_range.min, time_range, space_range, floor_acceleration, transform);
+    drawCurvingLine(time_range.min, space_range.min, time_range.min, space_range.max, time_range, space_range, floor_acceleration, transform);
+    drawCurvingLine(time_range.max, space_range.max, time_range.max, space_range.min, time_range, space_range, floor_acceleration, transform);
+    drawCurvingLine(time_range.max, space_range.max, time_range.min, space_range.max, time_range, space_range, floor_acceleration, transform);
+    ctx.strokeStyle = 'rgb(100,100,100)';
+    drawCurvingLine(time_range.min, 0.0, time_range.max, 0.0, time_range, space_range, floor_acceleration, transform);
+    drawCurvingLine(0.0, space_range.min, 0.0, space_range.max, time_range, space_range, floor_acceleration, transform);
+}
+
+function findBestFitTransform(screen_rect, time_range, space_range, floor_acceleration) {
+    // plot some points in some arbitrary space then scale to fit the rect
+    corners = [];
+    corners.push(toAcceleratingReferenceFrame(time_range.min, space_range.min, time_range, space_range, floor_acceleration));
+    corners.push(toAcceleratingReferenceFrame(time_range.min, space_range.max, time_range, space_range, floor_acceleration));
+    corners.push(toAcceleratingReferenceFrame(time_range.max, space_range.min, time_range, space_range, floor_acceleration));
+    corners.push(toAcceleratingReferenceFrame(time_range.max, space_range.max, time_range, space_range, floor_acceleration));
+    corners.push(toAcceleratingReferenceFrame((time_range.min+time_range.max)/2, space_range.min, time_range, space_range, floor_acceleration));
+    corners.push(toAcceleratingReferenceFrame((time_range.min+time_range.max)/2, space_range.max, time_range, space_range, floor_acceleration));
+    original_rect = boundingRect(corners);
+    return computeLinearTransform(original_rect, screen_rect);
+}
+
+function drawCurvingLine(t1, s1, t2, s2, time_range, space_range, floor_acceleration, transform) {
+    ctx.beginPath();
+    var step = 0.01;
+    for(var u = 0.0; u < 1.0+step; u += step) {
+        var t = t1 + u*(t2-t1);
+        var s = s1 + u*(s2-s1);
+        var p = applyLinearTranform(toAcceleratingReferenceFrame(t, s, time_range, space_range, floor_acceleration), transform);
+        if(u==0.0) {
+            moveTo(p);
+        }
+        else {
+            lineTo(p);
+        }
+    }
+    ctx.stroke();
+}
+
+function toAcceleratingReferenceFrame(time, space, time_range, space_range, floor_acceleration) {
+    var t_zero = (time_range.min+time_range.max)/2; // central time point (e.g. t=0) gets no spatial distortion
+    var time_delta = time - t_zero;
+    var x = time;
+    var y = space + distanceFallen(time_delta, g * floor_acceleration); // in our reference frame, the floor accelerates upwards with time
+    return pos(x, y);
+}
+
+function distanceFallen(t, a) {
+    return 0.5 * a * t * t;
+}
+
+function animate() {
+    if( isAnimating ) {
+        currentTime = currentTime + 0.01;
+        draw();
+        requestAnimationFrame( animate );
+    }
+}
+
+window.onload = init;
+</script>
+
+<noscript>
+<p>For full functionality of this site it is necessary to enable JavaScript.
+Here are the <a href="http://www.enable-javascript.com/" target="_blank">
+instructions how to enable JavaScript in your web browser</a>.
+</p></noscript>
+
+</head>
+
+<body>
+<p align="center"><canvas id="canvas" width="1000" height="600">(Canvas drawing not supported by your browser.)</canvas></p>
+
+<h4>About:</h4>
+Work in progress. Code: <a href="https://github.com/timhutton/GravityIsNotAForce">https://github.com/timhutton/GravityIsNotAForce</a>
+</body>
+
+</html>
+
