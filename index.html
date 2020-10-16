@@ -139,21 +139,19 @@ function draw() {
     ctx.fill();
 
     // draw each graph
-    drawSpaceTime(rect(40,440,400,-400), range(-4, 4, 1), range(0, 50, 10), g);
-    drawSpaceTime(rect(480,440,400,-400), range(-4, 4, 1), range(0, 50, 10), frameAcceleration);
-    drawSpaceTime(rect(920,440,400,-400), range(-4, 4, 1), range(0, 50, 10), 0.0);
+    var time_range = range(-4, 4, 1);
+    var space_range = range(0, 50, 10);
+    drawSpaceTime(rect(40,440,400,-400), time_range, space_range, g);
+    drawSpaceTime(rect(480,440,400,-400), time_range, space_range, frameAcceleration);
+    drawSpaceTime(rect(920,440,400,-400), time_range, space_range, 0.0);
 }
 
 function drawSpaceTime(screen_rect, time_range, space_range, frame_acceleration) {
-
-    ctx.save(); // save the clip region in order to restore it later
-
     // fill background with white
     ctx.fillStyle = 'rgb(255,255,255)';
     ctx.beginPath();
     ctx.rect(screen_rect.x, screen_rect.y, screen_rect.width, screen_rect.height);
     ctx.fill();
-    ctx.clip();
 
     var transform = findBestFitTransform(screen_rect, time_range, space_range, frame_acceleration);
     // draw minor axes
@@ -176,16 +174,16 @@ function drawSpaceTime(screen_rect, time_range, space_range, frame_acceleration)
         drawGeodesic(objects[i].start, objects[i].end, time_range, space_range, frame_acceleration, transform);
     }
 
-    ctx.restore(); // restore the clip region
-    
+    // show the frame acceleration as text
     ctx.fillStyle = 'rgb(0,0,0)';
     ctx.font = "20px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("Frame acceleration = "+frame_acceleration.toFixed(2)+" ms"+String.fromCharCode(0x207B)+String.fromCharCode(0x00B2), screen_rect.x+screen_rect.width/2, screen_rect.y+25);
+    ctx.fillText("Frame acceleration = "+frame_acceleration.toFixed(2)+" ms"+String.fromCharCode(0x207B)+String.fromCharCode(0x00B2),
+        screen_rect.x+screen_rect.width/2, screen_rect.y+25);
 }
 
 function drawCurvingLine(p1, p2, time_range, space_range, frame_acceleration, transform) {
-    // draw a line that is straight in our familiar (accelerating upwards at g) reference frame but that may not be straight in this frame, depending on its acceleration
+    // draw a line that is straight in our familiar (accelerating upwards at g) reference frame but may not be straight in this frame, depending on its acceleration
     var delta_acceleration = frame_acceleration - g;
     ctx.beginPath();
     var step = 0.01;
@@ -203,14 +201,14 @@ function drawCurvingLine(p1, p2, time_range, space_range, frame_acceleration, tr
 }
 
 function drawGeodesic(p1, p2, time_range, space_range, frame_acceleration, transform) {
-    // draw a line that is straight in an inertial frame, but may be not be straight in this frame, depending on its acceleration
+    // draw a line that is straight in an inertial frame but may be not be straight in this frame, depending on its acceleration
 
     // convert spacetime coordinates from our familiar (g-accelerating) frame into the inertial frame
     var delta_acceleration = 0.0 - g;
     var start = transformBetweenAcceleratingReferenceFrames(p1, time_range, space_range, delta_acceleration)
     var end = transformBetweenAcceleratingReferenceFrames(p2, time_range, space_range, delta_acceleration)
     // step along that line, converting to the target frame
-    delta_acceleration = frame_acceleration;
+    delta_acceleration = frame_acceleration - 0.0;
     ctx.beginPath();
     var step = 0.01;
     for(var u = 0.0; u < 1.0+step; u += step) {
