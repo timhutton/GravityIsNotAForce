@@ -1,2 +1,1 @@
-# GravityIsNotAForce
-Visualising the spacetime geodesics of general relavity
+Live demo: https://timhutton.github.io/GravityIsNotAForce/
