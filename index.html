@@ -103,7 +103,7 @@ function init() {
     ctx = canvas.getContext('2d');
 
     g = 9.8; // metres per second per second
-    
+
     var frameAccelerationSlider = document.getElementById("frameAccelerationSlider");
     frameAcceleration = g - g * frameAccelerationSlider.value / 100.0;
     frameAccelerationSlider.oninput = function() {
@@ -184,7 +184,20 @@ function drawSpaceTime(screen_rect, frame_acceleration) {
     for(var i = 0; i < objects.length; i++) {
         drawGeodesic(objects[i].start, objects[i].end, frame_acceleration, transform);
     }
-        
+    
+    // label axes
+    ctx.fillStyle = 'rgb(100,100,100)';
+    ctx.font = "13px Arial";
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    var horizOffset = -0.1;
+    textLabel(pos(horizOffset, 40.0), "40m", frame_acceleration, transform);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    var vertOffset = -0.4; 
+    for(var t = Math.ceil(time_range.min); t<=Math.floor(time_range.max); t+=time_range.step) {
+        textLabel(pos(t, vertOffset), t.toFixed(0)+"s", frame_acceleration, transform);
+    }
     ctx.restore(); // reset the clip
 
     // show the frame acceleration as text
@@ -193,6 +206,12 @@ function drawSpaceTime(screen_rect, frame_acceleration) {
     ctx.textAlign = "center";
     ctx.fillText("Frame acceleration = "+frame_acceleration.toFixed(2)+" ms"+String.fromCharCode(0x207B)+String.fromCharCode(0x00B2),
         screen_rect.x+screen_rect.width/2, screen_rect.y+25);
+}
+
+function textLabel(p, text, frame_acceleration, transform) {
+    var delta_acceleration = frame_acceleration - g;
+    p = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(p, delta_acceleration), transform);
+    ctx.fillText(text, p.x, p.y);
 }
 
 function drawCurvingLine(p1, p2, frame_acceleration, transform) {
@@ -257,7 +276,8 @@ function findBestFitTransform(screen_rect, frame_acceleration) {
     corners.push(transformBetweenAcceleratingReferenceFrames(pos((time_range.min+time_range.max)/2, space_range.min), delta_acceleration));
     corners.push(transformBetweenAcceleratingReferenceFrames(pos((time_range.min+time_range.max)/2, space_range.max), delta_acceleration));
     original_rect = boundingRect(corners);
-    return computeLinearTransform(original_rect, screen_rect);
+    var adjusted_screen_rect = rect(screen_rect.x, screen_rect.y-20, screen_rect.width, screen_rect.height-20); // allow room for labels at the bottom
+    return computeLinearTransform(original_rect, adjusted_screen_rect);
 }
 
 function distanceTravelled(time, acceleration) {
