@@ -25,8 +25,8 @@ function range(min, max, step=1.0) {
     return { min:min, max:max, step:step };
 }
 
-function object(start_height, start_time, start_speed) {
-    return { height:start_height, time:start_time, start_height:start_height, start_time:start_time };
+function object(start, end) {
+    return { start:start, end:end };
 }
 
 function linearTransform(mult_x, offset_x, mult_y, offset_y) {
@@ -105,7 +105,9 @@ function init() {
     g = 9.8; // metres per second per second
 
     objects = [];
-    objects.push(object(44.1,0,0)); // a released object takes 3s to fall 44.1m
+    objects.push(object(pos(0.0, 44.1), pos(3.0, 0.0)));
+    objects.push(object(pos(-1.0, 0.0), pos(2.0, 0.0)));
+    objects.push(object(pos(-3.0, 0.0), pos(1.0, 0.0)));
 
     draw();
 
@@ -157,9 +159,11 @@ function drawSpaceTime(screen_rect, time_range, space_range, frame_acceleration)
     ctx.strokeStyle = 'rgb(100,100,100)';
     drawCurvingLine(pos(time_range.min, 0.0), pos(time_range.max, 0.0), time_range, space_range, frame_acceleration, transform);
     drawCurvingLine(pos(0.0, space_range.min), pos(0.0, space_range.max), time_range, space_range, frame_acceleration, transform);
-    // draw object in free-fall
+    // draw objects in free-fall
     ctx.strokeStyle = 'rgb(255,100,100)';
-    drawGeodesic(pos(0.0, 44.1), pos(3.0, 0.0), time_range, space_range, frame_acceleration, transform);
+    for(var i = 0; i < objects.length; i++) {
+        drawGeodesic(objects[i].start, objects[i].end, time_range, space_range, frame_acceleration, transform);
+    }
 
     ctx.restore();
 }
