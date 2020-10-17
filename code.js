@@ -1,4 +1,19 @@
-<!-- Visualisation of 1+1 spacetime -->
+/*  GravityIsNotAForce - Visualising geodesics in general relativity
+    Copyright (C) 2020 Tim J. Hutton
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 
 var graphs;
 var trajectories;
@@ -273,7 +288,7 @@ function init() {
         draw();
     }
 
-    space_range = range(-10, 50, 10);
+    space_range = range(-10, 70, 10);
 
     trajectories = [];
     trajectories.push(trajectory(pos(0.0, 44.1), pos(3.0, 0.0), 'rgb(255,100,100)', 'rgb(200,100,100)'));
@@ -451,7 +466,8 @@ function transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration) {
 }
 
 function findBestFitTransform(graph) {
-    var delta_acceleration = graph.frame_acceleration - g;
+    //var delta_acceleration = graph.frame_acceleration - g; // (use this to see everything in the specified area)
+    var delta_acceleration = 0.0; // just use the transform from the g-accelerating frame, for visual clarity
     // plot some points in some arbitrary space then scale to fit the rect
     corners = [];
     corners.push(transformBetweenAcceleratingReferenceFrames(pos(time_range.min, space_range.min), delta_acceleration));
