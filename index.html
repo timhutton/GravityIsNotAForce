@@ -27,12 +27,22 @@ function range(min, max, step=1.0) {
     return { min:min, max:max, step:step };
 }
 
-function trajectory(start, end, color) {
-    return { start:start, end:end, color:color };
+function trajectory(start, end, color, hover_color) {
+    var default_start_size = 6.0;
+    var default_end_size = 4.0;
+    var mid_size = 2.0;
+    var hover_size = 10.0;
+    return { start:start, end:end, default_color:color,
+        start_size:default_start_size, end_size:default_end_size, mid_size:mid_size,
+        start_color:color, end_color:color,
+        default_start_size:default_start_size, default_end_size:default_end_size,
+        hover_size:hover_size, hover_color:hover_color };
 }
 
 function graph(rect, frame_acceleration) {
-    return {rect:rect, frame_acceleration:frame_acceleration, transform:findBestFitTransform(rect, frame_acceleration)};
+    var graph = {rect:rect, frame_acceleration:frame_acceleration};
+    graph.transform = findBestFitTransform(graph);
+    return graph;
 }
 
 function linearTransform(mult_x, offset_x, mult_y, offset_y) {
@@ -40,6 +50,10 @@ function linearTransform(mult_x, offset_x, mult_y, offset_y) {
 }
 
 // functions:
+
+function dist(a, b) {
+    return Math.sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y));
+}
 
 function lerp(a, b, u) {
     return pos(a.x + u*(b.x-a.x), a.y + u*(b.y-a.y));
@@ -54,7 +68,7 @@ function lineTo(p) {
 }
 
 // adapted from http://stackoverflow.com/a/6333775/126823
-function drawArrowHead( a, b, size ) { 
+function drawArrowHead( a, b, size ) {
     var angle = Math.atan2(b.y-a.y,b.x-a.x);
     ctx.beginPath();
     ctx.moveTo(b.x - size * Math.cos(angle - Math.PI/6), b.y - size * Math.sin(angle - Math.PI/6));
@@ -93,7 +107,61 @@ function boundingRect(points) {
     return rect(left, top, right-left, bottom-top);
 }
 
+function resetMarkers() {
+    for(var i = 0; i < trajectories.length; i++) {
+        trajectories[i].start_size = trajectories[i].default_start_size;
+        trajectories[i].start_color = trajectories[i].default_color;
+        trajectories[i].end_size = trajectories[i].default_end_size;
+        trajectories[i].end_color = trajectories[i].default_color;
+    }
+}
+
 function onMouseMove( evt ) {
+    // indicate which marker is being hovered over
+    resetMarkers();
+    var p = getMousePos(evt);
+    var hover_radius = 20;
+    var d_min = Number.MAX_VALUE;
+    var isHovering = false;
+    var whichTrajectory;
+    var isStart;
+    for(var i = 0; i < graphs.length; i++) {
+        if( pointInRect(p, graphs[i].rect) ) {
+            var delta_acceleration = graphs[i].frame_acceleration - g;
+            for(var j = 0; j < trajectories.length; j++) {
+                // start?
+                var m = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(trajectories[j].start, delta_acceleration), graphs[i].transform);
+                var d = dist(p, m);
+                if( d < hover_radius && d < d_min) {
+                    d_min = d;
+                    isHovering = true;
+                    whichTrajectory = j;
+                    isStart = true;
+                }
+                // end?
+                m = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(trajectories[j].end, delta_acceleration), graphs[i].transform);
+                d = dist(p, m);
+                if( d < hover_radius && d < d_min) {
+                    d_min = d;
+                    isHovering = true;
+                    whichTrajectory = j;
+                    isStart = false;
+                }
+            }
+            if(isHovering) {
+                if(isStart) {
+                    trajectories[whichTrajectory].start_size = trajectories[whichTrajectory].hover_size;
+                    trajectories[whichTrajectory].start_color = trajectories[whichTrajectory].hover_color;
+                }
+                else {
+                    trajectories[whichTrajectory].end_size = trajectories[whichTrajectory].hover_size;
+                    trajectories[whichTrajectory].end_color = trajectories[whichTrajectory].hover_color;
+                }
+            }
+            break;
+        }
+    }
+    draw();
 }
 
 function onTouchMove( evt ) {
@@ -148,18 +216,18 @@ function init() {
         var timeTranslation = 2 - 4 * timeTranslationSlider.value / 100.0;
         time_range = range(-4 + timeTranslation, 4 + timeTranslation, 1);
         for(var i = 0; i < graphs.length; i++) {
-            updateGraphTransform(graphs[i]);
+            graphs[i].transform = findBestFitTransform(graphs[i]);
         }
         draw();
     }
 
-    space_range = range(0, 50, 10);
+    space_range = range(-5, 50, 10);
 
     trajectories = [];
-    trajectories.push(trajectory(pos(0.0, 44.1), pos(3.0, 0.0), 'rgb(255,100,100)'));
-    trajectories.push(trajectory(pos(-1.0, 0.0), pos(2.0, 0.0), 'rgb(0,200,0)'));
-    trajectories.push(trajectory(pos(-3.0, 0.0), pos(1.0, 0.0), 'rgb(100,100,255)'));
-    
+    trajectories.push(trajectory(pos(0.0, 44.1), pos(3.0, 0.0), 'rgb(255,100,100)', 'rgb(200,100,100)'));
+    trajectories.push(trajectory(pos(-1.0, 0.0), pos(2.0, 0.0), 'rgb(0,200,0)', 'rgb(0,160,0)'));
+    trajectories.push(trajectory(pos(-3.0, 0.0), pos(1.0, 0.0), 'rgb(100,100,255)', 'rgb(100,100,200)'));
+
     graphs = [];
     graphs.push(graph(rect(40,440,400,-400), g));
     graphs.push(graph(rect(480,440,400,-400), g/2));
@@ -169,7 +237,7 @@ function init() {
     graphs[1].frame_acceleration = g - g * frameAccelerationSlider.value / 100.0;
     frameAccelerationSlider.oninput = function() {
         graphs[1].frame_acceleration = g - g * this.value / 100.0;
-        updateGraphTransform(graphs[1]);
+        graphs[1].transform = findBestFitTransform(graphs[1]);
         draw();
     }
 
@@ -195,10 +263,6 @@ function draw() {
     }
 }
 
-function updateGraphTransform(graph) {
-    graph.transform = findBestFitTransform(graph.rect, graph.frame_acceleration);
-}
-
 function drawSpaceTime(graph) {
     ctx.save(); // save the clip region for the moment
 
@@ -214,37 +278,37 @@ function drawSpaceTime(graph) {
     var space_extra = 80; // extend space axes beyond just the minimum area
     for(var t = Math.ceil(time_range.min); t<=Math.floor(time_range.max); t+=time_range.step) {
         if(t==0.0) { continue; }
-        drawCurvingLine(pos(t, space_range.min-space_extra), pos(t, space_range.max+space_extra), graph.frame_acceleration, graph.transform);
+        drawCurvingLine(pos(t, space_range.min-space_extra), pos(t, space_range.max+space_extra), graph);
     }
     for(var s = Math.ceil(space_range.min-space_extra); s<=Math.floor(space_range.max+space_extra); s+=space_range.step) {
         if(s==0.0) { continue; }
-        drawCurvingLine(pos(time_range.min, s), pos(time_range.max, s), graph.frame_acceleration, graph.transform);
+        drawCurvingLine(pos(time_range.min, s), pos(time_range.max, s), graph);
     }
     // draw major axes
-    ctx.strokeStyle = 'rgb(100,100,100)';
-    drawCurvingLine(pos(time_range.min, 0.0), pos(time_range.max, 0.0), graph.frame_acceleration, graph.transform);
-    drawCurvingLine(pos(0.0, space_range.min-space_extra), pos(0.0, space_range.max+space_extra), graph.frame_acceleration, graph.transform);
-    // draw trajectories in free-fall
-    for(var i = 0; i < trajectories.length; i++) {
-        ctx.strokeStyle = trajectories[i].color;
-        ctx.fillStyle = trajectories[i].color;
-        ctx.lineWidth = 2;
-        drawGeodesic(trajectories[i].start, trajectories[i].end, graph.frame_acceleration, graph.transform);
-    }
-    
+    ctx.strokeStyle = 'rgb(150,150,150)';
+    drawCurvingLine(pos(time_range.min, 0.0), pos(time_range.max, 0.0), graph);
+    drawCurvingLine(pos(0.0, space_range.min-space_extra), pos(0.0, space_range.max+space_extra), graph);
+
     // label axes
     ctx.fillStyle = 'rgb(100,100,100)';
     ctx.font = "13px Arial";
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
     var horizOffset = -0.1;
-    textLabel(pos(horizOffset, 40.0), "40m", graph.frame_acceleration, graph.transform);
+    textLabel(pos(horizOffset, 40.0), "40m", graph);
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
-    var vertOffset = -0.4; 
+    var vertOffset = -2.0;
     for(var t = Math.ceil(time_range.min); t<=Math.floor(time_range.max); t+=time_range.step) {
-        textLabel(pos(t, vertOffset), t.toFixed(0)+"s", graph.frame_acceleration, graph.transform);
+        textLabel(pos(t, vertOffset), t.toFixed(0)+"s", graph);
     }
+
+    // draw trajectories in free-fall
+    for(var i = 0; i < trajectories.length; i++) {
+        ctx.lineWidth = 2;
+        drawGeodesic(trajectories[i], graph);
+    }
+
     ctx.restore(); // reset the clip
 
     // show the frame acceleration as text
@@ -255,44 +319,52 @@ function drawSpaceTime(graph) {
         graph.rect.x+graph.rect.width/2, graph.rect.y+25);
 }
 
-function textLabel(p, text, frame_acceleration, transform) {
-    var delta_acceleration = frame_acceleration - g;
-    p = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(p, delta_acceleration), transform);
+function textLabel(p, text, graph) {
+    var delta_acceleration = graph.frame_acceleration - g;
+    p = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(p, delta_acceleration), graph.transform);
     ctx.fillText(text, p.x, p.y);
 }
 
-function drawCurvingLine(p1, p2, frame_acceleration, transform) {
+function drawCurvingLine(p1, p2, graph) {
     // draw a line that is straight in our familiar (accelerating upwards at g) reference frame but may not be straight in this frame, depending on its acceleration
-    var delta_acceleration = frame_acceleration - g;
-    drawLine(p1, p2, delta_acceleration, transform);
+    var delta_acceleration = graph.frame_acceleration - g;
+    drawLine(p1, p2, delta_acceleration, graph.transform);
 }
 
-function drawGeodesic(p1, p2, frame_acceleration, transform) {
+function drawGeodesic(trajectory, graph) {
     // draw a line that is straight in an inertial frame but may be not be straight in this frame, depending on its acceleration
 
+    ctx.strokeStyle = trajectory.default_color;
     // convert spacetime coordinates from our familiar (g-accelerating) frame into the inertial frame
     var delta_acceleration = 0.0 - g;
-    var start = transformBetweenAcceleratingReferenceFrames(p1, delta_acceleration)
-    var end = transformBetweenAcceleratingReferenceFrames(p2, delta_acceleration)
+    var start = transformBetweenAcceleratingReferenceFrames(trajectory.start, delta_acceleration)
+    var end = transformBetweenAcceleratingReferenceFrames(trajectory.end, delta_acceleration)
     // step along that line, converting to the target frame
-    delta_acceleration = frame_acceleration - 0.0;
-    drawLine(start, end, delta_acceleration, transform);
+    delta_acceleration = graph.frame_acceleration - 0.0;
+    drawLine(start, end, delta_acceleration, graph.transform);
+    // draw an arrowhead to indicate the direction of travel
+    var a1 = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(lerp(start, end, 0.59), delta_acceleration), graph.transform);
+    var a2 = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(lerp(start, end, 0.60), delta_acceleration), graph.transform);
+    drawArrowHead(a1, a2, 15);
     // draw circles along the way
     var n_steps = 10;
     for(var i = 0; i <= n_steps; i++) {
         var u = i / n_steps;
         var c = lerp(start, end, u);
-        c = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(c, delta_acceleration), transform);
+        c = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(c, delta_acceleration), graph.transform);
         ctx.beginPath();
-        var r = 2.0;
-        if(i==0) { r = 6.0; } else if(i==n_steps) { r=4.0; }
+        var r = trajectory.mid_size;
+        ctx.fillStyle = trajectory.default_color;
+        if(i==0) {
+            r = trajectory.start_size;
+            ctx.fillStyle = trajectory.start_color;
+        } else if(i==n_steps) {
+            r = trajectory.end_size;
+            ctx.fillStyle = trajectory.end_color;
+        }
         ctx.arc(c.x, c.y, r, 0, 2 * Math.PI);
         ctx.fill();
     }
-    // draw an arrowhead to indicate the direction of travel
-    var a1 = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(lerp(start, end, 0.59), delta_acceleration), transform);
-    var a2 = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(lerp(start, end, 0.60), delta_acceleration), transform);
-    drawArrowHead(a1, a2, 15);
 }
 
 function drawLine(p1, p2, delta_acceleration, transform) {
@@ -321,9 +393,8 @@ function transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration) {
     return pos(x, y);
 }
 
-
-function findBestFitTransform(screen_rect, frame_acceleration) {
-    var delta_acceleration = frame_acceleration - g;
+function findBestFitTransform(graph) {
+    var delta_acceleration = graph.frame_acceleration - g;
     // plot some points in some arbitrary space then scale to fit the rect
     corners = [];
     corners.push(transformBetweenAcceleratingReferenceFrames(pos(time_range.min, space_range.min), delta_acceleration));
@@ -333,8 +404,7 @@ function findBestFitTransform(screen_rect, frame_acceleration) {
     corners.push(transformBetweenAcceleratingReferenceFrames(pos((time_range.min+time_range.max)/2, space_range.min), delta_acceleration));
     corners.push(transformBetweenAcceleratingReferenceFrames(pos((time_range.min+time_range.max)/2, space_range.max), delta_acceleration));
     original_rect = boundingRect(corners);
-    var adjusted_screen_rect = rect(screen_rect.x, screen_rect.y-20, screen_rect.width, screen_rect.height+20); // allow room for labels at the bottom
-    return computeLinearTransform(original_rect, adjusted_screen_rect);
+    return computeLinearTransform(original_rect, graph.rect);
 }
 
 function distanceTravelled(time, acceleration) {
@@ -429,7 +499,7 @@ Use the first slider to change the acceleration of the frame of reference in the
 </p>
 
 <p class="text">
-Use the second slider to move the time window. Note that all the trajectories remain as straight lines in the inertial frame of reference. 
+Use the second slider to move the time window. Note that all the trajectories remain as straight lines in the inertial frame of reference.
 </p>
 
 <p class="text">
