@@ -13,6 +13,7 @@ var g;
 var frameAcceleration;
 var time_range;
 var space_range;
+var isDragging;
 
 // classes:
 
@@ -101,6 +102,7 @@ function pointInRect( p, rect ) {
 function init() {
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
+    isDragging = false;
 
     g = 9.8; // metres per second per second
 
@@ -232,23 +234,29 @@ function drawGeodesic(p1, p2, frame_acceleration, transform) {
     // step along that line, converting to the target frame
     delta_acceleration = frame_acceleration - 0.0;
     drawLine(start, end, delta_acceleration, transform);
-    // draw strt and end circles
-    ctx.beginPath();
-    var c1 = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(start, delta_acceleration), transform);
-    ctx.arc(c1.x, c1.y, 5, 0, 2 * Math.PI);
-    var c2 = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(end, delta_acceleration), transform);
-    ctx.arc(c2.x, c2.y, 3, 0, 2 * Math.PI);
-    ctx.fill();
+    // draw circles along the way
+    var n_steps = 10;
+    for(var i = 0; i <= n_steps; i++) {
+        var u = i / n_steps;
+        var c = lerp(start, end, u);
+        c = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(c, delta_acceleration), transform);
+        ctx.beginPath();
+        var r = 2.0;
+        if(i==0) { r = 6.0; } else if(i==n_steps) { r=4.0; }
+        ctx.arc(c.x, c.y, r, 0, 2 * Math.PI);
+        ctx.fill();
+    }
 }
 
 function drawLine(p1, p2, delta_acceleration, transform) {
     // step along the line, converting to the target frame
     ctx.beginPath();
-    var step = 0.01;
-    for(var u = 0.0; u < 1.0+step; u += step) {
+    var n_steps = 100;
+    for(var i = 0; i <= n_steps; i++) {
+        var u = i / n_steps;
         var ts = lerp(p1, p2, u);
         var p = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration), transform);
-        if(u==0.0) {
+        if(i==0) {
             moveTo(p);
         }
         else {
