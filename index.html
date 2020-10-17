@@ -277,9 +277,8 @@ function drawGeodesic(p1, p2, frame_acceleration, transform) {
     // step along that line, converting to the target frame
     delta_acceleration = frame_acceleration - 0.0;
     drawLine(start, end, delta_acceleration, transform);
-    // draw circles along the way, and an arrowhead
+    // draw circles along the way
     var n_steps = 10;
-    var arrowheadStart;
     for(var i = 0; i <= n_steps; i++) {
         var u = i / n_steps;
         var c = lerp(start, end, u);
@@ -289,11 +288,11 @@ function drawGeodesic(p1, p2, frame_acceleration, transform) {
         if(i==0) { r = 6.0; } else if(i==n_steps) { r=4.0; }
         ctx.arc(c.x, c.y, r, 0, 2 * Math.PI);
         ctx.fill();
-        if(i==5) { arrowheadStart = c; }
-        else if(i==6) {
-            drawArrowHead(arrowheadStart, c, 15);
-        }
     }
+    // draw an arrowhead to indicate the direction of travel
+    var a1 = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(lerp(start, end, 0.59), delta_acceleration), transform);
+    var a2 = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(lerp(start, end, 0.60), delta_acceleration), transform);
+    drawArrowHead(a1, a2, 15);
 }
 
 function drawLine(p1, p2, delta_acceleration, transform) {
