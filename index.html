@@ -210,19 +210,20 @@ function drawSpaceTime(graph) {
     ctx.clip(); // clip to this rect until reset
 
     // draw minor axes
-    ctx.strokeStyle = 'rgb(200,200,200)';
+    ctx.strokeStyle = 'rgb(240,240,240)';
+    var space_extra = 80; // extend space axes beyond just the minimum area
     for(var t = Math.ceil(time_range.min); t<=Math.floor(time_range.max); t+=time_range.step) {
         if(t==0.0) { continue; }
-        drawCurvingLine(pos(t, space_range.min), pos(t, space_range.max), graph.frame_acceleration, graph.transform);
+        drawCurvingLine(pos(t, space_range.min-space_extra), pos(t, space_range.max+space_extra), graph.frame_acceleration, graph.transform);
     }
-    for(var s = Math.ceil(space_range.min); s<=Math.floor(space_range.max); s+=space_range.step) {
+    for(var s = Math.ceil(space_range.min-space_extra); s<=Math.floor(space_range.max+space_extra); s+=space_range.step) {
         if(s==0.0) { continue; }
         drawCurvingLine(pos(time_range.min, s), pos(time_range.max, s), graph.frame_acceleration, graph.transform);
     }
     // draw major axes
     ctx.strokeStyle = 'rgb(100,100,100)';
     drawCurvingLine(pos(time_range.min, 0.0), pos(time_range.max, 0.0), graph.frame_acceleration, graph.transform);
-    drawCurvingLine(pos(0.0, space_range.min), pos(0.0, space_range.max), graph.frame_acceleration, graph.transform);
+    drawCurvingLine(pos(0.0, space_range.min-space_extra), pos(0.0, space_range.max+space_extra), graph.frame_acceleration, graph.transform);
     // draw trajectories in free-fall
     for(var i = 0; i < trajectories.length; i++) {
         ctx.strokeStyle = trajectories[i].color;
