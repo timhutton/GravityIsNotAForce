@@ -8,7 +8,7 @@
 
 var currentTime;
 var isAnimating;
-var objects;
+var trajectories;
 var g;
 var frameAcceleration;
 var time_range;
@@ -28,8 +28,8 @@ function range(min, max, step=1.0) {
     return { min:min, max:max, step:step };
 }
 
-function object(start, end) {
-    return { start:start, end:end };
+function trajectory(start, end, color) {
+    return { start:start, end:end, color:color };
 }
 
 function linearTransform(mult_x, offset_x, mult_y, offset_y) {
@@ -125,10 +125,10 @@ function init() {
     currentTime = 0.0;
     isAnimating = false;
 
-    objects = [];
-    objects.push(object(pos(0.0, 44.1), pos(3.0, 0.0)));
-    objects.push(object(pos(-1.0, 0.0), pos(2.0, 0.0)));
-    objects.push(object(pos(-3.0, 0.0), pos(1.0, 0.0)));
+    trajectories = [];
+    trajectories.push(trajectory(pos(0.0, 44.1), pos(3.0, 0.0), 'rgb(255,100,100)'));
+    trajectories.push(trajectory(pos(-1.0, 0.0), pos(2.0, 0.0), 'rgb(0,200,0)'));
+    trajectories.push(trajectory(pos(-3.0, 0.0), pos(1.0, 0.0), 'rgb(100,100,255)'));
 
     draw();
 
@@ -179,10 +179,11 @@ function drawSpaceTime(screen_rect, frame_acceleration) {
     ctx.strokeStyle = 'rgb(100,100,100)';
     drawCurvingLine(pos(time_range.min, 0.0), pos(time_range.max, 0.0), frame_acceleration, transform);
     drawCurvingLine(pos(0.0, space_range.min), pos(0.0, space_range.max), frame_acceleration, transform);
-    // draw objects in free-fall
-    ctx.strokeStyle = 'rgb(255,100,100)';
-    for(var i = 0; i < objects.length; i++) {
-        drawGeodesic(objects[i].start, objects[i].end, frame_acceleration, transform);
+    // draw trajectories in free-fall
+    for(var i = 0; i < trajectories.length; i++) {
+        ctx.strokeStyle = trajectories[i].color;
+        ctx.lineWidth = 2;
+        drawGeodesic(trajectories[i].start, trajectories[i].end, frame_acceleration, transform);
     }
     
     // label axes
