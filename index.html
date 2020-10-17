@@ -270,7 +270,7 @@ function findBestFitTransform(screen_rect, frame_acceleration) {
     corners.push(transformBetweenAcceleratingReferenceFrames(pos((time_range.min+time_range.max)/2, space_range.min), delta_acceleration));
     corners.push(transformBetweenAcceleratingReferenceFrames(pos((time_range.min+time_range.max)/2, space_range.max), delta_acceleration));
     original_rect = boundingRect(corners);
-    var adjusted_screen_rect = rect(screen_rect.x, screen_rect.y-20, screen_rect.width, screen_rect.height-20); // allow room for labels at the bottom
+    var adjusted_screen_rect = rect(screen_rect.x, screen_rect.y-20, screen_rect.width, screen_rect.height+20); // allow room for labels at the bottom
     return computeLinearTransform(original_rect, adjusted_screen_rect);
 }
 
