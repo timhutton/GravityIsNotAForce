@@ -2,7 +2,7 @@ I'm experimenting with how to visualise the geodesics in spacetime under general
 
 Live demo: https://timhutton.github.io/GravityIsNotAForce/
 
-[![image](https://user-images.githubusercontent.com/647092/96323293-6b44e680-1014-11eb-8fe5-43f1568133ef.png)](https://timhutton.github.io/GravityIsNotAForce/)
+[![image](https://user-images.githubusercontent.com/647092/96338577-12fafc80-1087-11eb-8a82-f67bd69c6594.png)](https://timhutton.github.io/GravityIsNotAForce/)
 
 History: (please help fill in the gaps!)
 - 2014: A [youtube video](https://www.youtube.com/watch?v=jlTVIMOix3I) showed a 'spacetime stretcher' whereby objects in free-fall move along straight lines.
