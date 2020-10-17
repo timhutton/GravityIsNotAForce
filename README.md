@@ -2,6 +2,8 @@ I'm just experimenting with how to visualise the geodesics in spacetime under ge
 
 Live demo: https://timhutton.github.io/GravityIsNotAForce/
 
+[![image](https://user-images.githubusercontent.com/647092/96323293-6b44e680-1014-11eb-8fe5-43f1568133ef.png)](https://timhutton.github.io/GravityIsNotAForce/)
+
 History: (please help fill in the gaps!)
 - 2014: A [youtube video](https://www.youtube.com/watch?v=jlTVIMOix3I) showed a 'spacetime stretcher' whereby objects in free-fall move along straight lines.
 - 2019: A [PDF here](https://iopscience.iop.org/article/10.1088/1361-6552/ab08f5/pdf) references that youtube video and commends the approach to educators.
