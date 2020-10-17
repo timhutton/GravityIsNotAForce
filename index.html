@@ -218,19 +218,7 @@ function textLabel(p, text, frame_acceleration, transform) {
 function drawCurvingLine(p1, p2, frame_acceleration, transform) {
     // draw a line that is straight in our familiar (accelerating upwards at g) reference frame but may not be straight in this frame, depending on its acceleration
     var delta_acceleration = frame_acceleration - g;
-    ctx.beginPath();
-    var step = 0.01;
-    for(var u = 0.0; u < 1.0+step; u += step) {
-        var ts = lerp(p1, p2, u);
-        var p = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration), transform);
-        if(u==0.0) {
-            moveTo(p);
-        }
-        else {
-            lineTo(p);
-        }
-    }
-    ctx.stroke();
+    drawLine(p1, p2, delta_acceleration, transform);
 }
 
 function drawGeodesic(p1, p2, frame_acceleration, transform) {
@@ -242,10 +230,15 @@ function drawGeodesic(p1, p2, frame_acceleration, transform) {
     var end = transformBetweenAcceleratingReferenceFrames(p2, delta_acceleration)
     // step along that line, converting to the target frame
     delta_acceleration = frame_acceleration - 0.0;
+    drawLine(start, end, delta_acceleration, transform);
+}
+
+function drawLine(p1, p2, delta_acceleration, transform) {
+    // step along the line, converting to the target frame
     ctx.beginPath();
     var step = 0.01;
     for(var u = 0.0; u < 1.0+step; u += step) {
-        var ts = lerp(start, end, u);
+        var ts = lerp(p1, p2, u);
         var p = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration), transform);
         if(u==0.0) {
             moveTo(p);
