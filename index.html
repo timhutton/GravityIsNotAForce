@@ -6,9 +6,9 @@
 
 <!-- Visualisation of 1+1 spacetime -->
 
+var graphs;
 var trajectories;
 var g;
-var frameAcceleration;
 var time_range;
 var space_range;
 var isDragging;
@@ -29,6 +29,10 @@ function range(min, max, step=1.0) {
 
 function trajectory(start, end, color) {
     return { start:start, end:end, color:color };
+}
+
+function graph(rect, frame_acceleration) {
+    return {rect:rect, frame_acceleration:frame_acceleration};
 }
 
 function linearTransform(mult_x, offset_x, mult_y, offset_y) {
@@ -95,11 +99,18 @@ function onTouchStart( evt ) {
 }
 
 function onMouseDown( evt ) {
+    trajectories[0].start = getMousePos(evt);
+    draw();
 }
 
 function clientToCanvas( clientPos ) {
     var rect = canvas.getBoundingClientRect();
-    return p2( clientPos.x - rect.left, clientPos.y - rect.top );
+    return pos( clientPos.x - rect.left, clientPos.y - rect.top );
+}
+
+function getMousePos(evt) {
+    var rect = canvas.getBoundingClientRect();
+    return pos( evt.clientX - rect.left, evt.clientY - rect.top );
 }
 
 function pointInRect( p, rect ) {
@@ -114,10 +125,20 @@ function init() {
 
     g = 9.8; // metres per second per second
 
+    trajectories = [];
+    trajectories.push(trajectory(pos(0.0, 44.1), pos(3.0, 0.0), 'rgb(255,100,100)'));
+    trajectories.push(trajectory(pos(-1.0, 0.0), pos(2.0, 0.0), 'rgb(0,200,0)'));
+    trajectories.push(trajectory(pos(-3.0, 0.0), pos(1.0, 0.0), 'rgb(100,100,255)'));
+    
+    graphs = [];
+    graphs.push(graph(rect(40,440,400,-400), g));
+    graphs.push(graph(rect(480,440,400,-400), g/2));
+    graphs.push(graph(rect(920,440,400,-400), 0.0));
+
     var frameAccelerationSlider = document.getElementById("frameAccelerationSlider");
-    frameAcceleration = g - g * frameAccelerationSlider.value / 100.0;
+    graphs[1].frame_acceleration = g - g * frameAccelerationSlider.value / 100.0;
     frameAccelerationSlider.oninput = function() {
-        frameAcceleration = g - g * this.value / 100.0;
+        graphs[1].frame_acceleration = g - g * this.value / 100.0;
         draw();
     }
 
@@ -131,11 +152,6 @@ function init() {
     }
 
     space_range = range(0, 50, 10);
-
-    trajectories = [];
-    trajectories.push(trajectory(pos(0.0, 44.1), pos(3.0, 0.0), 'rgb(255,100,100)'));
-    trajectories.push(trajectory(pos(-1.0, 0.0), pos(2.0, 0.0), 'rgb(0,200,0)'));
-    trajectories.push(trajectory(pos(-3.0, 0.0), pos(1.0, 0.0), 'rgb(100,100,255)'));
 
     draw();
 
@@ -154,9 +170,9 @@ function draw() {
     ctx.fill();
 
     // draw each graph
-    drawSpaceTime(rect(40,440,400,-400), g);
-    drawSpaceTime(rect(480,440,400,-400), frameAcceleration);
-    drawSpaceTime(rect(920,440,400,-400), 0.0);
+    for(var i = 0; i < graphs.length; i++) {
+        drawSpaceTime(graphs[i].rect, graphs[i].frame_acceleration);
+    }
 }
 
 function drawSpaceTime(screen_rect, frame_acceleration) {
