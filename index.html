@@ -112,10 +112,10 @@ function init() {
     }
 
     var timeTranslationSlider = document.getElementById("timeTranslationSlider");
-    var timeTranslation = -2 + 4 * timeTranslationSlider.value / 100.0;
+    var timeTranslation = 2 - 4 * timeTranslationSlider.value / 100.0;
     time_range = range(-4 + timeTranslation, 4 + timeTranslation, 1);
     timeTranslationSlider.oninput = function() {
-        var timeTranslation = -2 + 4 * timeTranslationSlider.value / 100.0;
+        var timeTranslation = 2 - 4 * timeTranslationSlider.value / 100.0;
         time_range = range(-4 + timeTranslation, 4 + timeTranslation, 1);
         draw();
     }
