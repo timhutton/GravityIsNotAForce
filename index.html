@@ -6,8 +6,6 @@
 
 <!-- Visualisation of 1+1 spacetime -->
 
-var currentTime;
-var isAnimating;
 var trajectories;
 var g;
 var frameAcceleration;
@@ -49,6 +47,16 @@ function moveTo(p) {
 
 function lineTo(p) {
     ctx.lineTo(p.x, p.y);
+}
+
+// adapted from http://stackoverflow.com/a/6333775/126823
+function drawArrowHead( a, b, size ) { 
+    var angle = Math.atan2(b.y-a.y,b.x-a.x);
+    ctx.beginPath();
+    ctx.moveTo(b.x - size * Math.cos(angle - Math.PI/6), b.y - size * Math.sin(angle - Math.PI/6));
+    ctx.lineTo(b.x, b.y);
+    ctx.lineTo(b.x - size * Math.cos(angle + Math.PI/6), b.y - size * Math.sin(angle + Math.PI/6));
+    ctx.stroke();
 }
 
 function applyLinearTransform(p, transform) {
@@ -124,9 +132,6 @@ function init() {
 
     space_range = range(0, 50, 10);
 
-    currentTime = 0.0;
-    isAnimating = false;
-
     trajectories = [];
     trajectories.push(trajectory(pos(0.0, 44.1), pos(3.0, 0.0), 'rgb(255,100,100)'));
     trajectories.push(trajectory(pos(-1.0, 0.0), pos(2.0, 0.0), 'rgb(0,200,0)'));
@@ -139,8 +144,6 @@ function init() {
 
     canvas.addEventListener( 'mousedown',   onMouseDown, false );
     canvas.addEventListener( 'touchstart',  onTouchStart, false );
-
-    animate();
 }
 
 function draw() {
@@ -234,8 +237,9 @@ function drawGeodesic(p1, p2, frame_acceleration, transform) {
     // step along that line, converting to the target frame
     delta_acceleration = frame_acceleration - 0.0;
     drawLine(start, end, delta_acceleration, transform);
-    // draw circles along the way
+    // draw circles along the way, and an arrowhead
     var n_steps = 10;
+    var arrowheadStart;
     for(var i = 0; i <= n_steps; i++) {
         var u = i / n_steps;
         var c = lerp(start, end, u);
@@ -245,6 +249,10 @@ function drawGeodesic(p1, p2, frame_acceleration, transform) {
         if(i==0) { r = 6.0; } else if(i==n_steps) { r=4.0; }
         ctx.arc(c.x, c.y, r, 0, 2 * Math.PI);
         ctx.fill();
+        if(i==5) { arrowheadStart = c; }
+        else if(i==6) {
+            drawArrowHead(arrowheadStart, c, 15);
+        }
     }
 }
 
@@ -292,14 +300,6 @@ function findBestFitTransform(screen_rect, frame_acceleration) {
 
 function distanceTravelled(time, acceleration) {
     return 0.5 * acceleration * time * time;
-}
-
-function animate() {
-    if( isAnimating ) {
-        currentTime = currentTime + 0.01;
-        draw();
-        requestAnimationFrame( animate );
-    }
 }
 
 window.onload = init;
