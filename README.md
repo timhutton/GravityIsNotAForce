@@ -1,4 +1,4 @@
-I'm just experimenting with how to visualise the geodesics in spacetime under general relativity. Please help with suggestions!
+I'm experimenting with how to visualise the geodesics in spacetime under general relativity. Please help with suggestions!
 
 Live demo: https://timhutton.github.io/GravityIsNotAForce/
 
