@@ -182,6 +182,7 @@ function drawSpaceTime(screen_rect, frame_acceleration) {
     // draw trajectories in free-fall
     for(var i = 0; i < trajectories.length; i++) {
         ctx.strokeStyle = trajectories[i].color;
+        ctx.fillStyle = trajectories[i].color;
         ctx.lineWidth = 2;
         drawGeodesic(trajectories[i].start, trajectories[i].end, frame_acceleration, transform);
     }
@@ -231,6 +232,13 @@ function drawGeodesic(p1, p2, frame_acceleration, transform) {
     // step along that line, converting to the target frame
     delta_acceleration = frame_acceleration - 0.0;
     drawLine(start, end, delta_acceleration, transform);
+    // draw strt and end circles
+    ctx.beginPath();
+    var c1 = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(start, delta_acceleration), transform);
+    ctx.arc(c1.x, c1.y, 5, 0, 2 * Math.PI);
+    var c2 = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(end, delta_acceleration), transform);
+    ctx.arc(c2.x, c2.y, 3, 0, 2 * Math.PI);
+    ctx.fill();
 }
 
 function drawLine(p1, p2, delta_acceleration, transform) {
