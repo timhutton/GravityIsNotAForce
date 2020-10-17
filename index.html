@@ -12,6 +12,8 @@ var g;
 var time_range;
 var space_range;
 var isDragging;
+var dragTrajectory;
+var dragIsStart;
 
 // classes:
 
@@ -117,48 +119,67 @@ function resetMarkers() {
 }
 
 function onMouseMove( evt ) {
-    // indicate which marker is being hovered over
-    resetMarkers();
-    var p = getMousePos(evt);
-    var hover_radius = 20;
-    var d_min = Number.MAX_VALUE;
-    var isHovering = false;
-    var whichTrajectory;
-    var isStart;
-    for(var i = 0; i < graphs.length; i++) {
-        if( pointInRect(p, graphs[i].rect) ) {
-            var delta_acceleration = graphs[i].frame_acceleration - g;
-            for(var j = 0; j < trajectories.length; j++) {
-                // start?
-                var m = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(trajectories[j].start, delta_acceleration), graphs[i].transform);
-                var d = dist(p, m);
-                if( d < hover_radius && d < d_min) {
-                    d_min = d;
-                    isHovering = true;
-                    whichTrajectory = j;
-                    isStart = true;
-                }
-                // end?
-                m = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(trajectories[j].end, delta_acceleration), graphs[i].transform);
-                d = dist(p, m);
-                if( d < hover_radius && d < d_min) {
-                    d_min = d;
-                    isHovering = true;
-                    whichTrajectory = j;
-                    isStart = false;
+    if(isDragging) {
+        // move the handle being dragged
+        var p = getMousePos(evt);
+        for(var i = 0; i < graphs.length; i++) {
+            if( pointInRect(p, graphs[i].rect) ) {
+                // convert p to the coordinate system of this graph
+                var delta_acceleration = g - graphs[i].frame_acceleration
+                p = applyLinearTransformInverse(p, graphs[i].transform);
+                p = transformBetweenAcceleratingReferenceFrames(p, delta_acceleration);
+                if(dragIsStart) {
+                    trajectories[dragTrajectory].start = p;
+                } else {
+                    trajectories[dragTrajectory].end = p;
                 }
             }
-            if(isHovering) {
-                if(isStart) {
-                    trajectories[whichTrajectory].start_size = trajectories[whichTrajectory].hover_size;
-                    trajectories[whichTrajectory].start_color = trajectories[whichTrajectory].hover_color;
+        }
+    }
+    else {
+        // indicate which marker is being hovered over
+        resetMarkers();
+        var p = getMousePos(evt);
+        var hover_radius = 20;
+        var d_min = Number.MAX_VALUE;
+        var isHovering = false;
+        var whichTrajectory;
+        var isStart;
+        for(var i = 0; i < graphs.length; i++) {
+            if( pointInRect(p, graphs[i].rect) ) {
+                var delta_acceleration = graphs[i].frame_acceleration - g;
+                for(var j = 0; j < trajectories.length; j++) {
+                    // start?
+                    var m = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(trajectories[j].start, delta_acceleration), graphs[i].transform);
+                    var d = dist(p, m);
+                    if( d < hover_radius && d < d_min) {
+                        d_min = d;
+                        isHovering = true;
+                        whichTrajectory = j;
+                        isStart = true;
+                    }
+                    // end?
+                    m = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(trajectories[j].end, delta_acceleration), graphs[i].transform);
+                    d = dist(p, m);
+                    if( d < hover_radius && d < d_min) {
+                        d_min = d;
+                        isHovering = true;
+                        whichTrajectory = j;
+                        isStart = false;
+                    }
                 }
-                else {
-                    trajectories[whichTrajectory].end_size = trajectories[whichTrajectory].hover_size;
-                    trajectories[whichTrajectory].end_color = trajectories[whichTrajectory].hover_color;
+                if(isHovering) {
+                    if(isStart) {
+                        trajectories[whichTrajectory].start_size = trajectories[whichTrajectory].hover_size;
+                        trajectories[whichTrajectory].start_color = trajectories[whichTrajectory].hover_color;
+                    }
+                    else {
+                        trajectories[whichTrajectory].end_size = trajectories[whichTrajectory].hover_size;
+                        trajectories[whichTrajectory].end_color = trajectories[whichTrajectory].hover_color;
+                    }
                 }
+                break;
             }
-            break;
         }
     }
     draw();
@@ -170,18 +191,55 @@ function onTouchMove( evt ) {
 function onTouchStart( evt ) {
 }
 
+function onTouchEnd( evt ) {
+}
+
 function onMouseDown( evt ) {
     var p = getMousePos(evt);
+    var grab_radius = 20;
+    var d_min = Number.MAX_VALUE;
     for(var i = 0; i < graphs.length; i++) {
         if( pointInRect(p, graphs[i].rect) ) {
-            p = applyLinearTransformInverse(p, graphs[i].transform);
-            var delta_acceleration = g - graphs[i].frame_acceleration
-            p = transformBetweenAcceleratingReferenceFrames(p, delta_acceleration)
-            trajectories[0].start = p;
-            draw();
+            var delta_acceleration = graphs[i].frame_acceleration - g;
+            for(var j = 0; j < trajectories.length; j++) {
+                // start?
+                var m = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(trajectories[j].start, delta_acceleration), graphs[i].transform);
+                var d = dist(p, m);
+                if( d < grab_radius && d < d_min) {
+                    d_min = d;
+                    isDragging = true;
+                    dragTrajectory = j;
+                    dragIsStart = true;
+                }
+                // end?
+                m = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(trajectories[j].end, delta_acceleration), graphs[i].transform);
+                d = dist(p, m);
+                if( d < grab_radius && d < d_min) {
+                    d_min = d;
+                    isDragging = true;
+                    dragTrajectory = j;
+                    dragIsStart = false;
+                }
+            }
+            if(isDragging) {
+                if(dragIsStart) {
+                    trajectories[dragTrajectory].start_size = trajectories[dragTrajectory].hover_size;
+                    trajectories[dragTrajectory].start_color = trajectories[dragTrajectory].hover_color;
+                }
+                else {
+                    trajectories[dragTrajectory].end_size = trajectories[dragTrajectory].hover_size;
+                    trajectories[dragTrajectory].end_color = trajectories[dragTrajectory].hover_color;
+                }
+            }
             break;
         }
     }
+}
+
+function onMouseUp( evt ) {
+    isDragging = false;
+    resetMarkers();
+    draw();
 }
 
 function clientToCanvas( clientPos ) {
@@ -221,7 +279,7 @@ function init() {
         draw();
     }
 
-    space_range = range(-5, 50, 10);
+    space_range = range(-10, 50, 10);
 
     trajectories = [];
     trajectories.push(trajectory(pos(0.0, 44.1), pos(3.0, 0.0), 'rgb(255,100,100)', 'rgb(200,100,100)'));
@@ -248,6 +306,9 @@ function init() {
 
     canvas.addEventListener( 'mousedown',   onMouseDown, false );
     canvas.addEventListener( 'touchstart',  onTouchStart, false );
+
+    canvas.addEventListener( 'mouseup',   onMouseUp, false );
+    canvas.addEventListener( 'touchend',  onTouchEnd, false );
 }
 
 function draw() {
@@ -500,6 +561,10 @@ Use the first slider to change the acceleration of the frame of reference in the
 
 <p class="text">
 Use the second slider to move the time window. Note that all the trajectories remain as straight lines in the inertial frame of reference.
+</p>
+
+<p class="text">
+You can drag the start and end position of each object to change their trajectories. All free-fall trajectories in the inertial frame of reference are straight lines.
 </p>
 
 <p class="text">
