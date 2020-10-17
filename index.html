@@ -64,7 +64,11 @@ function drawArrowHead( a, b, size ) {
 }
 
 function applyLinearTransform(p, transform) {
-    return pos(transform.offset_x + transform.mult_x*p.x, transform.offset_y + transform.mult_y*p.y);
+    return pos(transform.offset_x + transform.mult_x * p.x, transform.offset_y + transform.mult_y * p.y);
+}
+
+function applyLinearTransformInverse(p, transform) {
+    return pos((p.x - transform.offset_x) / transform.mult_x, (p.y - transform.offset_y) / transform.mult_y);
 }
 
 function computeLinearTransform(from_rect, to_rect) {
@@ -99,8 +103,17 @@ function onTouchStart( evt ) {
 }
 
 function onMouseDown( evt ) {
-    trajectories[0].start = getMousePos(evt);
-    draw();
+    var p = getMousePos(evt);
+    for(var i = 0; i < graphs.length; i++) {
+        if( pointInRect(p, graphs[i].rect) ) {
+            p = applyLinearTransformInverse(p, graphs[i].transform);
+            var delta_acceleration = g - graphs[i].frame_acceleration
+            p = transformBetweenAcceleratingReferenceFrames(p, delta_acceleration)
+            trajectories[0].start = p;
+            draw();
+            break;
+        }
+    }
 }
 
 function clientToCanvas( clientPos ) {
@@ -114,8 +127,11 @@ function getMousePos(evt) {
 }
 
 function pointInRect( p, rect ) {
-    return p.x > rect.x && p.x < ( rect.x + rect.width ) &&
-           p.y > rect.y && p.y < ( rect.y + rect.height );
+    var left = Math.min(rect.x, rect.x + rect.width);
+    var right = Math.max(rect.x, rect.x + rect.width);
+    var top = Math.min(rect.y, rect.y + rect.height);
+    var bottom = Math.max(rect.y, rect.y + rect.height);
+    return p.x > left && p.x < right && p.y > top && p.y < bottom;
 }
 
 function init() {
