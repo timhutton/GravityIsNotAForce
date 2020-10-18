@@ -398,8 +398,9 @@ function drawSpaceTime(graph) {
     ctx.fillStyle = 'rgb(0,0,0)';
     ctx.font = "20px Arial";
     ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
     ctx.fillText("Frame acceleration = "+graph.frame_acceleration.toFixed(2)+" ms"+String.fromCharCode(0x207B)+String.fromCharCode(0x00B2),
-        graph.rect.x+graph.rect.width/2, graph.rect.y+25);
+        graph.rect.x+graph.rect.width/2, (graph.rect.y+canvas.height)/2);
 }
 
 function textLabel(p, text, graph) {
