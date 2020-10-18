@@ -2,7 +2,7 @@ I'm experimenting with how to visualise the geodesics in spacetime under general
 
 Live demo: https://timhutton.github.io/GravityIsNotAForce/
 
-[![image](https://user-images.githubusercontent.com/647092/96347588-8a865700-109a-11eb-9eac-631b5265b7e8.png)](https://timhutton.github.io/GravityIsNotAForce/)
+[![image](https://user-images.githubusercontent.com/647092/96377209-06a49b80-117c-11eb-911e-76cd16c54db4.png)](https://timhutton.github.io/GravityIsNotAForce/)
 
 History: (please help fill in the gaps!)
 - 2013: A [YouTube video](https://www.youtube.com/watch?v=DdC0QN6f3G4) shows how bending spacetime can make straight lines out of parabolas.
