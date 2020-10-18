@@ -5,9 +5,9 @@ Live demo: https://timhutton.github.io/GravityIsNotAForce/
 [![image](https://user-images.githubusercontent.com/647092/96347588-8a865700-109a-11eb-9eac-631b5265b7e8.png)](https://timhutton.github.io/GravityIsNotAForce/)
 
 History: (please help fill in the gaps!)
-- 2014: A [YouTube video](https://www.youtube.com/watch?v=jlTVIMOix3I) by Edward Current showed a 'spacetime stretcher' whereby objects in free-fall move along straight lines.
+- 2013: A [YouTube video](https://www.youtube.com/watch?v=DdC0QN6f3G4) shows how bending spacetime can make straight lines out of parabolas.
+- 2014: A [YouTube video](https://www.youtube.com/watch?v=jlTVIMOix3I) by Edward Current showed a physical 'spacetime stretcher'.
 - 2019: A [paper](https://iopscience.iop.org/article/10.1088/1361-6552/ab08f5/pdf) by Magdalena Kersting references that youtube video and commends the approach to educators. A [follow-up paper](https://iopscience.iop.org/article/10.1088/1361-6552/ab56d7/pdf) discusses the limitations of the model.
-- Other youtube videos have used similar diagrams. [please add links]
 
 TO-DO list:
 - Is the 1+1 approach used (the parabolic axes in the inertial frame drawn on the right) in any way correct or rigorous?
