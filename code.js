@@ -331,6 +331,19 @@ function draw() {
     for(var i = 0; i < graphs.length; i++) {
         drawSpaceTime(graphs[i]);
     }
+
+    // label the space and time directions
+    ctx.fillStyle = 'rgb(0,0,0)';
+    ctx.font = "20px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.save();
+    ctx.translate(graphs[0].rect.x/2, graphs[0].rect.y + graphs[0].rect.height/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.textAlign = "center";
+    ctx.fillText("space "+String.fromCharCode(0x2192), 0, 0);
+    ctx.restore();
+    ctx.fillText("time "+String.fromCharCode(0x2192), graphs[0].rect.x + graphs[0].rect.width/2, (graphs[0].rect.y+graphs[0].rect.height)/2);
 }
 
 function drawSpaceTime(graph) {
@@ -365,9 +378,7 @@ function drawSpaceTime(graph) {
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
     var horizOffset = -0.1;
-    textLabel(pos(horizOffset, 40.0), "40m", graph);
-    textLabel(pos(horizOffset, 80.0), "80m", graph);
-    textLabel(pos(horizOffset, 120.0), "120m", graph);
+    textLabel(pos(horizOffset, 50.0), "50m", graph);
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     var vertOffset = -2.0;
