@@ -17,6 +17,9 @@
 
 
 function init() {
+    canvas = document.getElementById('canvas');
+    ctx = canvas.getContext('2d');
+
     // debugging
     var earth_mass = 5.972e24; // kg
     var earth_radius = 6371e3; // m
@@ -33,6 +36,33 @@ function init() {
     console.log("Time taken to fall",moon_distance-earth_radius,"m to Earth from Moon's orbit distance =",t3,'s, or',t3/(60.0*60.0*24.0),'days');
     var d3 = pointMassFreeFallDistance(t3, earth_mass, moon_distance);
     console.log("Distance fallen towards Earth from Moon's orbit distance in",t3,"seconds =",d3,'m');
+
+    // draw free-fall trajectory
+    var h1 = moon_distance;
+    var h2 = earth_radius;
+    var fall_time = pointMassFreeFallTime(h1, h2, earth_mass);
+    var n_steps = 100;
+    var time_step = fall_time / n_steps;
+    var size = 400;
+    var offset = 10;
+    ctx.moveTo(offset,offset);
+    for(var i = 1; i <= n_steps; i++) {
+        var time = i * time_step;
+        var fallen_distance = pointMassFreeFallDistance(time, earth_mass, h1);
+        var x = i * size / n_steps;
+        var y = size * fallen_distance / (h1-h2);
+        ctx.lineTo(x+offset,y+offset);
+    }
+    ctx.stroke();
+    
+    // draw axes
+    ctx.moveTo(offset,offset);
+    ctx.lineTo(offset,offset+size);
+    ctx.lineTo(offset+size,offset+size);
+    ctx.stroke();
+    
+    ctx.fillText("time",offset+size,offset+size);
+    ctx.fillText("height",offset,offset);
 }
 
 function pointMassFreeFallDistance(time, planet_mass, initial_height) {
