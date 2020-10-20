@@ -4,10 +4,10 @@ Live demo: https://timhutton.github.io/GravityIsNotAForce/
 
 [![image](https://user-images.githubusercontent.com/647092/96377209-06a49b80-117c-11eb-911e-76cd16c54db4.png)](https://timhutton.github.io/GravityIsNotAForce/)
 
-Discussion:
-- [Hacker News](https://news.ycombinator.com/item?id=24821141)
-- [Reddit r/physics](https://www.reddit.com/r/Physics/comments/jdqlzf/gravity_is_not_a_force_freefall_parabolas_are/)
-- [Twitter](https://twitter.com/_tim_hutton_/status/1317923535105478656)
+Discussions happened here:
+- Hacker News: [https://news.ycombinator.com/item?id=24821141](https://news.ycombinator.com/item?id=24821141)
+- Reddit r/physics: [https://www.reddit.com/r/Physics/comments/jdqlzf/gravity_is_not_a_force_freefall_parabolas_are/](https://www.reddit.com/r/Physics/comments/jdqlzf/gravity_is_not_a_force_freefall_parabolas_are/)
+- Twitter: [https://twitter.com/_tim_hutton_/status/1317923535105478656](https://twitter.com/_tim_hutton_/status/1317923535105478656)
 
 History: (please help fill in the gaps!)
 - 1985: The book [Relativity Visualized](https://books.google.de/books?id=lwZBAQAAIAAJ) by Lewis Carroll Epstein shows how [bending spacetime can make straight lines out of parabolas](http://demoweb.physics.ucla.edu/content/10-curved-spacetime).
