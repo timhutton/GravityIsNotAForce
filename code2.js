@@ -41,15 +41,18 @@ function init() {
     var d3 = freeFallDistance(t3, earth_mass, moon_distance);
     console.log("Distance fallen towards Earth from Moon's orbit distance in",t3,"seconds =",d3,'m');
     
-    //var h1 = moon_distance;
+    var h1 = moon_distance;
     //var h1 = earth_radius*4;
-    var h1 = earth_radius+5000000;
+    //var h1 = earth_radius+5000000;
     //var h1 = earth_radius+50;
     var h2 = earth_radius;
     var fall_time = freeFallTime(h1, h2, earth_mass);
     var size = 400;
     var offset = 10;
-    var heights = [h1, h2+3*(h1-h2)/4, h2+(h1-h2)/2, h2+(h1-h2)/4, h2+(h1-h2)/8, h2+(h1-h2)/16];
+    var heights = [];//[h1, /*h2+3*(h1-h2)/4,*/ h2+(h1-h2)/2, /*h2+(h1-h2)/4, h2+(h1-h2)/8, h2+(h1-h2)/16*/ h2];
+    for(var i=0;i<=10;i++) {
+        heights.push(h1+i*(h2-h1)/10.0);
+    }
     
     function undistort(time, final_height)
     {
@@ -58,7 +61,9 @@ function init() {
         // BUT - this doesn't work for the time-delayed trajectories - the blue trajectories aren't straight
         // lines (except in the parabolic regime, e.g. h1 = earth_radius+50)
         // NEED TO RETHINK
-        return findInitialHeight(time, final_height, earth_mass);
+        // Need to stretch the time dimension?
+        // Or is because spacetime isn't flat - need hyperbolic representation?
+        return { time:Math.pow(time,1.0), height:findInitialHeight(time, final_height, earth_mass) };
     }
 
     // draw axes
@@ -101,8 +106,9 @@ function init() {
             var time = i * time_step;
             var fallen_distance = freeFallDistance(time, earth_mass, initial_height);
             var h = Math.max(h2, initial_height - fallen_distance);
-            h = undistort(time, h)
-            var x = i * size / n_steps;
+            var st = undistort(time, h);
+            var x = st.time * size / fall_time;
+            h = st.height;
             var y = size - size * (h-h2) / (h1-h2);
             if(i==0) {
                 ctx.moveTo(x+offset,y+offset);
@@ -142,8 +148,9 @@ function init() {
             var time = i * time_step;
             var fallen_distance = freeFallDistance(time-time_delay, earth_mass, initial_height);
             var h = Math.max(h2, initial_height - fallen_distance);
-            h = undistort(time, h)
-            var x = i * size / n_steps;
+            var st = undistort(time, h);
+            var x = st.time * size / fall_time;
+            h = st.height;
             var y = size - size * (h-h2) / (h1-h2);
             if(i==n_steps/4) {
                 ctx.moveTo(x+offset,y+offset);
