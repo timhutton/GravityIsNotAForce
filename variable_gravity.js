@@ -17,16 +17,14 @@
 
 function fromStandardAxes(time, final_height)
 {
-    // Return the initial_height such that an inertial particle starting there at t=0
-    // would hit final_height at the time given.
-    return findInitialHeight(time, final_height, earth_mass);
+    // TODO: return the corresponding location on the distorted axes
+    return pos(time, final_height);
 }
 
 function toStandardAxes(time, height)
 {
-    // Return the final_height such that an inertial particle starting here at t=0
-    // would hit final_height at the time given.
-    return height - freeFallDistance(time, height, earth_mass);
+    // TODO: return the corresponding location on the orthogonal axes
+    return pos(time, height);
 }
 
 function getParabolaPoints(peak_time, peak_height, min_height, planet_mass) {
@@ -77,7 +75,8 @@ function init() {
     var h2 = earth_radius;
     var fall_time = freeFallTime(h1, h2, earth_mass);
     var size = 400;
-    var offset = 10;
+    var x_offsets = [ 10, 10 + size + 50 ];
+    var y_offset = 10;
     var heights = [];
     for(var i=0;i<=10;i++) {
         heights.push(h1+i*(h2-h1)/10.0);
@@ -85,13 +84,15 @@ function init() {
 
     // draw axes
     ctx.strokeStyle = 'rgb(150,150,150)';
-    ctx.beginPath();
-    ctx.moveTo(offset,offset);
-    ctx.lineTo(offset,offset+size);
-    ctx.lineTo(offset+size,offset+size);
-    ctx.stroke();  
-    ctx.fillText("time",offset+size,offset+size);
-    ctx.fillText("height",offset,offset);
+    for(var i=0;i<x_offsets.length;i++) {
+        ctx.beginPath();
+        ctx.moveTo(x_offsets[i],y_offset);
+        ctx.lineTo(x_offsets[i],y_offset+size);
+        ctx.lineTo(x_offsets[i]+size,y_offset+size);
+        ctx.stroke();  
+        ctx.fillText("time",x_offsets[i]+size,y_offset+size);
+        ctx.fillText("height",x_offsets[i],y_offset);
+    }
 
     // draw free-fall trajectories
     ctx.strokeStyle = 'rgb(0,0,0)'; // black: free-fall trajectories starting at t=0 on standard axes
@@ -106,9 +107,9 @@ function init() {
             var x = i * size / n_steps;
             var y = size - size * (h-h2) / (h1-h2);
             if(i==0) {
-                ctx.moveTo(x+offset,y+offset);
+                ctx.moveTo(x+x_offsets[0],y+y_offset);
             } else {
-                ctx.lineTo(x+offset,y+offset);
+                ctx.lineTo(x+x_offsets[0],y+y_offset);
             }
         }
     });
@@ -123,13 +124,13 @@ function init() {
             var time = i * time_step;
             var fallen_distance = freeFallDistance(time, initial_height, earth_mass);
             var h = Math.max(h2, initial_height - fallen_distance);
-            h = fromStandardAxes(time, h);
-            var x = time * size / fall_time;
-            var y = size - size * (h-h2) / (h1-h2);
+            var p = fromStandardAxes(time, h);
+            var x = p.x * size / fall_time;
+            var y = size - size * (p.y-h2) / (h1-h2);
             if(i==0) {
-                ctx.moveTo(x+offset,y+offset);
+                ctx.moveTo(x+x_offsets[1],y+y_offset);
             } else {
-                ctx.lineTo(x+offset,y+offset);
+                ctx.lineTo(x+x_offsets[1],y+y_offset);
             }
         }
     });
@@ -143,26 +144,25 @@ function init() {
         var x = pts[i].x * size / fall_time;
         var y = size - size * (pts[i].y-h2) / (h1-h2);
         if(i==0) {
-            ctx.moveTo(x+offset,y+offset);
+            ctx.moveTo(x+x_offsets[0],y+y_offset);
         } else {
-            ctx.lineTo(x+offset,y+offset);
+            ctx.lineTo(x+x_offsets[0],y+y_offset);
         }
     }
     ctx.stroke();
     ctx.strokeStyle='rgb(200,100,200)'; // purple: new parabola on distorted axes
     ctx.beginPath();
     for(var i=0;i<pts.length;i++) {
-        var h = fromStandardAxes(pts[i].x, pts[i].y)
-        var x = pts[i].x * size / fall_time;
-        var y = size - size * (h-h2) / (h1-h2);
+        var p = fromStandardAxes(pts[i].x, pts[i].y)
+        var x = p.x * size / fall_time;
+        var y = size - size * (p.y-h2) / (h1-h2);
         if(i==0) {
-            ctx.moveTo(x+offset,y+offset);
+            ctx.moveTo(x+x_offsets[1],y+y_offset);
         } else {
-            ctx.lineTo(x+offset,y+offset);
+            ctx.lineTo(x+x_offsets[1],y+y_offset);
         }
     }
     ctx.stroke();
-    // N.B. this approach doesn't work - the purple line is a geodesic but not straight on these axes.
 }
 
 window.onload = init;
