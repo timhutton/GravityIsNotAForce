@@ -17,7 +17,6 @@
 
 var graphs;
 var trajectories;
-var g;
 var time_range;
 var space_range;
 var isDragging;
@@ -25,14 +24,6 @@ var dragTrajectory;
 var dragIsStart;
 
 // classes:
-
-function pos(x, y) {
-    return { x:x, y:y };
-}
-
-function rect(x, y, width, height) {
-    return { x:x, y:y, width:width, height:height };
-}
 
 function range(min, max, step=1.0) {
     return { min:min, max:max, step:step };
@@ -56,19 +47,7 @@ function graph(rect, frame_acceleration) {
     return graph;
 }
 
-function linearTransform(mult_x, offset_x, mult_y, offset_y) {
-    return { mult_x:mult_x, offset_x:offset_x, mult_y:mult_y, offset_y:offset_y };
-}
-
 // functions:
-
-function dist(a, b) {
-    return Math.sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y));
-}
-
-function lerp(a, b, u) {
-    return pos(a.x + u*(b.x-a.x), a.y + u*(b.y-a.y));
-}
 
 function moveTo(p) {
     ctx.moveTo(p.x, p.y);
@@ -76,46 +55,6 @@ function moveTo(p) {
 
 function lineTo(p) {
     ctx.lineTo(p.x, p.y);
-}
-
-// adapted from http://stackoverflow.com/a/6333775/126823
-function drawArrowHead( a, b, size ) {
-    var angle = Math.atan2(b.y-a.y,b.x-a.x);
-    ctx.beginPath();
-    ctx.moveTo(b.x - size * Math.cos(angle - Math.PI/6), b.y - size * Math.sin(angle - Math.PI/6));
-    ctx.lineTo(b.x, b.y);
-    ctx.lineTo(b.x - size * Math.cos(angle + Math.PI/6), b.y - size * Math.sin(angle + Math.PI/6));
-    ctx.stroke();
-}
-
-function applyLinearTransform(p, transform) {
-    return pos(transform.offset_x + transform.mult_x * p.x, transform.offset_y + transform.mult_y * p.y);
-}
-
-function applyLinearTransformInverse(p, transform) {
-    return pos((p.x - transform.offset_x) / transform.mult_x, (p.y - transform.offset_y) / transform.mult_y);
-}
-
-function computeLinearTransform(from_rect, to_rect) {
-    mult_x = to_rect.width / from_rect.width;
-    offset_x = to_rect.x - mult_x * from_rect.x;
-    mult_y = to_rect.height / from_rect.height;
-    offset_y = to_rect.y - mult_y * from_rect.y;
-    return linearTransform(mult_x, offset_x, mult_y, offset_y);
-}
-
-function boundingRect(points) {
-    var left = Number.MAX_VALUE;
-    var right = -Number.MAX_VALUE;
-    var top = Number.MAX_VALUE;
-    var bottom = -Number.MAX_VALUE;
-    for(var i = 0; i < points.length; i++) {
-        left = Math.min(left, points[i].x);
-        right = Math.max(right, points[i].x);
-        top = Math.min(top, points[i].y);
-        bottom = Math.max(bottom, points[i].y);
-    }
-    return rect(left, top, right-left, bottom-top);
 }
 
 function resetMarkers() {
@@ -134,7 +73,7 @@ function onMouseMove( evt ) {
         for(var i = 0; i < graphs.length; i++) {
             if( pointInRect(p, graphs[i].rect) ) {
                 // convert p to the coordinate system of this graph
-                var delta_acceleration = g - graphs[i].frame_acceleration
+                var delta_acceleration = earth_surface_gravity - graphs[i].frame_acceleration
                 p = applyLinearTransformInverse(p, graphs[i].transform);
                 p = transformBetweenAcceleratingReferenceFrames(p, delta_acceleration);
                 if(dragIsStart) {
@@ -156,7 +95,7 @@ function onMouseMove( evt ) {
         var isStart;
         for(var i = 0; i < graphs.length; i++) {
             if( pointInRect(p, graphs[i].rect) ) {
-                var delta_acceleration = graphs[i].frame_acceleration - g;
+                var delta_acceleration = graphs[i].frame_acceleration - earth_surface_gravity;
                 for(var j = 0; j < trajectories.length; j++) {
                     // start?
                     var m = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(trajectories[j].start, delta_acceleration), graphs[i].transform);
@@ -209,7 +148,7 @@ function onMouseDown( evt ) {
     var d_min = Number.MAX_VALUE;
     for(var i = 0; i < graphs.length; i++) {
         if( pointInRect(p, graphs[i].rect) ) {
-            var delta_acceleration = graphs[i].frame_acceleration - g;
+            var delta_acceleration = graphs[i].frame_acceleration - earth_surface_gravity;
             for(var j = 0; j < trajectories.length; j++) {
                 // start?
                 var m = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(trajectories[j].start, delta_acceleration), graphs[i].transform);
@@ -261,20 +200,10 @@ function getMousePos(evt) {
     return pos( evt.clientX - rect.left, evt.clientY - rect.top );
 }
 
-function pointInRect( p, rect ) {
-    var left = Math.min(rect.x, rect.x + rect.width);
-    var right = Math.max(rect.x, rect.x + rect.width);
-    var top = Math.min(rect.y, rect.y + rect.height);
-    var bottom = Math.max(rect.y, rect.y + rect.height);
-    return p.x > left && p.x < right && p.y > top && p.y < bottom;
-}
-
 function init() {
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
     isDragging = false;
-
-    g = 9.8; // metres per second per second
 
     var timeTranslationSlider = document.getElementById("timeTranslationSlider");
     var timeTranslation = 2 - 4 * timeTranslationSlider.value / 100.0;
@@ -296,14 +225,14 @@ function init() {
     trajectories.push(trajectory(pos(-3.0, 0.0), pos(1.0, 0.0), 'rgb(100,100,255)', 'rgb(100,100,200)'));
 
     graphs = [];
-    graphs.push(graph(rect(40,440,400,-400), g));
-    graphs.push(graph(rect(480,440,400,-400), g/2));
+    graphs.push(graph(rect(40,440,400,-400), earth_surface_gravity));
+    graphs.push(graph(rect(480,440,400,-400), earth_surface_gravity/2));
     graphs.push(graph(rect(920,440,400,-400), 0.0));
 
     var frameAccelerationSlider = document.getElementById("frameAccelerationSlider");
-    graphs[1].frame_acceleration = g - g * frameAccelerationSlider.value / 100.0;
+    graphs[1].frame_acceleration = earth_surface_gravity - earth_surface_gravity * frameAccelerationSlider.value / 100.0;
     frameAccelerationSlider.oninput = function() {
-        graphs[1].frame_acceleration = g - g * this.value / 100.0;
+        graphs[1].frame_acceleration = earth_surface_gravity - earth_surface_gravity * this.value / 100.0;
         graphs[1].transform = findBestFitTransform(graphs[1]);
         draw();
     }
@@ -404,14 +333,14 @@ function drawSpaceTime(graph) {
 }
 
 function textLabel(p, text, graph) {
-    var delta_acceleration = graph.frame_acceleration - g;
+    var delta_acceleration = graph.frame_acceleration - earth_surface_gravity;
     p = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(p, delta_acceleration), graph.transform);
     ctx.fillText(text, p.x, p.y);
 }
 
 function drawCurvingLine(p1, p2, graph) {
-    // draw a line that is straight in our familiar (accelerating upwards at g) reference frame but may not be straight in this frame, depending on its acceleration
-    var delta_acceleration = graph.frame_acceleration - g;
+    // draw a line that is straight in our familiar (accelerating upwards at earth_surface_gravity) reference frame but may not be straight in this frame, depending on its acceleration
+    var delta_acceleration = graph.frame_acceleration - earth_surface_gravity;
     drawLine(p1, p2, delta_acceleration, graph.transform);
 }
 
@@ -419,8 +348,8 @@ function drawGeodesic(trajectory, graph) {
     // draw a line that is straight in an inertial frame but may be not be straight in this frame, depending on its acceleration
 
     ctx.strokeStyle = trajectory.default_color;
-    // convert spacetime coordinates from our familiar (g-accelerating) frame into the inertial frame
-    var delta_acceleration = 0.0 - g;
+    // convert spacetime coordinates from our familiar (earth_surface_gravity-accelerating) frame into the inertial frame
+    var delta_acceleration = 0.0 - earth_surface_gravity;
     var start = transformBetweenAcceleratingReferenceFrames(trajectory.start, delta_acceleration)
     var end = transformBetweenAcceleratingReferenceFrames(trajectory.end, delta_acceleration)
     // step along that line, converting to the target frame
@@ -473,13 +402,13 @@ function transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration) {
     var t_zero = (time_range.min+time_range.max)/2; // central time point (e.g. t=0) gets no spatial distortion
     var time_delta = ts.x - t_zero;
     var x = ts.x;
-    var y = ts.y - distanceTravelled(time_delta, delta_acceleration);
+    var y = ts.y - distanceTravelledWithConstantAcceleration(time_delta, delta_acceleration);
     return pos(x, y);
 }
 
 function findBestFitTransform(graph) {
-    //var delta_acceleration = graph.frame_acceleration - g; // (use this to see everything in the specified area)
-    var delta_acceleration = 0.0; // just use the transform from the g-accelerating frame, for visual clarity
+    //var delta_acceleration = graph.frame_acceleration - earth_surface_gravity; // (use this to see everything in the specified area)
+    var delta_acceleration = 0.0; // just use the transform from the earth_surface_gravity-accelerating frame, for visual clarity
     // plot some points in some arbitrary space then scale to fit the rect
     corners = [];
     corners.push(transformBetweenAcceleratingReferenceFrames(pos(time_range.min, space_range.min), delta_acceleration));
@@ -490,10 +419,6 @@ function findBestFitTransform(graph) {
     corners.push(transformBetweenAcceleratingReferenceFrames(pos((time_range.min+time_range.max)/2, space_range.max), delta_acceleration));
     original_rect = boundingRect(corners);
     return computeLinearTransform(original_rect, graph.rect);
-}
-
-function distanceTravelled(time, acceleration) {
-    return 0.5 * acceleration * time * time;
 }
 
 window.onload = init;
