@@ -29,6 +29,25 @@ function toStandardAxes(time, height)
     return height - freeFallDistance(time, height, earth_mass);
 }
 
+function getParabolaPoints(peak_time, peak_height, min_height, planet_mass) {
+    var fallTime = freeFallTime(peak_height, min_height, planet_mass);
+    var pts = [];
+    var n_pts = 100;
+    // from the left up
+    for(var i=0;i<n_pts;i++) {
+        var t = peak_time - fallTime + i*fallTime/n_pts;
+        var h = peak_height - freeFallDistance(peak_time-t, peak_height, planet_mass);
+        pts.push(pos(t,h));
+    }
+    // from the top down
+    for(var i=0;i<=n_pts;i++) {
+        var t = peak_time + i*fallTime/n_pts;
+        var h = peak_height - freeFallDistance(t - peak_time, peak_height, planet_mass);
+        pts.push(pos(t,h));
+    }
+    return pts;
+}
+
 function init() {
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
@@ -51,9 +70,9 @@ function init() {
     var d3 = freeFallDistance(t3, moon_distance, earth_mass);
     console.log("Distance fallen towards Earth from Moon's orbit distance in",t3,"seconds =",d3,'m');
     
-    var h1 = moon_distance;
+    //var h1 = moon_distance;
     //var h1 = earth_radius*4;
-    //var h1 = earth_radius+5000000;
+    var h1 = earth_radius+5000000;
     //var h1 = earth_radius+50;
     var h2 = earth_radius;
     var fall_time = freeFallTime(h1, h2, earth_mass);
@@ -115,6 +134,35 @@ function init() {
         }
     });
     ctx.stroke();
+    
+    // draw parabola on standard axes
+    var pts = getParabolaPoints(fall_time/4, h1+(h2-h1)*0.45, h2, earth_mass);
+    ctx.strokeStyle='rgb(200,100,100)'; // red: new parabola on standard axes
+    ctx.beginPath();
+    for(var i=0;i<pts.length;i++) {
+        var x = pts[i].x * size / fall_time;
+        var y = size - size * (pts[i].y-h2) / (h1-h2);
+        if(i==0) {
+            ctx.moveTo(x+offset,y+offset);
+        } else {
+            ctx.lineTo(x+offset,y+offset);
+        }
+    }
+    ctx.stroke();
+    ctx.strokeStyle='rgb(200,100,200)'; // purple: new parabola on distorted axes
+    ctx.beginPath();
+    for(var i=0;i<pts.length;i++) {
+        var h = fromStandardAxes(pts[i].x, pts[i].y)
+        var x = pts[i].x * size / fall_time;
+        var y = size - size * (h-h2) / (h1-h2);
+        if(i==0) {
+            ctx.moveTo(x+offset,y+offset);
+        } else {
+            ctx.lineTo(x+offset,y+offset);
+        }
+    }
+    ctx.stroke();
+    // N.B. this approach doesn't work - the purple line is a geodesic but not straight on these axes.
 }
 
 window.onload = init;

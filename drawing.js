@@ -24,4 +24,3 @@ function drawArrowHead( a, b, size ) {
     ctx.lineTo(b.x - size * Math.cos(angle + Math.PI/6), b.y - size * Math.sin(angle + Math.PI/6));
     ctx.stroke();
 }
-
