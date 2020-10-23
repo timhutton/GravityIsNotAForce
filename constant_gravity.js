@@ -25,10 +25,6 @@ var dragIsStart;
 
 // classes:
 
-function range(min, max, step=1.0) {
-    return { min:min, max:max, step:step };
-}
-
 function trajectory(start, end, color, hover_color) {
     var default_start_size = 6.0;
     var default_end_size = 4.0;

@@ -29,6 +29,10 @@ function linearTransform(mult_x, offset_x, mult_y, offset_y) {
     return { mult_x:mult_x, offset_x:offset_x, mult_y:mult_y, offset_y:offset_y };
 }
 
+function range(min, max, step=1.0) {
+    return { min:min, max:max, step:step };
+}
+
 // functions:
 
 function dist(a, b) {

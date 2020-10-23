@@ -67,10 +67,11 @@ function ptsToDistortedAxes(pts) {
     return new_pts;
 }
 
-function ptsToScreen(pts, min_height, max_height, min_time, max_time, size, x_offset, y_offset) {
+function ptsToScreen(pts, height_range, time_range, screen_rect) {
     var new_pts = [];
     for(var i=0;i<pts.length;i++) {
-        new_pts.push(pos(size * (pts[i].x-min_time)/(max_time-min_time) + x_offset, size * (max_height-pts[i].y)/(max_height-min_height) + y_offset));
+        new_pts.push(pos(screen_rect.width * (pts[i].x-time_range.min)/(time_range.max-time_range.min) + screen_rect.x,
+                         screen_rect.height * (height_range.max-pts[i].y)/(height_range.max-height_range.min) + screen_rect.y));
     }
     return new_pts;
 }
@@ -93,48 +94,43 @@ function init() {
 }
 
 function draw() {
-    var h1 = moon_distance;
-    //var h1 = earth_radius*4;
-    //var h1 = earth_radius+5000000;
-    //var h1 = earth_radius+50;
-    var h2 = earth_radius;
-    var fall_time = freeFallTime(h1, h2, earth_mass);
-    var size = 400;
-    var x_offsets = [ 10, 10 + size + 250 ];
-    var y_offset = 10;
+    var height_range = range(earth_radius, moon_distance);
+    var fall_time = freeFallTime(height_range.max, height_range.min, earth_mass);
+    var time_range = range(-fall_time/4, fall_time); 
+    var screen_rects = [ rect(10,10,400,400), rect(660,10,400,400) ];
 
     // draw axes
-    var x_axis = getLinePoints(pos(-fall_time,h2),pos(fall_time,h2));
-    var y_axis = getLinePoints(pos(0,h2),pos(0,h1));
-    var x1 = ptsToScreen(x_axis, h2, h1, 0, fall_time, size, x_offsets[0], y_offset);
-    var y1 = ptsToScreen(y_axis, h2, h1, 0, fall_time, size, x_offsets[0], y_offset);
+    var x_axis = getLinePoints(pos(time_range.min,height_range.min),pos(time_range.max,height_range.min));
+    var y_axis = getLinePoints(pos(0,height_range.min),pos(0,height_range.max));
+    var x1 = ptsToScreen(x_axis, height_range, time_range, screen_rects[0]);
+    var y1 = ptsToScreen(y_axis, height_range, time_range, screen_rects[0]);
     drawLine(x1, 'rgb(150,150,150)');
     drawLine(y1, 'rgb(150,150,150)');
-    var x2 = ptsToScreen(ptsToDistortedAxes(x_axis), h2, h1, 0, fall_time, size, x_offsets[1], y_offset);
-    var y2 = ptsToScreen(ptsToDistortedAxes(y_axis), h2, h1, 0, fall_time, size, x_offsets[1], y_offset);
+    var x2 = ptsToScreen(ptsToDistortedAxes(x_axis), height_range, time_range, screen_rects[1]);
+    var y2 = ptsToScreen(ptsToDistortedAxes(y_axis), height_range, time_range, screen_rects[1]);
     drawLine(x2, 'rgb(150,150,150)');
     drawLine(y2, 'rgb(150,150,150)');
 
     // draw some parabolas that peak at t=0
     var heights = [];
     for(var i=0;i<=10;i++) {
-        heights.push(h1+i*(h2-h1)/10.0);
+        heights.push(height_range.min+i*(height_range.max-height_range.min)/10.0);
     }
     heights.forEach(initial_height => {
-        var pts = getParabolaPoints(0, initial_height, h2, earth_mass);
-        var pts1 = ptsToScreen(pts, h2, h1, 0, fall_time, size, x_offsets[0], y_offset);
+        var pts = getParabolaPoints(0, initial_height, height_range.min, earth_mass);
+        var pts1 = ptsToScreen(pts, height_range, time_range, screen_rects[0]);
         drawLine(pts1, 'rgb(0,0,0)'); // black: free-fall trajectories starting at t=0 on standard axes
         var pts2 = ptsToDistortedAxes(pts);
-        pts2 = ptsToScreen(pts2, h2, h1, 0, fall_time, size, x_offsets[1], y_offset);
+        pts2 = ptsToScreen(pts2, height_range, time_range, screen_rects[1]);
         drawLine(pts2, 'rgb(100,200,100)'); // green: trajectories on distorted axes
     });
 
     // draw some other parabolas
-    var pts = getParabolaPoints(fall_time/4, h1+(h2-h1)*0.45, h2, earth_mass);
-    var pts1 = ptsToScreen(pts, h2, h1, 0, fall_time, size, x_offsets[0], y_offset);
+    var pts = getParabolaPoints(fall_time/4, height_range.min+(height_range.max-height_range.min)*0.45, height_range.min, earth_mass);
+    var pts1 = ptsToScreen(pts, height_range, time_range, screen_rects[0]);
     drawLine(pts1, 'rgb(200,100,100)'); // red: new parabola on standard axes
     var pts2 = ptsToDistortedAxes(pts);
-    pts2 = ptsToScreen(pts2, h2, h1, 0, fall_time, size, x_offsets[1], y_offset);
+    pts2 = ptsToScreen(pts2, height_range, time_range, screen_rects[1]);
     drawLine(pts2, 'rgb(200,100,200)'); // purple: new parabola on distorted axes
 }
 
