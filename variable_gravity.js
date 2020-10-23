@@ -84,7 +84,7 @@ function ptsToScreen(pts, height_range, time_range, screen_rect) {
     return new_pts;
 }
 
-function drawLine(pts, color='rgb(0,0,0)') {
+function drawLine(pts, color) {
     ctx.strokeStyle = color;
     ctx.beginPath();
     ctx.moveTo(pts[0].x, pts[0].y);
@@ -92,6 +92,15 @@ function drawLine(pts, color='rgb(0,0,0)') {
         ctx.lineTo(pts[i].x, pts[i].y);
     }
     ctx.stroke();
+}
+
+function drawSpacedCircles(pts, r, color) {
+    ctx.fillStyle = color;
+    for(var i=0;i<pts.length;i+=20) {
+        ctx.beginPath();
+        ctx.arc(pts[i].x, pts[i].y, r, 0, 2 * Math.PI);
+        ctx.fill();
+    }
 }
 
 function fitTimeRange(time_range_offset) {
@@ -150,12 +159,13 @@ function draw() {
     var y_axis = getLinePoints(pos(0,height_range.min),pos(0,height_range.max));
     var x1 = ptsToScreen(x_axis, height_range, time_range, screen_rects[0]);
     var y1 = ptsToScreen(y_axis, height_range, time_range, screen_rects[0]);
-    drawLine(x1, 'rgb(150,150,150)');
-    drawLine(y1, 'rgb(150,150,150)');
+    var axes_color = 'rgb(50,50,50)';
+    drawLine(x1, axes_color);
+    drawLine(y1, axes_color);
     var x2 = ptsToScreen(ptsToDistortedAxes(x_axis), height_range, time_range, screen_rects[1]);
     var y2 = ptsToScreen(ptsToDistortedAxes(y_axis), height_range, time_range, screen_rects[1]);
-    drawLine(x2, 'rgb(150,150,150)');
-    drawLine(y2, 'rgb(150,150,150)');
+    drawLine(x2, axes_color);
+    drawLine(y2, axes_color);
 
     // draw some parabolas
     var fall_time = freeFallTime(height_range.max, height_range.min, earth_mass);
@@ -164,15 +174,17 @@ function draw() {
                      parabola(pos(0.2*fall_time, height_range.min+(height_range.max-height_range.min)*0.32), 'rgb(200,100,200)'),
                      parabola(pos(0.4*fall_time, height_range.min+(height_range.max-height_range.min)*0.32), 'rgb(100,200,100)')];
     for(var i=0;i<=10;i++) {
-        parabolas.push( parabola(pos(0, height_range.min+i*(height_range.max-height_range.min)/10.0), 'rgb(0,0,0)') );
+        parabolas.push( parabola(pos(0, height_range.min+i*(height_range.max-height_range.min)/10.0), 'rgb(150,150,150)') );
     }
     parabolas.forEach(parabola => {
         var pts = getParabolaPoints(parabola.peak.x, parabola.peak.y, height_range.min, earth_mass);
         var pts1 = ptsToScreen(pts, height_range, time_range, screen_rects[0]);
         drawLine(pts1, parabola.color);
+        drawSpacedCircles(pts1, 1.5, parabola.color);
         var pts2 = ptsToDistortedAxes(pts);
         pts2 = ptsToScreen(pts2, height_range, time_range, screen_rects[1]);
         drawLine(pts2, parabola.color);
+        drawSpacedCircles(pts2, 1.5, parabola.color);
     });
 }
 
