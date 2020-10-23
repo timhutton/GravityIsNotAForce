@@ -15,12 +15,26 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+function fromStandardAxes(time, final_height)
+{
+    // Return the initial_height such that an inertial particle starting there at t=0
+    // would hit final_height at the time given.
+    return findInitialHeight(time, final_height, earth_mass);
+}
+
+function toStandardAxes(time, height)
+{
+    // Return the final_height such that an inertial particle starting here at t=0
+    // would hit final_height at the time given.
+    return height - freeFallDistance(time, height, earth_mass);
+}
+
 function init() {
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
 
     // debugging
-    var d = freeFallDistance(3.0, earth_mass, earth_radius);
+    var d = freeFallDistance(3.0, earth_radius, earth_mass);
     console.log("Distance fallen near Earth's surface in 3 seconds =",d,'m');
     var t = freeFallTime(earth_radius + d, earth_radius, earth_mass);
     console.log("Time taken to fall",d,"m near Earth's surface =",t,'s');
@@ -28,13 +42,13 @@ function init() {
     console.log("Initial height to reach Earth in ",t,"s =",h-earth_radius,'m above Earth');
     var tx = freeFallTime(earth_radius, 0, earth_mass);
     console.log("Time taken to fall",earth_radius,"m near Earth's surface =",tx,'s');
-    var d2 = freeFallDistance(3.0, earth_mass, moon_distance);
+    var d2 = freeFallDistance(3.0, moon_distance, earth_mass);
     console.log("Distance fallen towards Earth from Moon's orbit distance in 3 seconds =",d2,'m');
     var t2 = freeFallTime(moon_distance, moon_distance - d2, earth_mass);
     console.log("Time taken to fall",d2,"m towards Earth from Moon's orbit distance =",t2,'s');
     var t3 = freeFallTime(moon_distance, earth_radius, earth_mass);
     console.log("Time taken to fall",moon_distance-earth_radius,"m to Earth from Moon's orbit distance =",t3,'s, or',t3/(60.0*60.0*24.0),'days');
-    var d3 = freeFallDistance(t3, earth_mass, moon_distance);
+    var d3 = freeFallDistance(t3, moon_distance, earth_mass);
     console.log("Distance fallen towards Earth from Moon's orbit distance in",t3,"seconds =",d3,'m');
     
     var h1 = moon_distance;
@@ -49,13 +63,6 @@ function init() {
     for(var i=0;i<=10;i++) {
         heights.push(h1+i*(h2-h1)/10.0);
     }
-    
-    function undistort(time, final_height)
-    {
-        // Return the initial_height such that an inertial particle starting there at t=0
-        // would hit final_height at the time given.
-        return findInitialHeight(time, final_height, earth_mass);
-    }
 
     // draw axes
     ctx.strokeStyle = 'rgb(150,150,150)';
@@ -68,14 +75,14 @@ function init() {
     ctx.fillText("height",offset,offset);
 
     // draw free-fall trajectories
-    ctx.strokeStyle = 'rgb(0,0,0)'; // black: free-fall trajectories starting at t=0
+    ctx.strokeStyle = 'rgb(0,0,0)'; // black: free-fall trajectories starting at t=0 on standard axes
     ctx.beginPath();
     var n_steps = 500;
     heights.forEach(initial_height => {
         for(var i = 0; i <= n_steps; i++) {
             var time_step = fall_time / n_steps;
             var time = i * time_step;
-            var fallen_distance = freeFallDistance(time, earth_mass, initial_height);
+            var fallen_distance = freeFallDistance(time, initial_height, earth_mass);
             var h = Math.max(h2, initial_height - fallen_distance);
             var x = i * size / n_steps;
             var y = size - size * (h-h2) / (h1-h2);
@@ -89,15 +96,15 @@ function init() {
     ctx.stroke();
 
     // also draw the spacetime-warped versions
-    ctx.strokeStyle='rgb(100,200,100)'; // green: undistorted trajectories
+    ctx.strokeStyle='rgb(100,200,100)'; // green: trajectories on distorted axes
     ctx.beginPath();
     heights.forEach(initial_height => {
         for(var i = 0; i <= n_steps; i++) {
             var time_step = fall_time / n_steps;
             var time = i * time_step;
-            var fallen_distance = freeFallDistance(time, earth_mass, initial_height);
+            var fallen_distance = freeFallDistance(time, initial_height, earth_mass);
             var h = Math.max(h2, initial_height - fallen_distance);
-            h = undistort(time, h);
+            h = fromStandardAxes(time, h);
             var x = time * size / fall_time;
             var y = size - size * (h-h2) / (h1-h2);
             if(i==0) {

@@ -32,7 +32,7 @@ function findInitialHeight(time, final_height, planet_mass) {
     var t_high = freeFallTime(high_final_initial_estimate, final_height, planet_mass);
     var i = 0;
     var maxits = 100;
-    var epsilon = 1e-4;
+    var epsilon = 1e-6;
     while(i++ < maxits && Math.abs(high_final_initial_estimate-low_final_initial_estimate) > epsilon) {
         if(time < t_mid) {
             high_final_initial_estimate = mid_final_initial_estimate;
@@ -52,7 +52,7 @@ function findInitialHeight(time, final_height, planet_mass) {
     return mid_final_initial_estimate;
 }
 
-function freeFallDistance(time, planet_mass, initial_height) {
+function freeFallDistance(time, initial_height, planet_mass) {
     // Return the distance you will fall from initial_height in the given time.
     
     /*
@@ -74,7 +74,7 @@ function freeFallDistance(time, planet_mass, initial_height) {
     var t_high = freeFallTime(initial_height, high_final_height_estimate, planet_mass);
     var i = 0;
     var maxits = 100;
-    var epsilon = 1e-4;
+    var epsilon = 1e-6;
     var initial_t_high = t_high;
     var initial_t_low = t_low;
     while(i++ < maxits && Math.abs(high_final_height_estimate-low_final_height_estimate) > epsilon) {
