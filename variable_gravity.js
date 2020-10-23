@@ -17,17 +17,25 @@
 
 var canvas;
 var ctx;
+var height_range;
+var time_range;
+
+function parabola(peak, color) {
+    return { peak:peak, color:color };
+}
 
 function toDistortedAxes(time, final_height)
 {
     // return the corresponding location on the distorted axes
-    return pos(time, findInitialHeight(Math.abs(time), final_height, earth_mass));
+    var time_diff = Math.abs(time - (time_range.max+time_range.min)/2);
+    return pos(time, findInitialHeight(time_diff, final_height, earth_mass));
 }
 
 function toStandardAxes(time, height)
 {
     // return the corresponding location on the orthogonal axes
-    return pos(time, height - freeFallDistance(Math.abs(time), height, earth_mass));
+    var time_diff = Math.abs(time - (time_range.max+time_range.min)/2);
+    return pos(time, height - freeFallDistance(time_diff, height, earth_mass));
 }
 
 function getLinePoints(a, b) {
@@ -86,18 +94,56 @@ function drawLine(pts, color='rgb(0,0,0)') {
     ctx.stroke();
 }
 
+function fitTimeRange(time_range_offset) {
+    var fall_time = freeFallTime(height_range.max, height_range.min, earth_mass);
+    time_range = range(-fall_time + fall_time*time_range_offset, fall_time + fall_time*time_range_offset);
+}
+
 function init() {
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
-    
+
+    height_range = range(earth_radius, moon_distance);
+    var time_range_offset = 0;
+    fitTimeRange(time_range_offset);
+
+    var heightRangeSlider = document.getElementById("heightRangeSlider");
+    height_range.max = (earth_radius+50) + (moon_distance-(earth_radius+50)) * Math.pow(heightRangeSlider.value / 100.0, 3);
+    fitTimeRange(time_range_offset);
+    heightRangeSlider.oninput = function() {
+        height_range.max = (earth_radius+50) + (moon_distance-(earth_radius+50)) * Math.pow(heightRangeSlider.value / 100.0, 3);
+        fitTimeRange(time_range_offset);
+        draw();
+    }
+
+    var timeTranslationSlider = document.getElementById("timeTranslationSlider");
+    time_range_offset = 1-2*timeTranslationSlider.value / 100.0;
+    fitTimeRange(time_range_offset);
+    timeTranslationSlider.oninput = function() {
+        time_range_offset = 1-2*timeTranslationSlider.value / 100.0;
+        fitTimeRange(time_range_offset);
+        draw();
+    }
+
     draw();
 }
 
 function draw() {
-    var height_range = range(earth_radius, moon_distance);
-    var fall_time = freeFallTime(height_range.max, height_range.min, earth_mass);
-    var time_range = range(-fall_time/4, fall_time); 
-    var screen_rects = [ rect(10,10,400,400), rect(660,10,400,400) ];
+    var screen_rects = [ rect(10,10,600,400), rect(760,10,600,400) ];
+
+    // fill canvas with light gray
+    ctx.fillStyle = 'rgb(240,240,240)';
+    ctx.beginPath();
+    ctx.rect(0,0,canvas.width, canvas.height);
+    ctx.fill();
+
+    // fill background with white
+    screen_rects.forEach(screen_rect => {
+        ctx.fillStyle = 'rgb(255,255,255)';
+        ctx.beginPath();
+        ctx.rect(screen_rect.x, screen_rect.y, screen_rect.width, screen_rect.height);
+        ctx.fill();
+    });
 
     // draw axes
     var x_axis = getLinePoints(pos(time_range.min,height_range.min),pos(time_range.max,height_range.min));
@@ -111,27 +157,23 @@ function draw() {
     drawLine(x2, 'rgb(150,150,150)');
     drawLine(y2, 'rgb(150,150,150)');
 
-    // draw some parabolas that peak at t=0
-    var heights = [];
+    // draw some parabolas
+    var fall_time = freeFallTime(height_range.max, height_range.min, earth_mass);
+    var parabolas = [parabola(pos(-0.2*fall_time, height_range.min+(height_range.max-height_range.min)*0.75), 'rgb(100,100,200)'),
+                     parabola(pos(0.1*fall_time, height_range.min+(height_range.max-height_range.min)*0.45), 'rgb(200,100,100)'),
+                     parabola(pos(0.2*fall_time, height_range.min+(height_range.max-height_range.min)*0.32), 'rgb(200,100,200)'),
+                     parabola(pos(0.4*fall_time, height_range.min+(height_range.max-height_range.min)*0.32), 'rgb(100,200,100)')];
     for(var i=0;i<=10;i++) {
-        heights.push(height_range.min+i*(height_range.max-height_range.min)/10.0);
+        parabolas.push( parabola(pos(0, height_range.min+i*(height_range.max-height_range.min)/10.0), 'rgb(0,0,0)') );
     }
-    heights.forEach(initial_height => {
-        var pts = getParabolaPoints(0, initial_height, height_range.min, earth_mass);
+    parabolas.forEach(parabola => {
+        var pts = getParabolaPoints(parabola.peak.x, parabola.peak.y, height_range.min, earth_mass);
         var pts1 = ptsToScreen(pts, height_range, time_range, screen_rects[0]);
-        drawLine(pts1, 'rgb(0,0,0)'); // black: free-fall trajectories starting at t=0 on standard axes
+        drawLine(pts1, parabola.color);
         var pts2 = ptsToDistortedAxes(pts);
         pts2 = ptsToScreen(pts2, height_range, time_range, screen_rects[1]);
-        drawLine(pts2, 'rgb(100,200,100)'); // green: trajectories on distorted axes
+        drawLine(pts2, parabola.color);
     });
-
-    // draw some other parabolas
-    var pts = getParabolaPoints(fall_time/4, height_range.min+(height_range.max-height_range.min)*0.45, height_range.min, earth_mass);
-    var pts1 = ptsToScreen(pts, height_range, time_range, screen_rects[0]);
-    drawLine(pts1, 'rgb(200,100,100)'); // red: new parabola on standard axes
-    var pts2 = ptsToDistortedAxes(pts);
-    pts2 = ptsToScreen(pts2, height_range, time_range, screen_rects[1]);
-    drawLine(pts2, 'rgb(200,100,200)'); // purple: new parabola on distorted axes
 }
 
 window.onload = init;
