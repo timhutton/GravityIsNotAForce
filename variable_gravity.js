@@ -54,11 +54,6 @@ function fromDistanceFallenDistortedAxes(p)
     return new P2(time, height - freeFallDistance(time_diff, height, earth_mass));
 }
 
-function toKleinPseudosphereAxes(p) {
-    // TODO
-    return p;
-}
-
 function getLinePoints(a, b) {
     var pts = [];
     var n_pts = 100;
@@ -155,11 +150,10 @@ function draw() {
     var rect2 = new Rect( new P2(760,50), new P2(600,400));
     var distanceFallenTransform = new Transform( toDistanceFallenDistortedAxes, fromDistanceFallenDistortedAxes );
     var unitCircleRect = new Rect(new P2(-1,-1), new P2(2,2));
-    var flipY = p => { return new P2(p.x, spacetime_range.ymax-p.y+spacetime_range.ymin); };
+    var flipY = p => { return new P2(p.x, spacetime_range.ymax - p.y + spacetime_range.ymin); };
     var flipYTransform = new Transform( flipY, flipY );
     var standardAxes = new Graph( rect1, new ComposedTransform( flipYTransform, computeLinearTransform(spacetime_range, rect1) ) );
     var distanceFallenAxes = new Graph( rect2, new ComposedTransform( distanceFallenTransform, new ComposedTransform( flipYTransform, computeLinearTransform(spacetime_range, rect2)) ) );
-    //var kleinPseudosphereAxes = new Graph( rect2, new ComposedTransform( toKleinPseudosphereAxes, computeLinearTransform(unitCircleRect, rect2)) );
     [ standardAxes, distanceFallenAxes ].forEach(graph => {
         ctx.save(); // save the original clip for now
 
@@ -195,9 +189,6 @@ function draw() {
     ctx.textBaseline = "middle";
     ctx.fillText("Earth surface", rect1.center.x, (rect1.ymax+canvas.height)/2);
     ctx.fillText((spacetime_range.size.y/1000).toFixed(0)+"km above Earth surface", rect1.center.x, rect1.ymin/2);
-
-    var circ = new Circle(new P2(0,0), 1);
-    
 }
 
 window.onload = init;

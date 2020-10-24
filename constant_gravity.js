@@ -28,19 +28,17 @@ class Trajectory {
     constructor(start, end, color, hover_color) {
         var default_start_size = 6.0;
         var default_end_size = 4.0;
-        var mid_size = 2.0;
-        var hover_size = 10.0;
         this.start = start;
         this.end = end;
         this.default_color = color;
         this.start_size = default_start_size;
         this.end_size = default_end_size;
-        this.mid_size = mid_size;
+        this.mid_size = 2.0;;
         this.start_color = color;
         this.end_color = color;
         this.default_start_size = default_start_size;
         this.default_end_size = default_end_size;
-        this.hover_size = hover_size;
+        this.hover_size = 10.0;;
         this.hover_color = hover_color;
     }
 }
