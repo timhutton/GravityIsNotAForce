@@ -17,7 +17,7 @@ History: (please help fill in the gaps!)
 
 TO-DO list:
 - Is the 1+1 approach used (the parabolic axes in the inertial frame drawn on the right) in any way correct or rigorous?
-- Can we extend to 1+1 with a varying gravitational field (e.g. from Earth's surface to Moon's orbit)? [[See an experiment here]](https://timhutton.github.io/GravityIsNotAForce/variable_gravity.html) Or with a point mass on the 1D line (a black hole)?
+- Can we extend to 1+1 with a varying gravitational field (e.g. from Earth's surface to Moon's orbit)? [[See an experiment here]](https://timhutton.github.io/GravityIsNotAForce/variable_gravity.html) Or with a point mass on the 1D line (a black hole)? [Rickard Jonsson](http://www.relativitet.se/) has a [3D embedding](http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf) that does the job.
 - Can we extend to 2+1 with a constant gravitational field? Here the parabolas can be of different shapes representing objects launched at different angles.
 - Can we extend to 2+1 with a point mass? Perhaps by considering a single geodesic (e.g. an elliptic orbit) as a straight line and drawing the rest of the universe as a (possibly very strange) distorted grid around that geodesic?
 - In which of the above can we find a warping of spacetime such that *all* inertial objects move along straight lines? (As is true with the current constant-gravity 1+1 model.)
