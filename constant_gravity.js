@@ -17,41 +17,43 @@
 
 var graphs;
 var trajectories;
-var time_range;
-var space_range;
+var spacetime_range;
 var isDragging;
 var dragTrajectory;
 var dragIsStart;
 
 // classes:
 
-function trajectory(start, end, color, hover_color) {
-    var default_start_size = 6.0;
-    var default_end_size = 4.0;
-    var mid_size = 2.0;
-    var hover_size = 10.0;
-    return { start:start, end:end, default_color:color,
-        start_size:default_start_size, end_size:default_end_size, mid_size:mid_size,
-        start_color:color, end_color:color,
-        default_start_size:default_start_size, default_end_size:default_end_size,
-        hover_size:hover_size, hover_color:hover_color };
+class Trajectory {
+    constructor(start, end, color, hover_color) {
+        var default_start_size = 6.0;
+        var default_end_size = 4.0;
+        var mid_size = 2.0;
+        var hover_size = 10.0;
+        this.start = start;
+        this.end = end;
+        this.default_color = color;
+        this.start_size = default_start_size;
+        this.end_size = default_end_size;
+        this.mid_size = mid_size;
+        this.start_color = color;
+        this.end_color = color;
+        this.default_start_size = default_start_size;
+        this.default_end_size = default_end_size;
+        this.hover_size = hover_size;
+        this.hover_color = hover_color;
+    }
 }
 
-function graph(rect, frame_acceleration) {
-    var graph = {rect:rect, frame_acceleration:frame_acceleration};
-    graph.transform = findBestFitTransform(graph);
-    return graph;
+class Graph {
+    constructor(rect, frame_acceleration) {
+        this.rect = rect;
+        this.frame_acceleration = frame_acceleration;
+        this.transform = findBestFitTransform(this);
+    }
 }
 
 // functions:
-
-function moveTo(p) {
-    ctx.moveTo(p.x, p.y);
-}
-
-function lineTo(p) {
-    ctx.lineTo(p.x, p.y);
-}
 
 function resetMarkers() {
     for(var i = 0; i < trajectories.length; i++) {
@@ -188,12 +190,11 @@ function onMouseUp( evt ) {
 
 function clientToCanvas( clientPos ) {
     var rect = canvas.getBoundingClientRect();
-    return pos( clientPos.x - rect.left, clientPos.y - rect.top );
+    return new P2( clientPos.x - rect.left, clientPos.y - rect.top );
 }
 
 function getMousePos(evt) {
-    var rect = canvas.getBoundingClientRect();
-    return pos( evt.clientX - rect.left, evt.clientY - rect.top );
+    return clientToCanvas(new P2(evt.clientX, evt.clientY));
 }
 
 function init() {
@@ -201,29 +202,29 @@ function init() {
     ctx = canvas.getContext('2d');
     isDragging = false;
 
+    spacetime_range = new Rect(new P2(-4,-10), new P2(8,80));
+
     var timeTranslationSlider = document.getElementById("timeTranslationSlider");
     var timeTranslation = 2 - 4 * timeTranslationSlider.value / 100.0;
-    time_range = range(-4 + timeTranslation, 4 + timeTranslation, 1);
+    spacetime_range.p.x = -4 + timeTranslation;
     timeTranslationSlider.oninput = function() {
         var timeTranslation = 2 - 4 * timeTranslationSlider.value / 100.0;
-        time_range = range(-4 + timeTranslation, 4 + timeTranslation, 1);
+        spacetime_range.p.x = -4 + timeTranslation;
         for(var i = 0; i < graphs.length; i++) {
             graphs[i].transform = findBestFitTransform(graphs[i]);
         }
         draw();
     }
 
-    space_range = range(-10, 70, 10);
-
     trajectories = [];
-    trajectories.push(trajectory(pos(0.0, 44.1), pos(3.0, 0.0), 'rgb(255,100,100)', 'rgb(200,100,100)'));
-    trajectories.push(trajectory(pos(-1.0, 0.0), pos(2.0, 0.0), 'rgb(0,200,0)', 'rgb(0,160,0)'));
-    trajectories.push(trajectory(pos(-3.0, 0.0), pos(1.0, 0.0), 'rgb(100,100,255)', 'rgb(100,100,200)'));
+    trajectories.push(new Trajectory(new P2(0.0, 44.1), new P2(3.0, 0.0), 'rgb(255,100,100)', 'rgb(200,100,100)'));
+    trajectories.push(new Trajectory(new P2(-1.0, 0.0), new P2(2.0, 0.0), 'rgb(0,200,0)', 'rgb(0,160,0)'));
+    trajectories.push(new Trajectory(new P2(-3.0, 0.0), new P2(1.0, 0.0), 'rgb(100,100,255)', 'rgb(100,100,200)'));
 
     graphs = [];
-    graphs.push(graph(rect(40,440,400,-400), earth_surface_gravity));
-    graphs.push(graph(rect(480,440,400,-400), earth_surface_gravity/2));
-    graphs.push(graph(rect(920,440,400,-400), 0.0));
+    graphs.push(new Graph(new Rect(new P2(40,440), new P2(400,-400)), earth_surface_gravity));
+    graphs.push(new Graph(new Rect(new P2(480,440), new P2(400,-400)), earth_surface_gravity/2));
+    graphs.push(new Graph(new Rect(new P2(920,440), new P2(400,-400)), 0.0));
 
     var frameAccelerationSlider = document.getElementById("frameAccelerationSlider");
     graphs[1].frame_acceleration = earth_surface_gravity - earth_surface_gravity * frameAccelerationSlider.value / 100.0;
@@ -263,12 +264,12 @@ function draw() {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.save();
-    ctx.translate(graphs[0].rect.x/2, graphs[0].rect.y + graphs[0].rect.height/2);
+    ctx.translate(graphs[0].rect.p.x/2, graphs[0].rect.center.y);
     ctx.rotate(-Math.PI/2);
     ctx.textAlign = "center";
     ctx.fillText("space "+String.fromCharCode(0x2192), 0, 0);
     ctx.restore();
-    ctx.fillText("time "+String.fromCharCode(0x2192), graphs[0].rect.x + graphs[0].rect.width/2, (graphs[0].rect.y+graphs[0].rect.height)/2);
+    ctx.fillText("time "+String.fromCharCode(0x2192), graphs[0].rect.center.x, graphs[0].rect.ymin/2);
 }
 
 function drawSpaceTime(graph) {
@@ -277,25 +278,27 @@ function drawSpaceTime(graph) {
     // fill background with white
     ctx.fillStyle = 'rgb(255,255,255)';
     ctx.beginPath();
-    ctx.rect(graph.rect.x, graph.rect.y, graph.rect.width, graph.rect.height);
+    ctx.rect(graph.rect.p.x, graph.rect.p.y, graph.rect.size.x, graph.rect.size.y);
     ctx.fill();
     ctx.clip(); // clip to this rect until reset
 
     // draw minor axes
     ctx.strokeStyle = 'rgb(240,240,240)';
     var space_extra = 80; // extend space axes beyond just the minimum area
-    for(var t = Math.ceil(time_range.min); t<=Math.floor(time_range.max); t+=time_range.step) {
+    var time_step = 1;
+    var space_step = 10;
+    for(var t = Math.ceil(spacetime_range.xmin); t<=Math.floor(spacetime_range.xmax); t+=time_step) {
         if(t==0.0) { continue; }
-        drawCurvingLine(pos(t, space_range.min-space_extra), pos(t, space_range.max+space_extra), graph);
+        drawCurvingLine(new P2(t, spacetime_range.ymin-space_extra), new P2(t, spacetime_range.ymax+space_extra), graph);
     }
-    for(var s = Math.ceil(space_range.min-space_extra); s<=Math.floor(space_range.max+space_extra); s+=space_range.step) {
+    for(var s = Math.ceil(spacetime_range.ymin-space_extra); s<=Math.floor(spacetime_range.ymax+space_extra); s+=space_step) {
         if(s==0.0) { continue; }
-        drawCurvingLine(pos(time_range.min, s), pos(time_range.max, s), graph);
+        drawCurvingLine(new P2(spacetime_range.xmin, s), new P2(spacetime_range.xmax, s), graph);
     }
     // draw major axes
     ctx.strokeStyle = 'rgb(150,150,150)';
-    drawCurvingLine(pos(time_range.min, 0.0), pos(time_range.max, 0.0), graph);
-    drawCurvingLine(pos(0.0, space_range.min-space_extra), pos(0.0, space_range.max+space_extra), graph);
+    drawCurvingLine(new P2(spacetime_range.xmin, 0.0), new P2(spacetime_range.xmax, 0.0), graph);
+    drawCurvingLine(new P2(0.0, spacetime_range.ymin-space_extra), new P2(0.0, spacetime_range.ymax+space_extra), graph);
 
     // label axes
     ctx.fillStyle = 'rgb(100,100,100)';
@@ -303,12 +306,12 @@ function drawSpaceTime(graph) {
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
     var horizOffset = -0.1;
-    textLabel(pos(horizOffset, 50.0), "50m", graph);
+    textLabel(new P2(horizOffset, 50.0), "50m", graph);
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     var vertOffset = -2.0;
-    for(var t = Math.ceil(time_range.min); t<=Math.floor(time_range.max); t+=time_range.step) {
-        textLabel(pos(t, vertOffset), t.toFixed(0)+"s", graph);
+    for(var t = Math.ceil(spacetime_range.xmin); t<=Math.floor(spacetime_range.xmax); t+=time_step) {
+        textLabel(new P2(t, vertOffset), t.toFixed(0)+"s", graph);
     }
 
     // draw trajectories in free-fall
@@ -325,7 +328,7 @@ function drawSpaceTime(graph) {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("Frame acceleration = "+graph.frame_acceleration.toFixed(1)+" ms"+String.fromCharCode(0x207B)+String.fromCharCode(0x00B2),
-        graph.rect.x+graph.rect.width/2, (graph.rect.y+canvas.height)/2);
+        graph.rect.center.x, (graph.rect.ymax+canvas.height)/2);
 }
 
 function textLabel(p, text, graph) {
@@ -385,21 +388,21 @@ function drawLine(p1, p2, delta_acceleration, transform) {
         var ts = lerp(p1, p2, u);
         var p = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration), transform);
         if(i==0) {
-            moveTo(p);
+            ctx.moveTo(p.x, p.y);
         }
         else {
-            lineTo(p);
+            ctx.lineTo(p.x, p.y);
         }
     }
     ctx.stroke();
 }
 
 function transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration) {
-    var t_zero = (time_range.min+time_range.max)/2; // central time point (e.g. t=0) gets no spatial distortion
+    var t_zero = spacetime_range.center.x; // central time point (e.g. t=0) gets no spatial distortion
     var time_delta = ts.x - t_zero;
     var x = ts.x;
     var y = ts.y - distanceTravelledWithConstantAcceleration(time_delta, delta_acceleration);
-    return pos(x, y);
+    return new P2(x, y);
 }
 
 function findBestFitTransform(graph) {
@@ -407,12 +410,12 @@ function findBestFitTransform(graph) {
     var delta_acceleration = 0.0; // just use the transform from the earth_surface_gravity-accelerating frame, for visual clarity
     // plot some points in some arbitrary space then scale to fit the rect
     corners = [];
-    corners.push(transformBetweenAcceleratingReferenceFrames(pos(time_range.min, space_range.min), delta_acceleration));
-    corners.push(transformBetweenAcceleratingReferenceFrames(pos(time_range.min, space_range.max), delta_acceleration));
-    corners.push(transformBetweenAcceleratingReferenceFrames(pos(time_range.max, space_range.min), delta_acceleration));
-    corners.push(transformBetweenAcceleratingReferenceFrames(pos(time_range.max, space_range.max), delta_acceleration));
-    corners.push(transformBetweenAcceleratingReferenceFrames(pos((time_range.min+time_range.max)/2, space_range.min), delta_acceleration));
-    corners.push(transformBetweenAcceleratingReferenceFrames(pos((time_range.min+time_range.max)/2, space_range.max), delta_acceleration));
+    corners.push(transformBetweenAcceleratingReferenceFrames(new P2(spacetime_range.xmin, spacetime_range.ymin), delta_acceleration));
+    corners.push(transformBetweenAcceleratingReferenceFrames(new P2(spacetime_range.xmin, spacetime_range.ymax), delta_acceleration));
+    corners.push(transformBetweenAcceleratingReferenceFrames(new P2(spacetime_range.xmax, spacetime_range.ymin), delta_acceleration));
+    corners.push(transformBetweenAcceleratingReferenceFrames(new P2(spacetime_range.xmax, spacetime_range.ymax), delta_acceleration));
+    corners.push(transformBetweenAcceleratingReferenceFrames(new P2(spacetime_range.center.x, spacetime_range.ymin), delta_acceleration));
+    corners.push(transformBetweenAcceleratingReferenceFrames(new P2(spacetime_range.center.x, spacetime_range.ymax), delta_acceleration));
     original_rect = boundingRect(corners);
     return computeLinearTransform(original_rect, graph.rect);
 }

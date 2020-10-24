@@ -17,30 +17,51 @@
 
 // classes:
 
-function pos(x, y) {
-    return { x:x, y:y };
+class P2{
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
 }
 
-function circle(p, r) {
-    return { p:p, r:r };
+class Circle{
+    constructor(p, r) {
+        this.p = p;
+        this.r = r;
+    }
 }
 
-function rect(x, y, width, height) {
-    return { x:x, y:y, width:width, height:height };
+class Rect {
+    constructor(p, size) {
+        this.p = p;
+        this.size = size;
+    }
+    get xmin() { return Math.min(this.p.x, this.p.x+this.size.x); }
+    get xmax() { return Math.max(this.p.x, this.p.x+this.size.x); }
+    get ymin() { return Math.min(this.p.y, this.p.y+this.size.y); }
+    get ymax() { return Math.max(this.p.y, this.p.y+this.size.y); }
+    get min() { return new P2(this.xmin, this.ymin); }
+    get max() { return new P2(this.xmax, this.ymax); }
+    get center() { return add( this.p, scalar_mul(this.size, 0.5) ); }
 }
 
-function linearTransform(mult_x, offset_x, mult_y, offset_y) {
-    return { mult_x:mult_x, offset_x:offset_x, mult_y:mult_y, offset_y:offset_y };
-}
 
-function range(min, max, step=1.0) {
-    return { min:min, max:max, step:step };
+class LinearTransform {
+    constructor(offset, scale) {
+        this.offset = offset;
+        this.scale = scale;
+    }
 }
 
 // functions:
 
+function dot(a, b) {
+    return a.x * b.x + a.y * b.y;
+}
+
 function dist2(a, b) {
-    return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
+    var d = sub(a, b);
+    return dot(d, d);
 }
 
 function dist(a, b) {
@@ -48,45 +69,47 @@ function dist(a, b) {
 }
 
 function add(a, b) {
-    return pos(a.x + b.x, a.y + b.y);
+    return new P2(a.x + b.x, a.y + b.y);
 }
 
 function sub(a, b) {
-    return pos(a.x - b.x, a.y - b.y);
+    return new P2(a.x - b.x, a.y - b.y);
 }
 
-function scalarmul(a, f) {
-    return pos(a.x * f, a.y * f);
+function scalar_mul(a, f) {
+    return new P2(a.x * f, a.y * f);
 }
 
-function hadamard_produce(a, b) {
-    return pos(a.x * b.x, a.y * b.y);
+function elementwise_mul(a, b) {
+    return new P2(a.x * b.x, a.y * b.y);
+}
+
+function elementwise_div(a, b) {
+    return new P2(a.x / b.x, a.y / b.y);
 }
 
 function inversion(p, circle) {
     var r2 = circle.r * circle.r;
     var d2 = dist2( p, circle.p );
-    return add( circle.p, scalarmul( sub( p, circle.p ), r2 / d2 ) );
+    return add( circle.p, scalar_mul( sub( p, circle.p ), r2 / d2 ) );
 }
 
 function lerp(a, b, u) {
-    return add( a, scalarmul( sub(b, a), u) );
+    return add( a, scalar_mul( sub(b, a), u) );
 }
 
 function applyLinearTransform(p, transform) {
-    return pos(transform.offset_x + transform.mult_x * p.x, transform.offset_y + transform.mult_y * p.y);
+    return add( transform.offset, elementwise_mul(p, transform.scale) );
 }
 
 function applyLinearTransformInverse(p, transform) {
-    return pos((p.x - transform.offset_x) / transform.mult_x, (p.y - transform.offset_y) / transform.mult_y);
+    return elementwise_div( sub( p, transform.offset ), transform.scale );
 }
 
 function computeLinearTransform(from_rect, to_rect) {
-    mult_x = to_rect.width / from_rect.width;
-    offset_x = to_rect.x - mult_x * from_rect.x;
-    mult_y = to_rect.height / from_rect.height;
-    offset_y = to_rect.y - mult_y * from_rect.y;
-    return linearTransform(mult_x, offset_x, mult_y, offset_y);
+    var scale = elementwise_div(to_rect.size, from_rect.size);
+    var offset = sub(to_rect.p, elementwise_mul(from_rect.p, scale));
+    return new LinearTransform(offset, scale);
 }
 
 function boundingRect(points) {
@@ -100,13 +123,21 @@ function boundingRect(points) {
         top = Math.min(top, points[i].y);
         bottom = Math.max(bottom, points[i].y);
     }
-    return rect(left, top, right-left, bottom-top);
+    return new Rect(new P2(left, top), new P2(right-left, bottom-top));
 }
 
 function pointInRect( p, rect ) {
-    var left = Math.min(rect.x, rect.x + rect.width);
-    var right = Math.max(rect.x, rect.x + rect.width);
-    var top = Math.min(rect.y, rect.y + rect.height);
-    var bottom = Math.max(rect.y, rect.y + rect.height);
+    var left = Math.min(rect.p.x, rect.p.x + rect.size.x);
+    var right = Math.max(rect.p.x, rect.p.x + rect.size.x);
+    var top = Math.min(rect.p.y, rect.p.y + rect.size.y);
+    var bottom = Math.max(rect.p.y, rect.p.y + rect.size.y);
     return p.x > left && p.x < right && p.y > top && p.y < bottom;
+}
+
+function transformPoints(pts, func) {
+    var new_pts = [];
+    for(var i=0;i<pts.length;i++) {
+        new_pts.push(func(pts[i]));
+    }
+    return new_pts;
 }

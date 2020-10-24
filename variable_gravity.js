@@ -17,29 +17,46 @@
 
 var canvas;
 var ctx;
-var height_range;
-var time_range;
+var spacetime_range;
 
-function parabola(peak, color) {
-    return { peak:peak, color:color };
+class Parabola {
+    constructor(peak, color) {
+        this.peak = peak;
+        this.color = color;
+    }
 }
 
-function toDistortedAxes(p)
+class Graph {
+    constructor(screen_rect, transform) {
+        this.screen_rect = screen_rect;
+        this.transform = transform;
+    }
+}
+
+
+function toDistanceFallenDistortedAxes(p)
 {
-    // return the corresponding location on the distorted axes
+    // return the corresponding location on the axes where the space dimension is shifted up by the distance fallen
     var time = p.x;
     var final_height = p.y;
-    var time_diff = Math.abs(time - (time_range.max+time_range.min)/2);
-    return pos(time, findInitialHeight(time_diff, final_height, earth_mass));
+    var time_mid = spacetime_range.center.x; // center of the current time window
+    var time_diff = Math.abs(time - time_mid);
+    return new P2(time, findInitialHeight(time_diff, final_height, earth_mass));
 }
 
-function toStandardAxes(p)
+function fromDistanceFallenDistortedAxes(p)
 {
-    // return the corresponding location on the orthogonal axes
+    // return the corresponding location on the orthogonal axes given the location on the ones where the space dimension is shifted up by the distance fallen
     var time = p.x;
     var height = p.y;
-    var time_diff = Math.abs(time - (time_range.max+time_range.min)/2);
-    return pos(time, height - freeFallDistance(time_diff, height, earth_mass));
+    var time_mid = spacetime_range.center.x; // center of the current time window
+    var time_diff = Math.abs(time - time_mid);
+    return new P2(time, height - freeFallDistance(time_diff, height, earth_mass));
+}
+
+function toKleinPseudosphereAxes(p) {
+    // TODO
+    return p;
 }
 
 function getLinePoints(a, b) {
@@ -60,30 +77,23 @@ function getParabolaPoints(peak_time, peak_height, min_height, planet_mass) {
     for(var i=0;i<n_pts;i++) {
         var t = peak_time - fallTime + i*fallTime/n_pts;
         var h = peak_height - freeFallDistance(peak_time-t, peak_height, planet_mass);
-        pts.push(pos(t,h));
+        pts.push(new P2(t,h));
     }
     // from the top down
     for(var i=0;i<=n_pts;i++) {
         var t = peak_time + i*fallTime/n_pts;
         var h = peak_height - freeFallDistance(t - peak_time, peak_height, planet_mass);
-        pts.push(pos(t,h));
+        pts.push(new P2(t,h));
     }
     return pts;
 }
 
-function transformPoints(pts, func) {
+// TODO: use a transform
+function ptsToScreen(pts, screen_rect) {
     var new_pts = [];
     for(var i=0;i<pts.length;i++) {
-        new_pts.push(func(pts[i]));
-    }
-    return new_pts;
-}
-
-function ptsToScreen(pts, height_range, time_range, screen_rect) {
-    var new_pts = [];
-    for(var i=0;i<pts.length;i++) {
-        new_pts.push(pos(screen_rect.width * (pts[i].x-time_range.min)/(time_range.max-time_range.min) + screen_rect.x,
-                         screen_rect.height * (height_range.max-pts[i].y)/(height_range.max-height_range.min) + screen_rect.y));
+        new_pts.push(new P2(screen_rect.size.x * (pts[i].x-spacetime_range.p.x)/spacetime_range.size.x + screen_rect.p.x,
+                            screen_rect.size.y * (spacetime_range.p.y+spacetime_range.size.y-pts[i].y)/spacetime_range.size.y + screen_rect.p.y));
     }
     return new_pts;
 }
@@ -108,21 +118,24 @@ function drawSpacedCircles(pts, r, color) {
 }
 
 function fitTimeRange(time_range_offset) {
-    var fall_time = freeFallTime(height_range.max, height_range.min, earth_mass);
-    time_range = range(-fall_time + fall_time*time_range_offset, fall_time + fall_time*time_range_offset);
+    // pick the time range to allow for a free-fall from the max height to the min height
+    var fall_time = freeFallTime(spacetime_range.ymax, spacetime_range.ymin, earth_mass);
+    // time_range_offset slides the time window left and right by multiples of the existing time range
+    spacetime_range.p.x = -fall_time + fall_time*time_range_offset;
+    spacetime_range.size.x = fall_time * 2;
 }
 
 function init() {
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
 
-    height_range = range(earth_radius, moon_distance);
+    spacetime_range = new Rect( new P2(0,earth_radius), new P2(0,moon_distance-earth_radius)); // will fill in time range later
     var time_range_offset = 0;
 
     var heightRangeSlider = document.getElementById("heightRangeSlider");
-    height_range.max = (earth_radius+1000) + (moon_distance-(earth_radius+50)) * Math.pow(heightRangeSlider.value / 100.0, 3);
+    spacetime_range.size.y = (earth_radius+1000) + (moon_distance-(earth_radius+50)) * Math.pow(heightRangeSlider.value / 100.0, 3) - spacetime_range.p.y;
     heightRangeSlider.oninput = function() {
-        height_range.max = (earth_radius+1000) + (moon_distance-(earth_radius+50)) * Math.pow(heightRangeSlider.value / 100.0, 3);
+        spacetime_range.size.y = (earth_radius+1000) + (moon_distance-(earth_radius+50)) * Math.pow(heightRangeSlider.value / 100.0, 3) - spacetime_range.p.y;
         fitTimeRange(time_range_offset);
         draw();
     }
@@ -147,59 +160,63 @@ function draw() {
     ctx.rect(0,0,canvas.width, canvas.height);
     ctx.fill();
 
-    function graph(screen_rect, transform) {
-        return {screen_rect:screen_rect, transform:transform };
+    var graphs = [ new Graph( new Rect( new P2(40,50), new P2(600,400)), p => { return p; }),
+                   new Graph( new Rect( new P2(760,50), new P2(600,400)), toDistanceFallenDistortedAxes), // attempt to use a simple time-of-fall mapping
+                   //new Graph( new Rect( new P2(760,50), new P2(600,400)), toKleinPseudosphereAxes), // attempt to use a pseudosphere drawn in Klein's disk model
+                   ];
+    var x_axis = getLinePoints(spacetime_range.min, new P2(spacetime_range.xmax, spacetime_range.ymin));
+    var y_axis = getLinePoints(new P2(0,spacetime_range.ymin), new P2(0,spacetime_range.ymax));
+    var fall_time = freeFallTime(spacetime_range.ymax, spacetime_range.ymin, earth_mass);
+    var parabolas = [new Parabola(new P2(-0.2*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.75), 'rgb(100,100,200)'),
+                     new Parabola(new P2( 0.1*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.45), 'rgb(200,100,100)'),
+                     new Parabola(new P2( 0.2*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.32), 'rgb(200,100,200)'),
+                     new Parabola(new P2( 0.4*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.32), 'rgb(100,200,100)')];
+    for(var i=0;i<=10;i++) {
+        parabolas.push( new Parabola(new P2(0, spacetime_range.ymin+i*spacetime_range.size.y/10.0), 'rgb(150,150,150)') );
     }
-    
-    var graphs = [ graph(rect(40,50,600,400), p => { return p; }), graph(rect(760,50,600,400), toDistortedAxes) ];
+
+    // draw the graphs
     graphs.forEach(graph => {
         ctx.save(); // save the original clip for now
-        
+
         // fill background with white
         ctx.fillStyle = 'rgb(255,255,255)';
         ctx.beginPath();
-        ctx.rect(graph.screen_rect.x, graph.screen_rect.y, graph.screen_rect.width, graph.screen_rect.height);
+        ctx.rect(graph.screen_rect.xmin, graph.screen_rect.ymin, graph.screen_rect.size.x, graph.screen_rect.size.y);
         ctx.fill();
         ctx.clip(); // clip to this rect until restored
-        
-        // draw axes
-        var x_axis = getLinePoints(pos(time_range.min,height_range.min),pos(time_range.max,height_range.min));
-        var y_axis = getLinePoints(pos(0,height_range.min),pos(0,height_range.max));
-        x_axis = transformPoints(x_axis, graph.transform);
-        y_axis = transformPoints(y_axis, graph.transform);
-        x_axis = ptsToScreen(x_axis, height_range, time_range, graph.screen_rect);
-        y_axis = ptsToScreen(y_axis, height_range, time_range, graph.screen_rect);
-        var axes_color = 'rgb(50,50,50)';
-        drawLine(x_axis, axes_color);
-        drawLine(y_axis, axes_color);
 
-        // show the height range as text
-        ctx.fillStyle = 'rgb(0,0,0)';
-        ctx.font = "20px Arial";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("Earth surface", graph.screen_rect.x+graph.screen_rect.width/2, (graph.screen_rect.y+graph.screen_rect.height+canvas.height)/2);
-        ctx.fillText(((height_range.max-earth_radius)/1000).toFixed(0)+"km above Earth surface", graph.screen_rect.x+graph.screen_rect.width/2, graph.screen_rect.y/2);
+        // draw axes
+        var x_axis_transformed = transformPoints(x_axis, graph.transform);
+        var y_axis_transformed = transformPoints(y_axis, graph.transform);
+        x_axis_transformed = ptsToScreen(x_axis_transformed, graph.screen_rect);
+        y_axis_transformed = ptsToScreen(y_axis_transformed, graph.screen_rect);
+        var axes_color = 'rgb(50,50,50)';
+        drawLine(x_axis_transformed, axes_color);
+        drawLine(y_axis_transformed, axes_color);
 
         // draw some parabolas
-        var fall_time = freeFallTime(height_range.max, height_range.min, earth_mass);
-        var parabolas = [parabola(pos(-0.2*fall_time, height_range.min+(height_range.max-height_range.min)*0.75), 'rgb(100,100,200)'),
-                         parabola(pos(0.1*fall_time, height_range.min+(height_range.max-height_range.min)*0.45), 'rgb(200,100,100)'),
-                         parabola(pos(0.2*fall_time, height_range.min+(height_range.max-height_range.min)*0.32), 'rgb(200,100,200)'),
-                         parabola(pos(0.4*fall_time, height_range.min+(height_range.max-height_range.min)*0.32), 'rgb(100,200,100)')];
-        for(var i=0;i<=10;i++) {
-            parabolas.push( parabola(pos(0, height_range.min+i*(height_range.max-height_range.min)/10.0), 'rgb(150,150,150)') );
-        }
         parabolas.forEach(parabola => {
-            var pts = getParabolaPoints(parabola.peak.x, parabola.peak.y, height_range.min, earth_mass);
+            var pts = getParabolaPoints(parabola.peak.x, parabola.peak.y, spacetime_range.p.y, earth_mass);
             pts = transformPoints(pts, graph.transform);
-            pts = ptsToScreen(pts, height_range, time_range, graph.screen_rect);
+            pts = ptsToScreen(pts, graph.screen_rect);
             drawLine(pts, parabola.color);
             drawSpacedCircles(pts, 1.5, parabola.color);
         });
-        
+
         ctx.restore(); // restore the original clip
     });
+
+    // show the height range as text next to the first graph
+    var screen_rect = graphs[0].screen_rect;
+    ctx.fillStyle = 'rgb(0,0,0)';
+    ctx.font = "20px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Earth surface", screen_rect.center.x, (screen_rect.ymax+canvas.height)/2);
+    ctx.fillText((spacetime_range.size.y/1000).toFixed(0)+"km above Earth surface", screen_rect.center.x, screen_rect.p.y/2);
+
+    var circ = circle(pos(0,0),1);
 }
 
 window.onload = init;
