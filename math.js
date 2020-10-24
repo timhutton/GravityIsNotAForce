@@ -21,6 +21,10 @@ function pos(x, y) {
     return { x:x, y:y };
 }
 
+function circle(p, r) {
+    return { p:p, r:r };
+}
+
 function rect(x, y, width, height) {
     return { x:x, y:y, width:width, height:height };
 }
@@ -35,12 +39,38 @@ function range(min, max, step=1.0) {
 
 // functions:
 
+function dist2(a, b) {
+    return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
+}
+
 function dist(a, b) {
-    return Math.sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y));
+    return Math.sqrt(dist2(a, b));
+}
+
+function add(a, b) {
+    return pos(a.x + b.x, a.y + b.y);
+}
+
+function sub(a, b) {
+    return pos(a.x - b.x, a.y - b.y);
+}
+
+function scalarmul(a, f) {
+    return pos(a.x * f, a.y * f);
+}
+
+function hadamard_produce(a, b) {
+    return pos(a.x * b.x, a.y * b.y);
+}
+
+function inversion(p, circle) {
+    var r2 = circle.r * circle.r;
+    var d2 = dist2( p, circle.p );
+    return add( circle.p, scalarmul( sub( p, circle.p ), r2 / d2 ) );
 }
 
 function lerp(a, b, u) {
-    return pos(a.x + u*(b.x-a.x), a.y + u*(b.y-a.y));
+    return add( a, scalarmul( sub(b, a), u) );
 }
 
 function applyLinearTransform(p, transform) {

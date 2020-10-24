@@ -24,16 +24,20 @@ function parabola(peak, color) {
     return { peak:peak, color:color };
 }
 
-function toDistortedAxes(time, final_height)
+function toDistortedAxes(p)
 {
     // return the corresponding location on the distorted axes
+    var time = p.x;
+    var final_height = p.y;
     var time_diff = Math.abs(time - (time_range.max+time_range.min)/2);
     return pos(time, findInitialHeight(time_diff, final_height, earth_mass));
 }
 
-function toStandardAxes(time, height)
+function toStandardAxes(p)
 {
     // return the corresponding location on the orthogonal axes
+    var time = p.x;
+    var height = p.y;
     var time_diff = Math.abs(time - (time_range.max+time_range.min)/2);
     return pos(time, height - freeFallDistance(time_diff, height, earth_mass));
 }
@@ -67,10 +71,10 @@ function getParabolaPoints(peak_time, peak_height, min_height, planet_mass) {
     return pts;
 }
 
-function ptsToDistortedAxes(pts) {
+function transformPoints(pts, func) {
     var new_pts = [];
     for(var i=0;i<pts.length;i++) {
-        new_pts.push(toDistortedAxes(pts[i].x, pts[i].y));
+        new_pts.push(func(pts[i]));
     }
     return new_pts;
 }
@@ -137,61 +141,64 @@ function init() {
 }
 
 function draw() {
-    var screen_rects = [ rect(40,50,600,400), rect(760,50,600,400) ];
-
     // fill canvas with light gray
     ctx.fillStyle = 'rgb(240,240,240)';
     ctx.beginPath();
     ctx.rect(0,0,canvas.width, canvas.height);
     ctx.fill();
 
-    // fill background with white
-    screen_rects.forEach(screen_rect => {
+    function graph(screen_rect, transform) {
+        return {screen_rect:screen_rect, transform:transform };
+    }
+    
+    var graphs = [ graph(rect(40,50,600,400), p => { return p; }), graph(rect(760,50,600,400), toDistortedAxes) ];
+    graphs.forEach(graph => {
+        ctx.save(); // save the original clip for now
+        
+        // fill background with white
         ctx.fillStyle = 'rgb(255,255,255)';
         ctx.beginPath();
-        ctx.rect(screen_rect.x, screen_rect.y, screen_rect.width, screen_rect.height);
+        ctx.rect(graph.screen_rect.x, graph.screen_rect.y, graph.screen_rect.width, graph.screen_rect.height);
         ctx.fill();
-    });
+        ctx.clip(); // clip to this rect until restored
+        
+        // draw axes
+        var x_axis = getLinePoints(pos(time_range.min,height_range.min),pos(time_range.max,height_range.min));
+        var y_axis = getLinePoints(pos(0,height_range.min),pos(0,height_range.max));
+        x_axis = transformPoints(x_axis, graph.transform);
+        y_axis = transformPoints(y_axis, graph.transform);
+        x_axis = ptsToScreen(x_axis, height_range, time_range, graph.screen_rect);
+        y_axis = ptsToScreen(y_axis, height_range, time_range, graph.screen_rect);
+        var axes_color = 'rgb(50,50,50)';
+        drawLine(x_axis, axes_color);
+        drawLine(y_axis, axes_color);
 
-    // draw axes
-    var x_axis = getLinePoints(pos(time_range.min,height_range.min),pos(time_range.max,height_range.min));
-    var y_axis = getLinePoints(pos(0,height_range.min),pos(0,height_range.max));
-    var x1 = ptsToScreen(x_axis, height_range, time_range, screen_rects[0]);
-    var y1 = ptsToScreen(y_axis, height_range, time_range, screen_rects[0]);
-    var axes_color = 'rgb(50,50,50)';
-    drawLine(x1, axes_color);
-    drawLine(y1, axes_color);
-    var x2 = ptsToScreen(ptsToDistortedAxes(x_axis), height_range, time_range, screen_rects[1]);
-    var y2 = ptsToScreen(ptsToDistortedAxes(y_axis), height_range, time_range, screen_rects[1]);
-    drawLine(x2, axes_color);
-    drawLine(y2, axes_color);
+        // show the height range as text
+        ctx.fillStyle = 'rgb(0,0,0)';
+        ctx.font = "20px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("Earth surface", graph.screen_rect.x+graph.screen_rect.width/2, (graph.screen_rect.y+graph.screen_rect.height+canvas.height)/2);
+        ctx.fillText(((height_range.max-earth_radius)/1000).toFixed(0)+"km above Earth surface", graph.screen_rect.x+graph.screen_rect.width/2, graph.screen_rect.y/2);
 
-    // show the height range as text
-    ctx.fillStyle = 'rgb(0,0,0)';
-    ctx.font = "20px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("Earth surface", screen_rects[0].x+screen_rects[0].width/2, (screen_rects[0].y+screen_rects[0].height+canvas.height)/2);
-    ctx.fillText(((height_range.max-earth_radius)/1000).toFixed(0)+"km above Earth surface", screen_rects[0].x+screen_rects[0].width/2, screen_rects[0].y/2);
-
-    // draw some parabolas
-    var fall_time = freeFallTime(height_range.max, height_range.min, earth_mass);
-    var parabolas = [parabola(pos(-0.2*fall_time, height_range.min+(height_range.max-height_range.min)*0.75), 'rgb(100,100,200)'),
-                     parabola(pos(0.1*fall_time, height_range.min+(height_range.max-height_range.min)*0.45), 'rgb(200,100,100)'),
-                     parabola(pos(0.2*fall_time, height_range.min+(height_range.max-height_range.min)*0.32), 'rgb(200,100,200)'),
-                     parabola(pos(0.4*fall_time, height_range.min+(height_range.max-height_range.min)*0.32), 'rgb(100,200,100)')];
-    for(var i=0;i<=10;i++) {
-        parabolas.push( parabola(pos(0, height_range.min+i*(height_range.max-height_range.min)/10.0), 'rgb(150,150,150)') );
-    }
-    parabolas.forEach(parabola => {
-        var pts = getParabolaPoints(parabola.peak.x, parabola.peak.y, height_range.min, earth_mass);
-        var pts1 = ptsToScreen(pts, height_range, time_range, screen_rects[0]);
-        drawLine(pts1, parabola.color);
-        drawSpacedCircles(pts1, 1.5, parabola.color);
-        var pts2 = ptsToDistortedAxes(pts);
-        pts2 = ptsToScreen(pts2, height_range, time_range, screen_rects[1]);
-        drawLine(pts2, parabola.color);
-        drawSpacedCircles(pts2, 1.5, parabola.color);
+        // draw some parabolas
+        var fall_time = freeFallTime(height_range.max, height_range.min, earth_mass);
+        var parabolas = [parabola(pos(-0.2*fall_time, height_range.min+(height_range.max-height_range.min)*0.75), 'rgb(100,100,200)'),
+                         parabola(pos(0.1*fall_time, height_range.min+(height_range.max-height_range.min)*0.45), 'rgb(200,100,100)'),
+                         parabola(pos(0.2*fall_time, height_range.min+(height_range.max-height_range.min)*0.32), 'rgb(200,100,200)'),
+                         parabola(pos(0.4*fall_time, height_range.min+(height_range.max-height_range.min)*0.32), 'rgb(100,200,100)')];
+        for(var i=0;i<=10;i++) {
+            parabolas.push( parabola(pos(0, height_range.min+i*(height_range.max-height_range.min)/10.0), 'rgb(150,150,150)') );
+        }
+        parabolas.forEach(parabola => {
+            var pts = getParabolaPoints(parabola.peak.x, parabola.peak.y, height_range.min, earth_mass);
+            pts = transformPoints(pts, graph.transform);
+            pts = ptsToScreen(pts, height_range, time_range, graph.screen_rect);
+            drawLine(pts, parabola.color);
+            drawSpacedCircles(pts, 1.5, parabola.color);
+        });
+        
+        ctx.restore(); // restore the original clip
     });
 }
 
