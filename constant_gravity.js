@@ -72,7 +72,7 @@ function onMouseMove( evt ) {
             if( pointInRect(p, graphs[i].rect) ) {
                 // convert p to the coordinate system of this graph
                 var delta_acceleration = earth_surface_gravity - graphs[i].frame_acceleration
-                p = applyLinearTransformInverse(p, graphs[i].transform);
+                p = graphs[i].transform.backwards(p);
                 p = transformBetweenAcceleratingReferenceFrames(p, delta_acceleration);
                 if(dragIsStart) {
                     trajectories[dragTrajectory].start = p;
@@ -96,7 +96,7 @@ function onMouseMove( evt ) {
                 var delta_acceleration = graphs[i].frame_acceleration - earth_surface_gravity;
                 for(var j = 0; j < trajectories.length; j++) {
                     // start?
-                    var m = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(trajectories[j].start, delta_acceleration), graphs[i].transform);
+                    var m = graphs[i].transform.forwards(transformBetweenAcceleratingReferenceFrames(trajectories[j].start, delta_acceleration));
                     var d = dist(p, m);
                     if( d < hover_radius && d < d_min) {
                         d_min = d;
@@ -105,7 +105,7 @@ function onMouseMove( evt ) {
                         isStart = true;
                     }
                     // end?
-                    m = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(trajectories[j].end, delta_acceleration), graphs[i].transform);
+                    m = graphs[i].transform.forwards(transformBetweenAcceleratingReferenceFrames(trajectories[j].end, delta_acceleration));
                     d = dist(p, m);
                     if( d < hover_radius && d < d_min) {
                         d_min = d;
@@ -149,7 +149,7 @@ function onMouseDown( evt ) {
             var delta_acceleration = graphs[i].frame_acceleration - earth_surface_gravity;
             for(var j = 0; j < trajectories.length; j++) {
                 // start?
-                var m = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(trajectories[j].start, delta_acceleration), graphs[i].transform);
+                var m = graphs[i].transform.forwards(transformBetweenAcceleratingReferenceFrames(trajectories[j].start, delta_acceleration));
                 var d = dist(p, m);
                 if( d < grab_radius && d < d_min) {
                     d_min = d;
@@ -158,7 +158,7 @@ function onMouseDown( evt ) {
                     dragIsStart = true;
                 }
                 // end?
-                m = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(trajectories[j].end, delta_acceleration), graphs[i].transform);
+                m = graphs[i].transform.forwards(transformBetweenAcceleratingReferenceFrames(trajectories[j].end, delta_acceleration));
                 d = dist(p, m);
                 if( d < grab_radius && d < d_min) {
                     d_min = d;
@@ -333,7 +333,7 @@ function drawSpaceTime(graph) {
 
 function textLabel(p, text, graph) {
     var delta_acceleration = graph.frame_acceleration - earth_surface_gravity;
-    p = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(p, delta_acceleration), graph.transform);
+    p = graph.transform.forwards(transformBetweenAcceleratingReferenceFrames(p, delta_acceleration));
     ctx.fillText(text, p.x, p.y);
 }
 
@@ -355,15 +355,15 @@ function drawGeodesic(trajectory, graph) {
     delta_acceleration = graph.frame_acceleration - 0.0;
     drawLine(start, end, delta_acceleration, graph.transform);
     // draw an arrowhead to indicate the direction of travel
-    var a1 = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(lerp(start, end, 0.59), delta_acceleration), graph.transform);
-    var a2 = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(lerp(start, end, 0.60), delta_acceleration), graph.transform);
+    var a1 = graph.transform.forwards(transformBetweenAcceleratingReferenceFrames(lerp(start, end, 0.59), delta_acceleration));
+    var a2 = graph.transform.forwards(transformBetweenAcceleratingReferenceFrames(lerp(start, end, 0.60), delta_acceleration));
     drawArrowHead(a1, a2, 15);
     // draw circles along the way
     var n_steps = 10;
     for(var i = 0; i <= n_steps; i++) {
         var u = i / n_steps;
         var c = lerp(start, end, u);
-        c = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(c, delta_acceleration), graph.transform);
+        c = graph.transform.forwards(transformBetweenAcceleratingReferenceFrames(c, delta_acceleration));
         ctx.beginPath();
         var r = trajectory.mid_size;
         ctx.fillStyle = trajectory.default_color;
@@ -386,7 +386,7 @@ function drawLine(p1, p2, delta_acceleration, transform) {
     for(var i = 0; i <= n_steps; i++) {
         var u = i / n_steps;
         var ts = lerp(p1, p2, u);
-        var p = applyLinearTransform(transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration), transform);
+        var p = transform.forwards(transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration));
         if(i==0) {
             ctx.moveTo(p.x, p.y);
         }

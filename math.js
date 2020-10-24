@@ -45,11 +45,26 @@ class Rect {
     get center() { return add( this.p, scalar_mul(this.size, 0.5) ); }
 }
 
-
 class LinearTransform {
     constructor(offset, scale) {
         this.offset = offset;
         this.scale = scale;
+        this.forwards = p => { return add( this.offset, elementwise_mul(p, this.scale) ); };
+        this.backwards = p => { return elementwise_div( sub( p, this.offset ), this.scale ); };
+    }
+}
+
+class Transform {
+    constructor(forwards, backwards) {
+        this.forwards = forwards;
+        this.backwards = backwards;
+    }
+}
+
+class ComposedTransform {
+    constructor(inner, outer) {
+        this.forwards = p => { return outer.forwards(inner.forwards(p)); }
+        this.backwards = p => { return inner.backwards(outer.backwards(p)); }
     }
 }
 
@@ -96,14 +111,6 @@ function inversion(p, circle) {
 
 function lerp(a, b, u) {
     return add( a, scalar_mul( sub(b, a), u) );
-}
-
-function applyLinearTransform(p, transform) {
-    return add( transform.offset, elementwise_mul(p, transform.scale) );
-}
-
-function applyLinearTransformInverse(p, transform) {
-    return elementwise_div( sub( p, transform.offset ), transform.scale );
 }
 
 function computeLinearTransform(from_rect, to_rect) {

@@ -15,6 +15,16 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+function drawLine(pts, color) {
+    ctx.strokeStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for(var i=1;i<pts.length;i++) {
+        ctx.lineTo(pts[i].x, pts[i].y);
+    }
+    ctx.stroke();
+}
+
 // adapted from http://stackoverflow.com/a/6333775/126823
 function drawArrowHead( a, b, size ) {
     var angle = Math.atan2(b.y-a.y,b.x-a.x);
