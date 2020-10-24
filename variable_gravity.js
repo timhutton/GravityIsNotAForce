@@ -114,31 +114,30 @@ function init() {
 
     height_range = range(earth_radius, moon_distance);
     var time_range_offset = 0;
-    fitTimeRange(time_range_offset);
 
     var heightRangeSlider = document.getElementById("heightRangeSlider");
-    height_range.max = (earth_radius+50) + (moon_distance-(earth_radius+50)) * Math.pow(heightRangeSlider.value / 100.0, 3);
-    fitTimeRange(time_range_offset);
+    height_range.max = (earth_radius+1000) + (moon_distance-(earth_radius+50)) * Math.pow(heightRangeSlider.value / 100.0, 3);
     heightRangeSlider.oninput = function() {
-        height_range.max = (earth_radius+50) + (moon_distance-(earth_radius+50)) * Math.pow(heightRangeSlider.value / 100.0, 3);
+        height_range.max = (earth_radius+1000) + (moon_distance-(earth_radius+50)) * Math.pow(heightRangeSlider.value / 100.0, 3);
         fitTimeRange(time_range_offset);
         draw();
     }
 
     var timeTranslationSlider = document.getElementById("timeTranslationSlider");
     time_range_offset = 1-2*timeTranslationSlider.value / 100.0;
-    fitTimeRange(time_range_offset);
     timeTranslationSlider.oninput = function() {
-        time_range_offset = 1-2*timeTranslationSlider.value / 100.0;
+        var time_range_offset = 1-2*timeTranslationSlider.value / 100.0;
         fitTimeRange(time_range_offset);
         draw();
     }
+
+    fitTimeRange(time_range_offset);
 
     draw();
 }
 
 function draw() {
-    var screen_rects = [ rect(10,10,600,400), rect(760,10,600,400) ];
+    var screen_rects = [ rect(40,50,600,400), rect(760,50,600,400) ];
 
     // fill canvas with light gray
     ctx.fillStyle = 'rgb(240,240,240)';
@@ -166,6 +165,14 @@ function draw() {
     var y2 = ptsToScreen(ptsToDistortedAxes(y_axis), height_range, time_range, screen_rects[1]);
     drawLine(x2, axes_color);
     drawLine(y2, axes_color);
+
+    // show the height range as text
+    ctx.fillStyle = 'rgb(0,0,0)';
+    ctx.font = "20px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Earth surface", screen_rects[0].x+screen_rects[0].width/2, (screen_rects[0].y+screen_rects[0].height+canvas.height)/2);
+    ctx.fillText(((height_range.max-earth_radius)/1000).toFixed(0)+"km above Earth surface", screen_rects[0].x+screen_rects[0].width/2, screen_rects[0].y/2);
 
     // draw some parabolas
     var fall_time = freeFallTime(height_range.max, height_range.min, earth_mass);
