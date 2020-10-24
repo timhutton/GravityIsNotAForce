@@ -8,6 +8,11 @@
   margin: auto;
 }
 
+.heightRangeSlider {
+  width: 25%;
+  margin: auto;
+}
+
 .slider {
   -webkit-appearance: none;
   width: 100%;

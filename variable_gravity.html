@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <script src="math.js"></script>
+    <script src="physics.js"></script>
+    <script src="variable_gravity.js"></script>
+    <link rel="stylesheet" href="styles.css">
+
+    <noscript>
+    <p>For full functionality of this site it is necessary to enable JavaScript.
+    Here are the <a href="http://www.enable-javascript.com/" target="_blank">
+    instructions how to enable JavaScript in your web browser</a>.
+    </p></noscript>
+</head>
+
+<body class="sansserif">
+    <p align="center">
+    <canvas class="canvas" id="canvas" width="1560" height="500">(Canvas drawing not supported by your browser.)</canvas>
+    <div class="heightRangeSlider">
+      Change the height range: <input type="range" min="0" max="100" value="50" class="slider" id="heightRangeSlider">
+    </div>
+    <div class="timeTranslationSlider">
+      Move the time window: <input type="range" min="0" max="100" value="50" class="slider" id="timeTranslationSlider">
+    </div>
+    </p>
+
+    <h4>Description:</h4>
+    <p class="text">
+    Work in progress. Above is a space-time diagram of some free-falls from orbital distances to Earth. The aim is to find a distortion that
+    makes all the geodesics into straight lines, as we are able to do in the constant-gravity case.
+    </p>
+
+    <p class="text">
+    Code, more details, feedback: <a href="https://github.com/timhutton/GravityIsNotAForce">https://github.com/timhutton/GravityIsNotAForce</a>
+    </p>
+</body>
+
+</html>
+
