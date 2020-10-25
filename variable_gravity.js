@@ -54,9 +54,8 @@ function fromDistanceFallenDistortedAxes(p)
     return new P2(time, height - freeFallDistance(time_diff, height, earth_mass));
 }
 
-function getLinePoints(a, b) {
+function getLinePoints(a, b, n_pts=100) {
     var pts = [];
-    var n_pts = 100;
     for(var i=0;i<=n_pts;i++) {
         var u = i / n_pts;
         pts.push(lerp(a, b, u));
@@ -104,12 +103,14 @@ function init() {
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
 
-    spacetime_range = new Rect( new P2(0, earth_radius), new P2(0, moon_distance - earth_radius)); // will fill in time range later
+    var highest_allowed_top = moon_distance;
+    var lowest_allowed_top = earth_radius+1000;
+    spacetime_range = new Rect( new P2(0, earth_radius), new P2(0, 0)); // will fill in the rest shortly
 
     var heightRangeSlider = document.getElementById("heightRangeSlider");
-    spacetime_range.size.y = (earth_radius+1000) + (moon_distance-(earth_radius+50)) * Math.pow(heightRangeSlider.value / 100.0, 3) - spacetime_range.ymin;
+    spacetime_range.size.y = lowest_allowed_top + (highest_allowed_top-lowest_allowed_top) * Math.pow(heightRangeSlider.value / 100.0, 3) - spacetime_range.ymin;
     heightRangeSlider.oninput = function() {
-        spacetime_range.size.y = (earth_radius+1000) + (moon_distance-(earth_radius+50)) * Math.pow(heightRangeSlider.value / 100.0, 3) - spacetime_range.ymin;
+        spacetime_range.size.y = lowest_allowed_top + (highest_allowed_top-lowest_allowed_top) * Math.pow(heightRangeSlider.value / 100.0, 3) - spacetime_range.ymin;
         fitTimeRange(time_range_offset);
         draw();
     }
@@ -135,7 +136,14 @@ function draw() {
     ctx.fill();
 
     var x_axis = getLinePoints(spacetime_range.min, new P2(spacetime_range.xmax, spacetime_range.ymin));
+    var minor_axes = [];
+    for(var y = spacetime_range.ymin; y<=spacetime_range.ymax; y+= spacetime_range.size.y/10) {
+        minor_axes.push(getLinePoints(new P2(spacetime_range.xmin, y), new P2(spacetime_range.xmax, y)));
+    }
     var y_axis = getLinePoints(new P2(0, spacetime_range.ymin), new P2(0, spacetime_range.ymax));
+    for(var x = spacetime_range.xmin; x<=spacetime_range.xmax; x+= spacetime_range.size.x/10) {
+        minor_axes.push(getLinePoints(new P2(x, spacetime_range.ymin), new P2(x, spacetime_range.ymax)));
+    }
     var fall_time = freeFallTime(spacetime_range.ymax, spacetime_range.ymin, earth_mass);
     var parabolas = [new Parabola(new P2(-0.2*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.75), 'rgb(100,100,200)'),
                      new Parabola(new P2( 0.1*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.45), 'rgb(200,100,100)'),
@@ -145,16 +153,27 @@ function draw() {
         parabolas.push( new Parabola(new P2(0, spacetime_range.ymin+i*spacetime_range.size.y/10.0), 'rgb(150,150,150)') );
     }
 
-    // draw the graphs
     var rect1 = new Rect( new P2(40,50), new P2(600,400));
     var rect2 = new Rect( new P2(760,50), new P2(600,400));
     var distanceFallenTransform = new Transform( toDistanceFallenDistortedAxes, fromDistanceFallenDistortedAxes );
-    var unitCircleRect = new Rect(new P2(-1,-1), new P2(2,2));
     var flipY = p => { return new P2(p.x, spacetime_range.ymax - p.y + spacetime_range.ymin); };
     var flipYTransform = new Transform( flipY, flipY );
+
+    // define the Klein pseudosphere transforms
+    var circle = new Circle(new P2(1060, 50), 400);
+    var invert = p => { return inversion(p, circle); };
+    var inversionTransform = new Transform( invert, invert );
+    var spacing = 100;
+    var x_extent = 1;
+    var y_extent = 1;
+    var kp_input_rect = new Rect(new P2(circle.p.x-circle.r*x_extent,circle.p.y+circle.r), new P2(2*circle.r*x_extent,circle.r*y_extent));
+    var kleinPseudosphereAxes = new Graph( rect2, new ComposedTransform( computeLinearTransform(spacetime_range, kp_input_rect), inversionTransform ) );
+    // TODO: turn Poincare into Klein
+
+    // draw the graphs
     var standardAxes = new Graph( rect1, new ComposedTransform( flipYTransform, computeLinearTransform(spacetime_range, rect1) ) );
     var distanceFallenAxes = new Graph( rect2, new ComposedTransform( distanceFallenTransform, new ComposedTransform( flipYTransform, computeLinearTransform(spacetime_range, rect2)) ) );
-    [ standardAxes, distanceFallenAxes ].forEach(graph => {
+    [ standardAxes, kleinPseudosphereAxes, /*, distanceFallenAxes*/ ].forEach(graph => {
         ctx.save(); // save the original clip for now
 
         // fill background with white
@@ -170,6 +189,9 @@ function draw() {
         var axes_color = 'rgb(50,50,50)';
         drawLine(x_axis_transformed, axes_color);
         drawLine(y_axis_transformed, axes_color);
+        var axes_color = 'rgb(210,210,210)';
+        minor_axes.forEach( axes => { drawLine(transformPoints(axes, graph.transform.forwards), axes_color); } );
+
 
         // draw some parabolas
         parabolas.forEach(parabola => {
