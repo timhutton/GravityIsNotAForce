@@ -1,14 +1,4 @@
-.frameAccelerationSlider {
-  width: 25%;
-  margin: auto;
-}
-
-.timeTranslationSlider {
-  width: 25%;
-  margin: auto;
-}
-
-.heightRangeSlider {
+.mainSlider {
   width: 25%;
   margin: auto;
 }

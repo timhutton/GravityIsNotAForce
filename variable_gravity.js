@@ -19,6 +19,8 @@ var canvas;
 var ctx;
 var spacetime_range;
 var time_range_offset;
+var x_extent;
+var y_extent;
 
 class Parabola {
     constructor(peak, color) {
@@ -123,6 +125,20 @@ function init() {
         draw();
     }
 
+    var xExtentSlider = document.getElementById("xExtentSlider");
+    x_extent = 2 * xExtentSlider.value / 100.0;
+    xExtentSlider.oninput = function() {
+        x_extent = 2 * xExtentSlider.value / 100.0;
+        draw();
+    }
+
+    var yExtentSlider = document.getElementById("yExtentSlider");
+    y_extent = 2 * yExtentSlider.value / 100.0;
+    yExtentSlider.oninput = function() {
+        y_extent = 2 * yExtentSlider.value / 100.0;
+        draw();
+    }
+
     fitTimeRange(time_range_offset);
 
     draw();
@@ -136,11 +152,11 @@ function draw() {
     ctx.fill();
 
     var x_axis = getLinePoints(spacetime_range.min, new P2(spacetime_range.xmax, spacetime_range.ymin));
+    var y_axis = getLinePoints(new P2(0, spacetime_range.ymin), new P2(0, spacetime_range.ymax));
     var minor_axes = [];
     for(var y = spacetime_range.ymin; y<=spacetime_range.ymax; y+= spacetime_range.size.y/10) {
         minor_axes.push(getLinePoints(new P2(spacetime_range.xmin, y), new P2(spacetime_range.xmax, y)));
     }
-    var y_axis = getLinePoints(new P2(0, spacetime_range.ymin), new P2(0, spacetime_range.ymax));
     for(var x = spacetime_range.xmin; x<=spacetime_range.xmax; x+= spacetime_range.size.x/10) {
         minor_axes.push(getLinePoints(new P2(x, spacetime_range.ymin), new P2(x, spacetime_range.ymax)));
     }
@@ -164,8 +180,6 @@ function draw() {
     var invert = p => { return inversion(p, circle); };
     var inversionTransform = new Transform( invert, invert );
     var spacing = 100;
-    var x_extent = 1;
-    var y_extent = 1;
     var kp_input_rect = new Rect(new P2(circle.p.x-circle.r*x_extent,circle.p.y+circle.r), new P2(2*circle.r*x_extent,circle.r*y_extent));
     var kleinPseudosphereAxes = new Graph( rect2, new ComposedTransform( computeLinearTransform(spacetime_range, kp_input_rect), inversionTransform ) );
     // TODO: turn Poincare into Klein
