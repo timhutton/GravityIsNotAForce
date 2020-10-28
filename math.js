@@ -17,7 +17,7 @@
 
 // classes:
 
-class P2{
+class P{
     constructor(x, y) {
         this.x = x;
         this.y = y;
@@ -40,8 +40,8 @@ class Rect {
     get xmax() { return Math.max(this.p.x, this.p.x+this.size.x); }
     get ymin() { return Math.min(this.p.y, this.p.y+this.size.y); }
     get ymax() { return Math.max(this.p.y, this.p.y+this.size.y); }
-    get min() { return new P2(this.xmin, this.ymin); }
-    get max() { return new P2(this.xmax, this.ymax); }
+    get min() { return new P(this.xmin, this.ymin); }
+    get max() { return new P(this.xmax, this.ymax); }
     get center() { return add( this.p, scalar_mul(this.size, 0.5) ); }
 }
 
@@ -84,23 +84,23 @@ function dist(a, b) {
 }
 
 function add(a, b) {
-    return new P2(a.x + b.x, a.y + b.y);
+    return new P(a.x + b.x, a.y + b.y);
 }
 
 function sub(a, b) {
-    return new P2(a.x - b.x, a.y - b.y);
+    return new P(a.x - b.x, a.y - b.y);
 }
 
 function scalar_mul(a, f) {
-    return new P2(a.x * f, a.y * f);
+    return new P(a.x * f, a.y * f);
 }
 
 function elementwise_mul(a, b) {
-    return new P2(a.x * b.x, a.y * b.y);
+    return new P(a.x * b.x, a.y * b.y);
 }
 
 function elementwise_div(a, b) {
-    return new P2(a.x / b.x, a.y / b.y);
+    return new P(a.x / b.x, a.y / b.y);
 }
 
 function inversion(p, circle) {
@@ -130,15 +130,11 @@ function boundingRect(points) {
         top = Math.min(top, points[i].y);
         bottom = Math.max(bottom, points[i].y);
     }
-    return new Rect(new P2(left, top), new P2(right-left, bottom-top));
+    return new Rect(new P(left, top), new P(right-left, bottom-top));
 }
 
 function pointInRect( p, rect ) {
-    var left = Math.min(rect.p.x, rect.p.x + rect.size.x);
-    var right = Math.max(rect.p.x, rect.p.x + rect.size.x);
-    var top = Math.min(rect.p.y, rect.p.y + rect.size.y);
-    var bottom = Math.max(rect.p.y, rect.p.y + rect.size.y);
-    return p.x > left && p.x < right && p.y > top && p.y < bottom;
+    return p.x > rect.xmin && p.x < rect.xmax && p.y > rect.ymin && p.y < rect.ymax;
 }
 
 function transformPoints(pts, func) {

@@ -188,11 +188,11 @@ function onMouseUp( evt ) {
 
 function clientToCanvas( clientPos ) {
     var rect = canvas.getBoundingClientRect();
-    return new P2( clientPos.x - rect.left, clientPos.y - rect.top );
+    return new P( clientPos.x - rect.left, clientPos.y - rect.top );
 }
 
 function getMousePos(evt) {
-    return clientToCanvas(new P2(evt.clientX, evt.clientY));
+    return clientToCanvas(new P(evt.clientX, evt.clientY));
 }
 
 function init() {
@@ -200,7 +200,7 @@ function init() {
     ctx = canvas.getContext('2d');
     isDragging = false;
 
-    spacetime_range = new Rect(new P2(-4,-10), new P2(8,80));
+    spacetime_range = new Rect(new P(-4,-10), new P(8,80));
 
     var timeTranslationSlider = document.getElementById("timeTranslationSlider");
     var timeTranslation = 2 - 4 * timeTranslationSlider.value / 100.0;
@@ -215,14 +215,14 @@ function init() {
     }
 
     trajectories = [];
-    trajectories.push(new Trajectory(new P2(0.0, 44.1), new P2(3.0, 0.0), 'rgb(255,100,100)', 'rgb(200,100,100)'));
-    trajectories.push(new Trajectory(new P2(-1.0, 0.0), new P2(2.0, 0.0), 'rgb(0,200,0)', 'rgb(0,160,0)'));
-    trajectories.push(new Trajectory(new P2(-3.0, 0.0), new P2(1.0, 0.0), 'rgb(100,100,255)', 'rgb(100,100,200)'));
+    trajectories.push(new Trajectory(new P(0.0, 44.1), new P(3.0, 0.0), 'rgb(255,100,100)', 'rgb(200,100,100)'));
+    trajectories.push(new Trajectory(new P(-1.0, 0.0), new P(2.0, 0.0), 'rgb(0,200,0)', 'rgb(0,160,0)'));
+    trajectories.push(new Trajectory(new P(-3.0, 0.0), new P(1.0, 0.0), 'rgb(100,100,255)', 'rgb(100,100,200)'));
 
     graphs = [];
-    graphs.push(new Graph(new Rect(new P2(40,440), new P2(400,-400)), earth_surface_gravity));
-    graphs.push(new Graph(new Rect(new P2(480,440), new P2(400,-400)), earth_surface_gravity/2));
-    graphs.push(new Graph(new Rect(new P2(920,440), new P2(400,-400)), 0.0));
+    graphs.push(new Graph(new Rect(new P(40,440), new P(400,-400)), earth_surface_gravity));
+    graphs.push(new Graph(new Rect(new P(480,440), new P(400,-400)), earth_surface_gravity/2));
+    graphs.push(new Graph(new Rect(new P(920,440), new P(400,-400)), 0.0));
 
     var frameAccelerationSlider = document.getElementById("frameAccelerationSlider");
     graphs[1].frame_acceleration = earth_surface_gravity - earth_surface_gravity * frameAccelerationSlider.value / 100.0;
@@ -287,16 +287,16 @@ function drawSpaceTime(graph) {
     var space_step = 10;
     for(var t = Math.ceil(spacetime_range.xmin); t<=Math.floor(spacetime_range.xmax); t+=time_step) {
         if(t==0.0) { continue; }
-        drawCurvingLine(new P2(t, spacetime_range.ymin-space_extra), new P2(t, spacetime_range.ymax+space_extra), graph);
+        drawCurvingLine(new P(t, spacetime_range.ymin-space_extra), new P(t, spacetime_range.ymax+space_extra), graph);
     }
     for(var s = Math.ceil(spacetime_range.ymin-space_extra); s<=Math.floor(spacetime_range.ymax+space_extra); s+=space_step) {
         if(s==0.0) { continue; }
-        drawCurvingLine(new P2(spacetime_range.xmin, s), new P2(spacetime_range.xmax, s), graph);
+        drawCurvingLine(new P(spacetime_range.xmin, s), new P(spacetime_range.xmax, s), graph);
     }
     // draw major axes
     ctx.strokeStyle = 'rgb(150,150,150)';
-    drawCurvingLine(new P2(spacetime_range.xmin, 0.0), new P2(spacetime_range.xmax, 0.0), graph);
-    drawCurvingLine(new P2(0.0, spacetime_range.ymin-space_extra), new P2(0.0, spacetime_range.ymax+space_extra), graph);
+    drawCurvingLine(new P(spacetime_range.xmin, 0.0), new P(spacetime_range.xmax, 0.0), graph);
+    drawCurvingLine(new P(0.0, spacetime_range.ymin-space_extra), new P(0.0, spacetime_range.ymax+space_extra), graph);
 
     // label axes
     ctx.fillStyle = 'rgb(100,100,100)';
@@ -304,12 +304,12 @@ function drawSpaceTime(graph) {
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
     var horizOffset = -0.1;
-    textLabel(new P2(horizOffset, 50.0), "50m", graph);
+    textLabel(new P(horizOffset, 50.0), "50m", graph);
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     var vertOffset = -2.0;
     for(var t = Math.ceil(spacetime_range.xmin); t<=Math.floor(spacetime_range.xmax); t+=time_step) {
-        textLabel(new P2(t, vertOffset), t.toFixed(0)+"s", graph);
+        textLabel(new P(t, vertOffset), t.toFixed(0)+"s", graph);
     }
 
     // draw trajectories in free-fall
@@ -400,7 +400,7 @@ function transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration) {
     var time_delta = ts.x - t_zero;
     var x = ts.x;
     var y = ts.y - distanceTravelledWithConstantAcceleration(time_delta, delta_acceleration);
-    return new P2(x, y);
+    return new P(x, y);
 }
 
 function findBestFitTransform(graph) {
@@ -408,12 +408,12 @@ function findBestFitTransform(graph) {
     var delta_acceleration = 0.0; // just use the transform from the earth_surface_gravity-accelerating frame, for visual clarity
     // plot some points in some arbitrary space then scale to fit the rect
     corners = [];
-    corners.push(transformBetweenAcceleratingReferenceFrames(new P2(spacetime_range.xmin, spacetime_range.ymin), delta_acceleration));
-    corners.push(transformBetweenAcceleratingReferenceFrames(new P2(spacetime_range.xmin, spacetime_range.ymax), delta_acceleration));
-    corners.push(transformBetweenAcceleratingReferenceFrames(new P2(spacetime_range.xmax, spacetime_range.ymin), delta_acceleration));
-    corners.push(transformBetweenAcceleratingReferenceFrames(new P2(spacetime_range.xmax, spacetime_range.ymax), delta_acceleration));
-    corners.push(transformBetweenAcceleratingReferenceFrames(new P2(spacetime_range.center.x, spacetime_range.ymin), delta_acceleration));
-    corners.push(transformBetweenAcceleratingReferenceFrames(new P2(spacetime_range.center.x, spacetime_range.ymax), delta_acceleration));
+    corners.push(transformBetweenAcceleratingReferenceFrames(new P(spacetime_range.xmin, spacetime_range.ymin), delta_acceleration));
+    corners.push(transformBetweenAcceleratingReferenceFrames(new P(spacetime_range.xmin, spacetime_range.ymax), delta_acceleration));
+    corners.push(transformBetweenAcceleratingReferenceFrames(new P(spacetime_range.xmax, spacetime_range.ymin), delta_acceleration));
+    corners.push(transformBetweenAcceleratingReferenceFrames(new P(spacetime_range.xmax, spacetime_range.ymax), delta_acceleration));
+    corners.push(transformBetweenAcceleratingReferenceFrames(new P(spacetime_range.center.x, spacetime_range.ymin), delta_acceleration));
+    corners.push(transformBetweenAcceleratingReferenceFrames(new P(spacetime_range.center.x, spacetime_range.ymax), delta_acceleration));
     original_rect = boundingRect(corners);
     return computeLinearTransform(original_rect, graph.rect);
 }

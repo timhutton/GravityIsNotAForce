@@ -21,6 +21,7 @@ var spacetime_range;
 var time_range_offset;
 var x_extent;
 var y_extent;
+var y_power;
 
 class Parabola {
     constructor(peak, color) {
@@ -43,7 +44,7 @@ function toDistanceFallenDistortedAxes(p)
     var final_height = p.y;
     var time_mid = spacetime_range.center.x; // center of the current time window
     var time_diff = Math.abs(time - time_mid);
-    return new P2(time, findInitialHeight(time_diff, final_height, earth_mass));
+    return new P(time, findInitialHeight(time_diff, final_height, earth_mass));
 }
 
 function fromDistanceFallenDistortedAxes(p)
@@ -53,7 +54,7 @@ function fromDistanceFallenDistortedAxes(p)
     var height = p.y;
     var time_mid = spacetime_range.center.x; // center of the current time window
     var time_diff = Math.abs(time - time_mid);
-    return new P2(time, height - freeFallDistance(time_diff, height, earth_mass));
+    return new P(time, height - freeFallDistance(time_diff, height, earth_mass));
 }
 
 function getLinePoints(a, b, n_pts=100) {
@@ -73,13 +74,13 @@ function getParabolaPoints(peak_time, peak_height, min_height, planet_mass) {
     for(var i=0;i<n_pts;i++) {
         var t = peak_time - fallTime + i*fallTime/n_pts;
         var h = peak_height - freeFallDistance(peak_time-t, peak_height, planet_mass);
-        pts.push(new P2(t,h));
+        pts.push(new P(t,h));
     }
     // from the top down
     for(var i=0;i<=n_pts;i++) {
         var t = peak_time + i*fallTime/n_pts;
         var h = peak_height - freeFallDistance(t - peak_time, peak_height, planet_mass);
-        pts.push(new P2(t,h));
+        pts.push(new P(t,h));
     }
     return pts;
 }
@@ -105,14 +106,15 @@ function init() {
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
 
+    var lowest_height = earth_radius;
+    spacetime_range = new Rect( new P(0, lowest_height), new P(0, 0)); // will fill in the rest shortly
     var highest_allowed_top = moon_distance;
-    var lowest_allowed_top = earth_radius+1000;
-    spacetime_range = new Rect( new P2(0, earth_radius), new P2(0, 0)); // will fill in the rest shortly
+    var lowest_allowed_top = lowest_height + 1000;
 
     var heightRangeSlider = document.getElementById("heightRangeSlider");
-    spacetime_range.size.y = lowest_allowed_top + (highest_allowed_top-lowest_allowed_top) * Math.pow(heightRangeSlider.value / 100.0, 3) - spacetime_range.ymin;
+    spacetime_range.size.y = lowest_allowed_top + (highest_allowed_top-lowest_allowed_top) * Math.pow(heightRangeSlider.value / 100.0, 3) - lowest_height;
     heightRangeSlider.oninput = function() {
-        spacetime_range.size.y = lowest_allowed_top + (highest_allowed_top-lowest_allowed_top) * Math.pow(heightRangeSlider.value / 100.0, 3) - spacetime_range.ymin;
+        spacetime_range.size.y = lowest_allowed_top + (highest_allowed_top-lowest_allowed_top) * Math.pow(heightRangeSlider.value / 100.0, 3) - lowest_height;
         fitTimeRange(time_range_offset);
         draw();
     }
@@ -139,6 +141,13 @@ function init() {
         draw();
     }
 
+    var yPowerSlider = document.getElementById("yPowerSlider");
+    y_power = 3 * yPowerSlider.value / 100.0;
+    yPowerSlider.oninput = function() {
+        y_power = 3 * yPowerSlider.value / 100.0;
+        draw();
+    }
+
     fitTimeRange(time_range_offset);
 
     draw();
@@ -151,37 +160,40 @@ function draw() {
     ctx.rect(0,0,canvas.width, canvas.height);
     ctx.fill();
 
-    var x_axis = getLinePoints(spacetime_range.min, new P2(spacetime_range.xmax, spacetime_range.ymin));
-    var y_axis = getLinePoints(new P2(0, spacetime_range.ymin), new P2(0, spacetime_range.ymax));
+    var x_axis = getLinePoints(spacetime_range.min, new P(spacetime_range.xmax, spacetime_range.ymin));
+    var y_axis = getLinePoints(new P(0, spacetime_range.ymin), new P(0, spacetime_range.ymax));
     var minor_axes = [];
     for(var y = spacetime_range.ymin; y<=spacetime_range.ymax; y+= spacetime_range.size.y/10) {
-        minor_axes.push(getLinePoints(new P2(spacetime_range.xmin, y), new P2(spacetime_range.xmax, y)));
+        minor_axes.push(getLinePoints(new P(spacetime_range.xmin, y), new P(spacetime_range.xmax, y)));
     }
     for(var x = spacetime_range.xmin; x<=spacetime_range.xmax; x+= spacetime_range.size.x/10) {
-        minor_axes.push(getLinePoints(new P2(x, spacetime_range.ymin), new P2(x, spacetime_range.ymax)));
+        minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax)));
     }
     var fall_time = freeFallTime(spacetime_range.ymax, spacetime_range.ymin, earth_mass);
-    var parabolas = [new Parabola(new P2(-0.2*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.75), 'rgb(100,100,200)'),
-                     new Parabola(new P2( 0.1*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.45), 'rgb(200,100,100)'),
-                     new Parabola(new P2( 0.2*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.32), 'rgb(200,100,200)'),
-                     new Parabola(new P2( 0.4*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.32), 'rgb(100,200,100)')];
+    var parabolas = [new Parabola(new P(-0.2*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.75), 'rgb(100,100,200)'),
+                     new Parabola(new P( 0.1*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.45), 'rgb(200,100,100)'),
+                     new Parabola(new P( 0.2*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.32), 'rgb(200,100,200)'),
+                     new Parabola(new P( 0.4*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.32), 'rgb(100,200,100)')];
     for(var i=0;i<=10;i++) {
-        parabolas.push( new Parabola(new P2(0, spacetime_range.ymin+i*spacetime_range.size.y/10.0), 'rgb(150,150,150)') );
+        parabolas.push( new Parabola(new P(0, spacetime_range.ymin+i*spacetime_range.size.y/10.0), 'rgb(150,150,150)') );
     }
 
-    var rect1 = new Rect( new P2(40,50), new P2(600,400));
-    var rect2 = new Rect( new P2(760,50), new P2(600,400));
+    var rect1 = new Rect( new P(40,50), new P(600,400));
+    var rect2 = new Rect( new P(760,50), new P(600,400));
     var distanceFallenTransform = new Transform( toDistanceFallenDistortedAxes, fromDistanceFallenDistortedAxes );
-    var flipY = p => { return new P2(p.x, spacetime_range.ymax - p.y + spacetime_range.ymin); };
+    var flipY = p => { return new P(p.x, spacetime_range.ymax - p.y + spacetime_range.ymin); };
     var flipYTransform = new Transform( flipY, flipY );
 
     // define the Klein pseudosphere transforms
-    var circle = new Circle(new P2(1060, 50), 400);
+    var circle = new Circle(new P(1060, 50), 400);
     var invert = p => { return inversion(p, circle); };
     var inversionTransform = new Transform( invert, invert );
     var spacing = 100;
-    var kp_input_rect = new Rect(new P2(circle.p.x-circle.r*x_extent,circle.p.y+circle.r), new P2(2*circle.r*x_extent,circle.r*y_extent));
-    var kleinPseudosphereAxes = new Graph( rect2, new ComposedTransform( computeLinearTransform(spacetime_range, kp_input_rect), inversionTransform ) );
+    var kp_input_rect = new Rect(new P(circle.p.x-circle.r*x_extent,circle.p.y+circle.r), new P(2*circle.r*x_extent,circle.r*y_extent));
+    var yPowerTransform = new Transform( p => { return new P(p.x, Math.pow(p.y, y_power)); },
+                                         p => { return new P(p.x, Math.pow(p.y, 1.0 / y_power)); } );
+    var kleinPseudosphereAxes = new Graph( rect2, 
+            new ComposedTransform( new ComposedTransform( yPowerTransform, computeLinearTransform(spacetime_range, kp_input_rect) ), inversionTransform ) );
     // TODO: turn Poincare into Klein
 
     // draw the graphs
