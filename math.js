@@ -50,7 +50,7 @@ class Rect {
     get min() { return new P(this.xmin, this.ymin); }
     get max() { return new P(this.xmax, this.ymax); }
     get center() { return add( this.p, scalar_mul(this.size, 0.5) ); }
-    pointInRect( p ) { return p.x >= this.xmin && p.x <= this.xmax && p.y >= this.ymin && p.y <= this.ymax; }
+    pointInRect(p) { return p.x >= this.xmin && p.x <= this.xmax && p.y >= this.ymin && p.y <= this.ymax; }
 }
 
 class LinearTransform2D {
@@ -90,7 +90,7 @@ class Camera {
     project(pt) {
         var ray = sub(pt, this.p); // the ray from camera center to point
         var cp = new P(dot(this.x, ray), dot(this.y, ray), dot(this.z, ray)); // the point in camera space
-        return add(scalar_mul(cp, this.f / cp.z), this.pp); // pinhole projection
+        return add(this.pp, scalar_mul(cp, this.f / cp.z)); // pinhole projection
     }
 }
 
@@ -143,7 +143,7 @@ function cross( a, b ) {
 }
 
 function lerp(a, b, u) {
-    return add( a, scalar_mul( sub(b, a), u) );
+    return add(a, scalar_mul(sub(b, a), u));
 }
 
 function boundingRect(points) {
@@ -159,4 +159,3 @@ function boundingRect(points) {
     }
     return new Rect(new P(left, top), new P(right-left, bottom-top));
 }
-
