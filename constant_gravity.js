@@ -304,12 +304,12 @@ function drawSpaceTime(graph) {
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
     var horizOffset = -0.1;
-    textLabel(new P(horizOffset, 50.0), "50m", graph);
+    drawText(graph.transform.forwards(new P(horizOffset, 50.0)), "50m");
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     var vertOffset = -2.0;
     for(var t = Math.ceil(spacetime_range.xmin); t<=Math.floor(spacetime_range.xmax); t+=time_step) {
-        textLabel(new P(t, vertOffset), t.toFixed(0)+"s", graph);
+        drawText(graph.transform.forwards(new P(t, vertOffset)), t.toFixed(0)+"s");
     }
 
     // draw trajectories in free-fall
@@ -327,11 +327,6 @@ function drawSpaceTime(graph) {
     ctx.textBaseline = "middle";
     ctx.fillText("Frame acceleration = "+graph.frame_acceleration.toFixed(1)+" ms"+String.fromCharCode(0x207B)+String.fromCharCode(0x00B2),
         graph.rect.center.x, (graph.rect.ymax+canvas.height)/2);
-}
-
-function textLabel(p, text, graph) {
-    p = graph.transform.forwards(p);
-    ctx.fillText(text, p.x, p.y);
 }
 
 function fromEarthSurfaceGravityAcceleratingFrameToInertialFrame(p) {
