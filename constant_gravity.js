@@ -60,51 +60,45 @@ function resetMarkers() {
     });
 }
 
+function findClosestEnd(mousePos, graph, radius) {
+    var withinRadius = false;
+    var whichTrajectory;
+    var whichEnd;
+    var d_min = Number.MAX_VALUE;
+    trajectories.forEach( trajectory => {
+        for(var iEnd = 0; iEnd < 2; iEnd++) {
+            var m = graph.transform.forwards(trajectory.ends[iEnd]);
+            var d = dist(mousePos, m);
+            if( d < radius && d < d_min) {
+                d_min = d;
+                withinRadius = true;
+                whichTrajectory = trajectory;
+                whichEnd = iEnd;
+            }
+        }
+    });
+    return [withinRadius, whichTrajectory, whichEnd];
+}
+
 function onMouseMove( evt ) {
-    if(isDragging) {
-        // move the handle being dragged
-        var p = getMousePos(evt);
-        graphs.some( graph =>{
-            if( graph.rect.pointInRect(p) ) {
-                dragTrajectory.ends[dragEnd] = graph.transform.backwards(p);
-                return true;
+    var mousePos = getMousePos(evt);
+    var targetGraph = graphs.find( graph => graph.rect.pointInRect(mousePos) );
+    if(targetGraph) {
+        if(isDragging) {
+            // move the handle being dragged
+            dragTrajectory.ends[dragEnd] = targetGraph.transform.backwards(mousePos);
+        }
+        else {
+            // indicate which marker is being hovered over
+            resetMarkers();
+            const [isHovering, hoveredTrajectory, hoveredEnd] = findClosestEnd(mousePos, targetGraph, 20);
+            if(isHovering) {
+                hoveredTrajectory.end_sizes[hoveredEnd] = hoveredTrajectory.hover_size;
+                hoveredTrajectory.end_colors[hoveredEnd] = hoveredTrajectory.hover_color;
             }
-            return false;
-        });
+        }
+        draw();
     }
-    else {
-        // indicate which marker is being hovered over
-        resetMarkers();
-        var p = getMousePos(evt);
-        var hover_radius = 20;
-        var d_min = Number.MAX_VALUE;
-        var isHovering = false;
-        var hoveredTrajectory;
-        var hoveredEnd;
-        graphs.some( graph => {
-            if( graph.rect.pointInRect(p) ) {
-                trajectories.forEach( trajectory => {
-                    for(var iEnd = 0; iEnd < 2; iEnd++) {
-                        var m = graph.transform.forwards(trajectory.ends[iEnd]);
-                        var d = dist(p, m);
-                        if( d < hover_radius && d < d_min) {
-                            d_min = d;
-                            isHovering = true;
-                            hoveredTrajectory = trajectory;
-                            hoveredEnd = iEnd;
-                        }
-                    }
-                });
-                if(isHovering) {
-                    hoveredTrajectory.end_sizes[hoveredEnd] = hoveredTrajectory.hover_size;
-                    hoveredTrajectory.end_colors[hoveredEnd] = hoveredTrajectory.hover_color;
-                }
-                return true;
-            }
-            return false;
-        });
-    }
-    draw();
 }
 
 function onTouchMove( evt ) {
@@ -117,36 +111,19 @@ function onTouchEnd( evt ) {
 }
 
 function onMouseDown( evt ) {
-    var p = getMousePos(evt);
-    var grab_radius = 20;
-    var d_min = Number.MAX_VALUE;
-    graphs.some( graph => {
-        if( graph.rect.pointInRect(p) ) {
-            trajectories.forEach( trajectory => {
-                for(var iEnd = 0; iEnd < 2; iEnd++) {
-                    var m = graph.transform.forwards(trajectory.ends[iEnd]);
-                    var d = dist(p, m);
-                    if( d < grab_radius && d < d_min) {
-                        d_min = d;
-                        isDragging = true;
-                        dragTrajectory = trajectory;
-                        dragEnd = iEnd;
-                    }
-                }
-            });
-            if(isDragging) {
-                dragTrajectory.end_sizes[dragEnd] = dragTrajectory.hover_size;
-                dragTrajectory.end_colors[dragEnd] = dragTrajectory.hover_color;
-            }
-            return true;
+    var mousePos = getMousePos(evt);
+    var targetGraph = graphs.find( graph => graph.rect.pointInRect(mousePos) );
+    if(targetGraph) {
+        [isDragging, dragTrajectory, dragEnd] = findClosestEnd(mousePos, targetGraph, 20);
+        if(isDragging) {
+            dragTrajectory.end_sizes[dragEnd] = dragTrajectory.hover_size;
+            dragTrajectory.end_colors[dragEnd] = dragTrajectory.hover_color;
         }
-        return false;
-    });
+    }
 }
 
 function onMouseUp( evt ) {
     isDragging = false;
-    resetMarkers();
     draw();
 }
 
