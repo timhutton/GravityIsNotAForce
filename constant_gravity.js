@@ -72,10 +72,7 @@ function onMouseMove( evt ) {
         var p = getMousePos(evt);
         for(var i = 0; i < graphs.length; i++) {
             if( graphs[i].rect.pointInRect(p) ) {
-                // convert p to the coordinate system of this graph
-                var delta_acceleration = earth_surface_gravity - graphs[i].frame_acceleration
                 p = graphs[i].transform.backwards(p);
-                p = transformBetweenAcceleratingReferenceFrames(p, delta_acceleration);
                 if(dragIsStart) {
                     trajectories[dragTrajectory].start = p;
                 } else {
@@ -98,7 +95,7 @@ function onMouseMove( evt ) {
                 var delta_acceleration = graphs[i].frame_acceleration - earth_surface_gravity;
                 for(var j = 0; j < trajectories.length; j++) {
                     // start?
-                    var m = graphs[i].transform.forwards(transformBetweenAcceleratingReferenceFrames(trajectories[j].start, delta_acceleration));
+                    var m = graphs[i].transform.forwards(trajectories[j].start);
                     var d = dist(p, m);
                     if( d < hover_radius && d < d_min) {
                         d_min = d;
@@ -107,7 +104,7 @@ function onMouseMove( evt ) {
                         isStart = true;
                     }
                     // end?
-                    m = graphs[i].transform.forwards(transformBetweenAcceleratingReferenceFrames(trajectories[j].end, delta_acceleration));
+                    m = graphs[i].transform.forwards(trajectories[j].end);
                     d = dist(p, m);
                     if( d < hover_radius && d < d_min) {
                         d_min = d;
@@ -151,7 +148,7 @@ function onMouseDown( evt ) {
             var delta_acceleration = graphs[i].frame_acceleration - earth_surface_gravity;
             for(var j = 0; j < trajectories.length; j++) {
                 // start?
-                var m = graphs[i].transform.forwards(transformBetweenAcceleratingReferenceFrames(trajectories[j].start, delta_acceleration));
+                var m = graphs[i].transform.forwards(trajectories[j].start);
                 var d = dist(p, m);
                 if( d < grab_radius && d < d_min) {
                     d_min = d;
@@ -160,7 +157,7 @@ function onMouseDown( evt ) {
                     dragIsStart = true;
                 }
                 // end?
-                m = graphs[i].transform.forwards(transformBetweenAcceleratingReferenceFrames(trajectories[j].end, delta_acceleration));
+                m = graphs[i].transform.forwards(trajectories[j].end);
                 d = dist(p, m);
                 if( d < grab_radius && d < d_min) {
                     d_min = d;
