@@ -78,31 +78,20 @@ class ComposedTransform {
 }
 
 class Camera {
-    constructor(p, look_at, f, pp) {
-        this.p = p;
-        this.look_at = look_at;
-        this.f = f;
-        this.pp = pp;
-        recompute_camera_space();
+    constructor(p, look_at, up, f, pp) {
+        this.p = p; // camera center
+        this.look_at = look_at; // point we are looking at
+        this.f = f; // focal distance
+        this.pp = pp; // principal point
+        this.up = up; // up-vector
     }
     project(pt) {
+        var z = normalize(sub(this.look_at, this.p));
+        var x = normalize(cross(z, this.up));
+        var y = normalize(cross(x, z));
         var ray = sub(pt, this.p); // the ray from camera center to point
-        var cp = new P(dot(this.x, ray), dot(this.y, ray), dot(this.z, ray)); // the point in camera space
-        return add(this.pp, scalar_mul(cp, this.f / cp.z)); // pinhole projection
-    }
-    set p(p) {
-        this.p = p;
-        recompute_camera_space();
-    }
-    set look_at(look_at) {
-        this.look_at = look_at;
-        recompute_camera_space();
-    }
-    recompute_camera_space() {
-        this.z = normalize( sub(this.look_at, this.p) );
-        var default_up = new P(0,1,0);
-        this.x = normalize(cross(this.z, default_up));
-        this.y = normalize(cross(this.x, this.z));
+        var cp = new P(dot(x, ray), dot(y, ray), dot(z, ray)); // the point in camera space
+        return sub(this.pp, scalar_mul(cp, this.f / cp.z)); // pinhole projection
     }
 }
 
@@ -175,8 +164,9 @@ function boundingRect(points) {
 function sech(x) { return 1 / Math.cosh(x); }
 
 function pseudosphere(p) {
-    // Transform point p ( x in [-inf, inf], y in [0, 2pi] ) onto the pseudosphere
-    return new P(sech(p.x) * Math.cos(p.y), sech(p.x) * Math.sin(p.y), p.x - Math.tanh(p.x));
+    // Transform point p ( x in [0, 2pi], y in [-inf, inf], ) onto the pseudosphere
+    // (note that x and y are different to u and v here: https://mathworld.wolfram.com/Pseudosphere.html
+    return new P(sech(p.y) * Math.cos(p.x), sech(p.y) * Math.sin(p.x), p.y - Math.tanh(p.y));
 }
 
 function getLinePoints(a, b, n_pts=100) {

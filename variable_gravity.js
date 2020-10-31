@@ -19,8 +19,6 @@ var canvas;
 var ctx;
 var spacetime_range;
 var time_range_offset;
-var x_extent;
-var y_extent;
 
 class Parabola {
     constructor(peak, color) {
@@ -108,20 +106,6 @@ function init() {
         draw();
     }
 
-    var xExtentSlider = document.getElementById("xExtentSlider");
-    x_extent = 2 * xExtentSlider.value / 100.0;
-    xExtentSlider.oninput = function() {
-        x_extent = 2 * xExtentSlider.value / 100.0;
-        draw();
-    }
-
-    var yExtentSlider = document.getElementById("yExtentSlider");
-    y_extent = 2 * yExtentSlider.value / 100.0;
-    yExtentSlider.oninput = function() {
-        y_extent = 2 * yExtentSlider.value / 100.0;
-        draw();
-    }
-
     fitTimeRange(time_range_offset);
 
     draw();
@@ -162,6 +146,8 @@ function draw() {
     var circle = new Circle(new P(1060, 50), 400);
     var invert = p => circle.invert(p);
     var inversionTransform = new Transform( invert, invert );
+    var x_extent = 1;
+    var y_extent = 1;
     var spacing = 100;
     var kp_input_rect = new Rect(new P(circle.p.x-circle.r*x_extent,circle.p.y+circle.r), new P(2*circle.r*x_extent,circle.r*y_extent));
     var kleinPseudosphereAxes = new Graph( rect2,
@@ -171,12 +157,15 @@ function draw() {
     // define the 3D transforms
     var identityTransform = p => new P(p.x, p.y, p.z);
     var pseudosphereTransform = new Transform(pseudosphere, identityTransform); // TODO: need camera ray intersection for the reverse
-    //var camera = new Camera
+    var camera = new Camera(new P(0,-10,2), new P(0,0,0.5), new P(0,0,1), 2000, rect2.center);
+    var cameraTransform = new Transform( p => camera.project(p), identityTransform );
+    var toPseudosphereCoords = new LinearTransform2D(spacetime_range, new Rect(new P(-10,0), new P(20,10)));
+    var pseudosphereAxes = new Graph( rect2, new ComposedTransform( toPseudosphereCoords, pseudosphereTransform, cameraTransform) );
 
     // draw the graphs
     var standardAxes = new Graph( rect1, new ComposedTransform( flipYTransform, new LinearTransform2D(spacetime_range, rect1) ) );
     var distanceFallenAxes = new Graph( rect2, new ComposedTransform( distanceFallenTransform, flipYTransform, new LinearTransform2D(spacetime_range, rect2) ) );
-    [ standardAxes, kleinPseudosphereAxes, /*, distanceFallenAxes*/ ].forEach(graph => {
+    [ standardAxes, pseudosphereAxes, /*kleinPseudosphereAxes,*/ /*, distanceFallenAxes*/ ].forEach(graph => {
         ctx.save(); // save the original clip for now
 
         // fill background with white
