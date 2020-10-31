@@ -20,26 +20,20 @@ var trajectories;
 var spacetime_range;
 var isDragging;
 var dragTrajectory;
-var dragIsStart;
+var dragEnd;
 
 // classes:
 
 class Trajectory {
     constructor(start, end, color, hover_color) {
-        var default_start_size = 6.0;
-        var default_end_size = 4.0;
-        this.start = start;
-        this.end = end;
-        this.default_color = color;
-        this.start_size = default_start_size;
-        this.end_size = default_end_size;
-        this.mid_size = 2.0;;
-        this.start_color = color;
-        this.end_color = color;
-        this.default_start_size = default_start_size;
-        this.default_end_size = default_end_size;
-        this.hover_size = 10.0;;
+        this.ends = [start, end];
+        this.color = color;
+        this.end_colors = [color, color];
         this.hover_color = hover_color;
+        this.end_sizes = [6, 4];
+        this.default_end_sizes = [6, 4];
+        this.mid_size = 2;
+        this.hover_size = 10;
     }
 }
 
@@ -58,28 +52,25 @@ class Graph {
 // functions:
 
 function resetMarkers() {
-    for(var i = 0; i < trajectories.length; i++) {
-        trajectories[i].start_size = trajectories[i].default_start_size;
-        trajectories[i].start_color = trajectories[i].default_color;
-        trajectories[i].end_size = trajectories[i].default_end_size;
-        trajectories[i].end_color = trajectories[i].default_color;
-    }
+    trajectories.forEach( trajectory => {
+        for(var iEnd = 0; iEnd < 2; iEnd++) {
+            trajectory.end_sizes[iEnd] = trajectory.default_end_sizes[iEnd];
+            trajectory.end_colors[iEnd] = trajectory.color;
+        }
+    });
 }
 
 function onMouseMove( evt ) {
     if(isDragging) {
         // move the handle being dragged
         var p = getMousePos(evt);
-        for(var i = 0; i < graphs.length; i++) {
-            if( graphs[i].rect.pointInRect(p) ) {
-                p = graphs[i].transform.backwards(p);
-                if(dragIsStart) {
-                    trajectories[dragTrajectory].start = p;
-                } else {
-                    trajectories[dragTrajectory].end = p;
-                }
+        graphs.some( graph =>{
+            if( graph.rect.pointInRect(p) ) {
+                dragTrajectory.ends[dragEnd] = graph.transform.backwards(p);
+                return true;
             }
-        }
+            return false;
+        });
     }
     else {
         // indicate which marker is being hovered over
@@ -88,44 +79,30 @@ function onMouseMove( evt ) {
         var hover_radius = 20;
         var d_min = Number.MAX_VALUE;
         var isHovering = false;
-        var whichTrajectory;
-        var isStart;
-        for(var i = 0; i < graphs.length; i++) {
-            if( graphs[i].rect.pointInRect(p) ) {
-                var delta_acceleration = graphs[i].frame_acceleration - earth_surface_gravity;
-                for(var j = 0; j < trajectories.length; j++) {
-                    // start?
-                    var m = graphs[i].transform.forwards(trajectories[j].start);
-                    var d = dist(p, m);
-                    if( d < hover_radius && d < d_min) {
-                        d_min = d;
-                        isHovering = true;
-                        whichTrajectory = j;
-                        isStart = true;
+        var hoveredTrajectory;
+        var hoveredEnd;
+        graphs.some( graph => {
+            if( graph.rect.pointInRect(p) ) {
+                trajectories.forEach( trajectory => {
+                    for(var iEnd = 0; iEnd < 2; iEnd++) {
+                        var m = graph.transform.forwards(trajectory.ends[iEnd]);
+                        var d = dist(p, m);
+                        if( d < hover_radius && d < d_min) {
+                            d_min = d;
+                            isHovering = true;
+                            hoveredTrajectory = trajectory;
+                            hoveredEnd = iEnd;
+                        }
                     }
-                    // end?
-                    m = graphs[i].transform.forwards(trajectories[j].end);
-                    d = dist(p, m);
-                    if( d < hover_radius && d < d_min) {
-                        d_min = d;
-                        isHovering = true;
-                        whichTrajectory = j;
-                        isStart = false;
-                    }
-                }
+                });
                 if(isHovering) {
-                    if(isStart) {
-                        trajectories[whichTrajectory].start_size = trajectories[whichTrajectory].hover_size;
-                        trajectories[whichTrajectory].start_color = trajectories[whichTrajectory].hover_color;
-                    }
-                    else {
-                        trajectories[whichTrajectory].end_size = trajectories[whichTrajectory].hover_size;
-                        trajectories[whichTrajectory].end_color = trajectories[whichTrajectory].hover_color;
-                    }
+                    hoveredTrajectory.end_sizes[hoveredEnd] = hoveredTrajectory.hover_size;
+                    hoveredTrajectory.end_colors[hoveredEnd] = hoveredTrajectory.hover_color;
                 }
-                break;
+                return true;
             }
-        }
+            return false;
+        });
     }
     draw();
 }
@@ -143,42 +120,28 @@ function onMouseDown( evt ) {
     var p = getMousePos(evt);
     var grab_radius = 20;
     var d_min = Number.MAX_VALUE;
-    for(var i = 0; i < graphs.length; i++) {
-        if( graphs[i].rect.pointInRect(p) ) {
-            var delta_acceleration = graphs[i].frame_acceleration - earth_surface_gravity;
-            for(var j = 0; j < trajectories.length; j++) {
-                // start?
-                var m = graphs[i].transform.forwards(trajectories[j].start);
-                var d = dist(p, m);
-                if( d < grab_radius && d < d_min) {
-                    d_min = d;
-                    isDragging = true;
-                    dragTrajectory = j;
-                    dragIsStart = true;
+    graphs.some( graph => {
+        if( graph.rect.pointInRect(p) ) {
+            trajectories.forEach( trajectory => {
+                for(var iEnd = 0; iEnd < 2; iEnd++) {
+                    var m = graph.transform.forwards(trajectory.ends[iEnd]);
+                    var d = dist(p, m);
+                    if( d < grab_radius && d < d_min) {
+                        d_min = d;
+                        isDragging = true;
+                        dragTrajectory = trajectory;
+                        dragEnd = iEnd;
+                    }
                 }
-                // end?
-                m = graphs[i].transform.forwards(trajectories[j].end);
-                d = dist(p, m);
-                if( d < grab_radius && d < d_min) {
-                    d_min = d;
-                    isDragging = true;
-                    dragTrajectory = j;
-                    dragIsStart = false;
-                }
-            }
+            });
             if(isDragging) {
-                if(dragIsStart) {
-                    trajectories[dragTrajectory].start_size = trajectories[dragTrajectory].hover_size;
-                    trajectories[dragTrajectory].start_color = trajectories[dragTrajectory].hover_color;
-                }
-                else {
-                    trajectories[dragTrajectory].end_size = trajectories[dragTrajectory].hover_size;
-                    trajectories[dragTrajectory].end_color = trajectories[dragTrajectory].hover_color;
-                }
+                dragTrajectory.end_sizes[dragEnd] = dragTrajectory.hover_size;
+                dragTrajectory.end_colors[dragEnd] = dragTrajectory.hover_color;
             }
-            break;
+            return true;
         }
-    }
+        return false;
+    });
 }
 
 function onMouseUp( evt ) {
@@ -249,9 +212,9 @@ function draw() {
     ctx.fill();
 
     // draw each graph
-    for(var i = 0; i < graphs.length; i++) {
-        drawSpaceTime(graphs[i]);
-    }
+    graphs.forEach( graph => {
+        drawSpaceTime(graph);
+    });
 
     // label the space and time directions
     ctx.fillStyle = 'rgb(0,0,0)';
@@ -311,9 +274,9 @@ function drawSpaceTime(graph) {
 
     // draw trajectories in free-fall
     ctx.lineWidth = 2;
-    for(var i = 0; i < trajectories.length; i++) {
-        drawGeodesic(trajectories[i], graph);
-    }
+    trajectories.forEach( trajectory => {
+        drawGeodesic(trajectory, graph);
+    });
 
     ctx.restore(); // reset the clip
 
@@ -337,17 +300,18 @@ function fromInertialFrameToEarthSurfaceGravityAcceleratingFrame(p) {
 function drawGeodesic(trajectory, graph) {
     // draw a line that is straight in an inertial frame but may be not be straight in this frame, depending on its acceleration
     
-    var start_inertial = fromEarthSurfaceGravityAcceleratingFrameToInertialFrame(trajectory.start);
-    var end_inertial = fromEarthSurfaceGravityAcceleratingFrameToInertialFrame(trajectory.end);
+    var start_inertial = fromEarthSurfaceGravityAcceleratingFrameToInertialFrame(trajectory.ends[0]);
+    var end_inertial = fromEarthSurfaceGravityAcceleratingFrameToInertialFrame(trajectory.ends[1]);
     var pts = getLinePoints(start_inertial, end_inertial).map(fromInertialFrameToEarthSurfaceGravityAcceleratingFrame);
     var screen_pts = pts.map(graph.transform.forwards);
-    drawLine(screen_pts, trajectory.default_color);
-    drawSpacedCircles(screen_pts, trajectory.mid_size, trajectory.default_color, 10);
+    drawLine(screen_pts, trajectory.color);
+    drawSpacedCircles(screen_pts, trajectory.mid_size, trajectory.color, 10);
     var a1 = fromInertialFrameToEarthSurfaceGravityAcceleratingFrame(lerp(start_inertial, end_inertial, 0.59));
     var a2 = fromInertialFrameToEarthSurfaceGravityAcceleratingFrame(lerp(start_inertial, end_inertial, 0.60));
     drawArrowHead(graph.transform.forwards(a1), graph.transform.forwards(a2), 15);
-    drawCircle(graph.transform.forwards(trajectory.start), trajectory.start_size, trajectory.start_color);
-    drawCircle(graph.transform.forwards(trajectory.end), trajectory.end_size, trajectory.end_color);
+    for(var iEnd = 0; iEnd < 2; iEnd++) {
+        drawCircle(graph.transform.forwards(trajectory.ends[iEnd]), trajectory.end_sizes[iEnd], trajectory.end_colors[iEnd]);
+    }
 }
 
 function transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration) {
