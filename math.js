@@ -159,3 +159,10 @@ function boundingRect(points) {
     }
     return new Rect(new P(left, top), new P(right-left, bottom-top));
 }
+
+function sech(x) { return 1 / Math.cosh(x); }
+
+function pseudosphere(p) {
+    // Transform point p ( x in [-inf, inf], y in [0, 2pi] ) onto the pseudosphere
+    return new P(sech(p.x) * Math.cos(p.y), sech(p.x) * Math.sin(p.y), p.x - Math.tanh(p.x));
+}
