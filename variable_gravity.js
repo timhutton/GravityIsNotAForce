@@ -173,22 +173,27 @@ function draw() {
     var rect1 = new Rect( new P(40,50), new P(600,400));
     var rect2 = new Rect( new P(760,50), new P(600,400));
     var distanceFallenTransform = new Transform( toDistanceFallenDistortedAxes, fromDistanceFallenDistortedAxes );
-    var flipY = p => { return new P(p.x, spacetime_range.ymax - p.y + spacetime_range.ymin); };
+    var flipY = p => new P(p.x, spacetime_range.ymax - p.y + spacetime_range.ymin);
     var flipYTransform = new Transform( flipY, flipY );
 
     // define the Klein pseudosphere transforms
     var circle = new Circle(new P(1060, 50), 400);
-    var invert = p => { return circle.invert(p); };
+    var invert = p => circle.invert(p);
     var inversionTransform = new Transform( invert, invert );
     var spacing = 100;
     var kp_input_rect = new Rect(new P(circle.p.x-circle.r*x_extent,circle.p.y+circle.r), new P(2*circle.r*x_extent,circle.r*y_extent));
     var kleinPseudosphereAxes = new Graph( rect2, 
-            new ComposedTransform( new LinearTransform2D(spacetime_range, kp_input_rect), inversionTransform ) );
+            new ComposedTransform( new LinearTransform2D(spacetime_range, kp_input_rect), inversionTransform ) ); // TODO add transform to rect2
     // TODO: turn Poincare into Klein
+    
+    // define the 3D transforms
+    var identityTransform = p => new P(p.x, p.y, p.z);
+    var pseudosphereTransform = new Transform(pseudosphere, identityTransform); // TODO: need camera ray intersection for the reverse
+    //var camera = new Camera
 
     // draw the graphs
     var standardAxes = new Graph( rect1, new ComposedTransform( flipYTransform, new LinearTransform2D(spacetime_range, rect1) ) );
-    var distanceFallenAxes = new Graph( rect2, new ComposedTransform( distanceFallenTransform, new ComposedTransform( flipYTransform, new LinearTransform2D(spacetime_range, rect2)) ) );
+    var distanceFallenAxes = new Graph( rect2, new ComposedTransform( distanceFallenTransform, flipYTransform, new LinearTransform2D(spacetime_range, rect2) ) );
     [ standardAxes, kleinPseudosphereAxes, /*, distanceFallenAxes*/ ].forEach(graph => {
         ctx.save(); // save the original clip for now
 

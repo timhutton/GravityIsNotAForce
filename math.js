@@ -58,8 +58,8 @@ class LinearTransform2D {
     constructor(from_rect, to_rect) {
         var scale = elementwise_div_2d(to_rect.size, from_rect.size);
         var offset = sub(to_rect.p, elementwise_mul(from_rect.p, scale));
-        this.forwards = p => { return add( offset, elementwise_mul(p, scale) ); };
-        this.backwards = p => { return elementwise_div_2d( sub( p, offset ), scale ); };
+        this.forwards = p => add( offset, elementwise_mul(p, scale) );
+        this.backwards = p => elementwise_div_2d( sub( p, offset ), scale );
     }
 }
 
@@ -71,9 +71,9 @@ class Transform {
 }
 
 class ComposedTransform {
-    constructor(inner, outer) {
-        this.forwards = p => { return outer.forwards(inner.forwards(p)); }
-        this.backwards = p => { return inner.backwards(outer.backwards(p)); }
+    constructor(...transforms) {
+        this.forwards = p => transforms.reduce((pt, transform) => transform.forwards(pt), p);
+        this.backwards = p => transforms.reduceRight((pt, transform) => transform.backwards(pt), p);
     }
 }
 
