@@ -47,7 +47,11 @@ class Graph {
     constructor(rect, frame_acceleration) {
         this.rect = rect;
         this.frame_acceleration = frame_acceleration;
-        this.transform = findBestFitTransform(this);
+    }
+    get transform() { 
+        var forwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, this.frame_acceleration - earth_surface_gravity);
+        var backwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, earth_surface_gravity - this.frame_acceleration);
+        return new ComposedTransform(new Transform(forwardsDistortion, backwardsDistortion), findBestFitTransform(this));
     }
 }
 
@@ -208,9 +212,6 @@ function init() {
     timeTranslationSlider.oninput = function() {
         var timeTranslation = 2 - 4 * timeTranslationSlider.value / 100.0;
         spacetime_range.p.x = -4 + timeTranslation;
-        for(var i = 0; i < graphs.length; i++) {
-            graphs[i].transform = findBestFitTransform(graphs[i]);
-        }
         draw();
     }
 
@@ -228,7 +229,6 @@ function init() {
     graphs[1].frame_acceleration = earth_surface_gravity - earth_surface_gravity * frameAccelerationSlider.value / 100.0;
     frameAccelerationSlider.oninput = function() {
         graphs[1].frame_acceleration = earth_surface_gravity - earth_surface_gravity * this.value / 100.0;
-        graphs[1].transform = findBestFitTransform(graphs[1]);
         draw();
     }
 
@@ -287,16 +287,16 @@ function drawSpaceTime(graph) {
     var space_step = 10;
     for(var t = Math.ceil(spacetime_range.xmin); t<=Math.floor(spacetime_range.xmax); t+=time_step) {
         if(t==0.0) { continue; }
-        drawCurvingLine(new P(t, spacetime_range.ymin-space_extra), new P(t, spacetime_range.ymax+space_extra), graph);
+        drawAcceleratingLine(new P(t, spacetime_range.ymin-space_extra), new P(t, spacetime_range.ymax+space_extra), graph.transform.forwards);
     }
     for(var s = Math.ceil(spacetime_range.ymin-space_extra); s<=Math.floor(spacetime_range.ymax+space_extra); s+=space_step) {
         if(s==0.0) { continue; }
-        drawCurvingLine(new P(spacetime_range.xmin, s), new P(spacetime_range.xmax, s), graph);
+        drawAcceleratingLine(new P(spacetime_range.xmin, s), new P(spacetime_range.xmax, s), graph.transform.forwards);
     }
     // draw major axes
     ctx.strokeStyle = 'rgb(150,150,150)';
-    drawCurvingLine(new P(spacetime_range.xmin, 0.0), new P(spacetime_range.xmax, 0.0), graph);
-    drawCurvingLine(new P(0.0, spacetime_range.ymin-space_extra), new P(0.0, spacetime_range.ymax+space_extra), graph);
+    drawAcceleratingLine(new P(spacetime_range.xmin, 0.0), new P(spacetime_range.xmax, 0.0), graph.transform.forwards);
+    drawAcceleratingLine(new P(0.0, spacetime_range.ymin-space_extra), new P(0.0, spacetime_range.ymax+space_extra), graph.transform.forwards);
 
     // label axes
     ctx.fillStyle = 'rgb(100,100,100)';
@@ -313,10 +313,10 @@ function drawSpaceTime(graph) {
     }
 
     // draw trajectories in free-fall
-    for(var i = 0; i < trajectories.length; i++) {
+    /*for(var i = 0; i < trajectories.length; i++) {
         ctx.lineWidth = 2;
         drawGeodesic(trajectories[i], graph);
-    }
+    }*/
 
     ctx.restore(); // reset the clip
 
@@ -330,15 +330,8 @@ function drawSpaceTime(graph) {
 }
 
 function textLabel(p, text, graph) {
-    var delta_acceleration = graph.frame_acceleration - earth_surface_gravity;
-    p = graph.transform.forwards(transformBetweenAcceleratingReferenceFrames(p, delta_acceleration));
+    p = graph.transform.forwards(p);
     ctx.fillText(text, p.x, p.y);
-}
-
-function drawCurvingLine(p1, p2, graph) {
-    // draw a line that is straight in our familiar (accelerating upwards at earth_surface_gravity) reference frame but may not be straight in this frame, depending on its acceleration
-    var delta_acceleration = graph.frame_acceleration - earth_surface_gravity;
-    drawAcceleratingLine(p1, p2, delta_acceleration, graph.transform);
 }
 
 function drawGeodesic(trajectory, graph) {
@@ -377,14 +370,14 @@ function drawGeodesic(trajectory, graph) {
     }
 }
 
-function drawAcceleratingLine(p1, p2, delta_acceleration, transform) {
-    // step along the line, converting to the target frame
+function drawAcceleratingLine(p1, p2, transform) {
+    // step along the line, applying the transform function
     ctx.beginPath();
     var n_steps = 100;
     for(var i = 0; i <= n_steps; i++) {
         var u = i / n_steps;
         var ts = lerp(p1, p2, u);
-        var p = transform.forwards(transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration));
+        var p = transform(ts);
         if(i==0) {
             ctx.moveTo(p.x, p.y);
         }
