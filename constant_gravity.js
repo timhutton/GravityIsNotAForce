@@ -67,7 +67,7 @@ function onMouseMove( evt ) {
         // move the handle being dragged
         var p = getMousePos(evt);
         for(var i = 0; i < graphs.length; i++) {
-            if( pointInRect(p, graphs[i].rect) ) {
+            if( graphs[i].rect.pointInRect(p) ) {
                 // convert p to the coordinate system of this graph
                 var delta_acceleration = earth_surface_gravity - graphs[i].frame_acceleration
                 p = graphs[i].transform.backwards(p);
@@ -90,7 +90,7 @@ function onMouseMove( evt ) {
         var whichTrajectory;
         var isStart;
         for(var i = 0; i < graphs.length; i++) {
-            if( pointInRect(p, graphs[i].rect) ) {
+            if( graphs[i].rect.pointInRect(p) ) {
                 var delta_acceleration = graphs[i].frame_acceleration - earth_surface_gravity;
                 for(var j = 0; j < trajectories.length; j++) {
                     // start?
@@ -143,7 +143,7 @@ function onMouseDown( evt ) {
     var grab_radius = 20;
     var d_min = Number.MAX_VALUE;
     for(var i = 0; i < graphs.length; i++) {
-        if( pointInRect(p, graphs[i].rect) ) {
+        if( graphs[i].rect.pointInRect(p) ) {
             var delta_acceleration = graphs[i].frame_acceleration - earth_surface_gravity;
             for(var j = 0; j < trajectories.length; j++) {
                 // start?

@@ -33,7 +33,7 @@ class Circle{
 }
 
 class Rect {
-    // A 2D rect in the XY plane
+    // An axis-aligned rectangle in the XY plane
     constructor(p, size) {
         this.p = p;
         this.size = size;
@@ -45,6 +45,7 @@ class Rect {
     get min() { return new P(this.xmin, this.ymin); }
     get max() { return new P(this.xmax, this.ymax); }
     get center() { return add( this.p, scalar_mul(this.size, 0.5) ); }
+    pointInRect( p ) { return p.x >= this.xmin && p.x <= this.xmax && p.y >= this.ymin && p.y <= this.ymax; }
 }
 
 class LinearTransform2D {
@@ -133,10 +134,6 @@ function boundingRect(points) {
         bottom = Math.max(bottom, points[i].y);
     }
     return new Rect(new P(left, top), new P(right-left, bottom-top));
-}
-
-function pointInRect( p, rect ) {
-    return p.x > rect.xmin && p.x < rect.xmax && p.y > rect.ymin && p.y < rect.ymax;
 }
 
 function transformPoints(pts, func) {
