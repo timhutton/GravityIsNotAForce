@@ -77,6 +77,23 @@ class ComposedTransform {
     }
 }
 
+class Camera {
+    constructor(p, look_at, f, pp) {
+        this.p = p;
+        this.z = normalize( sub(look_at, this.p) );
+        var default_up = new P(0,1,0);
+        this.x = normalize(cross(this.z, default_up));
+        this.y = normalize(cross(this.x, this.z));
+        this.f = f;
+        this.pp = pp;
+    }
+    project(pt) {
+        var ray = sub(pt, this.p); // the ray from camera center to point
+        var cp = new P(dot(this.x, ray), dot(this.y, ray), dot(this.z, ray)); // the point in camera space
+        return add(scalar_mul(cp, this.f / cp.z), this.pp); // pinhole projection
+    }
+}
+
 // functions:
 
 function dot(a, b) {
@@ -115,6 +132,14 @@ function elementwise_div_2d(a, b) {
 
 function elementwise_div_3d(a, b) {
     return new P(a.x / b.x, a.y / b.y, a.z / b.z);
+}
+
+function normalize(a) {
+    return scalar_mul(a, 1 / Math.sqrt(dot(a, a)));
+}
+
+function cross( a, b ) {
+    return new P(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
 }
 
 function lerp(a, b, u) {
