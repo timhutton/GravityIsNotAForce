@@ -200,19 +200,19 @@ function draw() {
         ctx.clip(); // clip to this rect until restored
 
         // draw axes
-        var x_axis_transformed = transformPoints(x_axis, graph.transform.forwards);
-        var y_axis_transformed = transformPoints(y_axis, graph.transform.forwards);
+        var x_axis_transformed = x_axis.map(graph.transform.forwards);
+        var y_axis_transformed = y_axis.map(graph.transform.forwards);
         var axes_color = 'rgb(50,50,50)';
         drawLine(x_axis_transformed, axes_color);
         drawLine(y_axis_transformed, axes_color);
         var axes_color = 'rgb(210,210,210)';
-        minor_axes.forEach( axes => { drawLine(transformPoints(axes, graph.transform.forwards), axes_color); } );
+        minor_axes.forEach( axes => { drawLine(axes.map(graph.transform.forwards), axes_color); } );
 
 
         // draw some parabolas
         parabolas.forEach(parabola => {
             var pts = getParabolaPoints(parabola.peak.x, parabola.peak.y, spacetime_range.p.y, earth_mass);
-            pts = transformPoints(pts, graph.transform.forwards);
+            pts = pts.map(graph.transform.forwards);
             drawLine(pts, parabola.color);
             drawSpacedCircles(pts, 1.5, parabola.color);
         });

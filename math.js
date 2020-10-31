@@ -160,10 +160,3 @@ function boundingRect(points) {
     return new Rect(new P(left, top), new P(right-left, bottom-top));
 }
 
-function transformPoints(pts, func) {
-    var new_pts = [];
-    for(var i=0;i<pts.length;i++) {
-        new_pts.push(func(pts[i]));
-    }
-    return new_pts;
-}
