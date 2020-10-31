@@ -345,28 +345,17 @@ function fromInertialFrameToEarthSurfaceGravityAcceleratingFrame(p) {
 function drawGeodesic(trajectory, graph) {
     // draw a line that is straight in an inertial frame but may be not be straight in this frame, depending on its acceleration
     
-    var start = fromEarthSurfaceGravityAcceleratingFrameToInertialFrame(trajectory.start);
-    var end = fromEarthSurfaceGravityAcceleratingFrameToInertialFrame(trajectory.end);
-    var pts = getLinePoints(start, end).map(fromInertialFrameToEarthSurfaceGravityAcceleratingFrame);
+    var start_inertial = fromEarthSurfaceGravityAcceleratingFrameToInertialFrame(trajectory.start);
+    var end_inertial = fromEarthSurfaceGravityAcceleratingFrameToInertialFrame(trajectory.end);
+    var pts = getLinePoints(start_inertial, end_inertial).map(fromInertialFrameToEarthSurfaceGravityAcceleratingFrame);
     var screen_pts = pts.map(graph.transform.forwards);
     drawLine(screen_pts, trajectory.default_color);
     drawSpacedCircles(screen_pts, trajectory.mid_size, trajectory.default_color, 10);
-    // draw an arrowhead to indicate the direction of travel
-    var a1 = graph.transform.forwards(fromInertialFrameToEarthSurfaceGravityAcceleratingFrame(lerp(start, end, 0.59)));
-    var a2 = graph.transform.forwards(fromInertialFrameToEarthSurfaceGravityAcceleratingFrame(lerp(start, end, 0.60)));
-    drawArrowHead(a1, a2, 15);
-    // draw start blob
-    var screen_start = graph.transform.forwards(trajectory.start);
-    ctx.fillStyle = trajectory.start_color;
-    ctx.beginPath();
-    ctx.arc(screen_start.x, screen_start.y, trajectory.start_size, 0, 2 * Math.PI);
-    ctx.fill();
-    // draw end blob
-    var screen_end = graph.transform.forwards(trajectory.end);
-    ctx.fillStyle = trajectory.end_color;
-    ctx.beginPath();
-    ctx.arc(screen_end.x, screen_end.y, trajectory.end_size, 0, 2 * Math.PI);
-    ctx.fill();
+    var a1 = fromInertialFrameToEarthSurfaceGravityAcceleratingFrame(lerp(start_inertial, end_inertial, 0.59));
+    var a2 = fromInertialFrameToEarthSurfaceGravityAcceleratingFrame(lerp(start_inertial, end_inertial, 0.60));
+    drawArrowHead(graph.transform.forwards(a1), graph.transform.forwards(a2), 15);
+    drawCircle(graph.transform.forwards(trajectory.start), trajectory.start_size, trajectory.start_color);
+    drawCircle(graph.transform.forwards(trajectory.end), trajectory.end_size, trajectory.end_color);
 }
 
 function transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration) {
@@ -378,18 +367,9 @@ function transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration) {
 }
 
 function findBestFitTransform(graph) {
-    //var delta_acceleration = graph.frame_acceleration - earth_surface_gravity; // (use this to see everything in the specified area)
-    var delta_acceleration = 0.0; // just use the transform from the earth_surface_gravity-accelerating frame, for visual clarity
-    // plot some points in some arbitrary space then scale to fit the rect
-    corners = [];
-    corners.push(transformBetweenAcceleratingReferenceFrames(new P(spacetime_range.xmin, spacetime_range.ymin), delta_acceleration));
-    corners.push(transformBetweenAcceleratingReferenceFrames(new P(spacetime_range.xmin, spacetime_range.ymax), delta_acceleration));
-    corners.push(transformBetweenAcceleratingReferenceFrames(new P(spacetime_range.xmax, spacetime_range.ymin), delta_acceleration));
-    corners.push(transformBetweenAcceleratingReferenceFrames(new P(spacetime_range.xmax, spacetime_range.ymax), delta_acceleration));
-    corners.push(transformBetweenAcceleratingReferenceFrames(new P(spacetime_range.center.x, spacetime_range.ymin), delta_acceleration));
-    corners.push(transformBetweenAcceleratingReferenceFrames(new P(spacetime_range.center.x, spacetime_range.ymax), delta_acceleration));
-    original_rect = boundingRect(corners);
-    return new LinearTransform2D(original_rect, graph.rect);
+    var corners = [new P(spacetime_range.xmin, spacetime_range.ymin), new P(spacetime_range.xmin, spacetime_range.ymax),
+                   new P(spacetime_range.xmax, spacetime_range.ymin), new P(spacetime_range.xmax, spacetime_range.ymax)];
+    return new LinearTransform2D(boundingRect(corners), graph.rect);
 }
 
 window.onload = init;

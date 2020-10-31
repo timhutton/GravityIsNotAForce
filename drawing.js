@@ -25,6 +25,19 @@ function drawLine(pts, color) {
     ctx.stroke();
 }
 
+function drawCircle(p, r, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, 2 * Math.PI);
+    ctx.fill();
+}
+
+function drawSpacedCircles(pts, r, color, nth=20) {
+    for(var i=0;i<pts.length;i+=nth) {
+        drawCircle(pts[i], r, color);
+    }
+}
+
 // adapted from http://stackoverflow.com/a/6333775/126823
 function drawArrowHead( a, b, size ) {
     var angle = Math.atan2(b.y-a.y,b.x-a.x);
@@ -33,13 +46,4 @@ function drawArrowHead( a, b, size ) {
     ctx.lineTo(b.x, b.y);
     ctx.lineTo(b.x - size * Math.cos(angle + Math.PI/6), b.y - size * Math.sin(angle + Math.PI/6));
     ctx.stroke();
-}
-
-function drawSpacedCircles(pts, r, color, nth=20) {
-    ctx.fillStyle = color;
-    for(var i=0;i<pts.length;i+=nth) {
-        ctx.beginPath();
-        ctx.arc(pts[i].x, pts[i].y, r, 0, 2 * Math.PI);
-        ctx.fill();
-    }
 }
