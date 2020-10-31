@@ -46,11 +46,11 @@ class Rect {
 }
 
 class LinearTransform {
-    constructor(offset, scale) {
-        this.offset = offset;
-        this.scale = scale;
-        this.forwards = p => { return add( this.offset, elementwise_mul(p, this.scale) ); };
-        this.backwards = p => { return elementwise_div( sub( p, this.offset ), this.scale ); };
+    constructor(from_rect, to_rect) {
+        var scale = elementwise_div(to_rect.size, from_rect.size);
+        var offset = sub(to_rect.p, elementwise_mul(from_rect.p, scale));
+        this.forwards = p => { return add( offset, elementwise_mul(p, scale) ); };
+        this.backwards = p => { return elementwise_div( sub( p, offset ), scale ); };
     }
 }
 
@@ -111,12 +111,6 @@ function inversion(p, circle) {
 
 function lerp(a, b, u) {
     return add( a, scalar_mul( sub(b, a), u) );
-}
-
-function computeLinearTransform(from_rect, to_rect) {
-    var scale = elementwise_div(to_rect.size, from_rect.size);
-    var offset = sub(to_rect.p, elementwise_mul(from_rect.p, scale));
-    return new LinearTransform(offset, scale);
 }
 
 function boundingRect(points) {
