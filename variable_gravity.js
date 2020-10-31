@@ -56,15 +56,6 @@ function fromDistanceFallenDistortedAxes(p)
     return new P(time, height - freeFallDistance(time_diff, height, earth_mass));
 }
 
-function getLinePoints(a, b, n_pts=100) {
-    var pts = [];
-    for(var i=0;i<=n_pts;i++) {
-        var u = i / n_pts;
-        pts.push(lerp(a, b, u));
-    }
-    return pts;
-}
-
 function getParabolaPoints(peak_time, peak_height, min_height, planet_mass) {
     var fallTime = freeFallTime(peak_height, min_height, planet_mass);
     var pts = [];
@@ -82,15 +73,6 @@ function getParabolaPoints(peak_time, peak_height, min_height, planet_mass) {
         pts.push(new P(t,h));
     }
     return pts;
-}
-
-function drawSpacedCircles(pts, r, color, nth=20) {
-    ctx.fillStyle = color;
-    for(var i=0;i<pts.length;i+=nth) {
-        ctx.beginPath();
-        ctx.arc(pts[i].x, pts[i].y, r, 0, 2 * Math.PI);
-        ctx.fill();
-    }
 }
 
 function fitTimeRange(time_range_offset) {

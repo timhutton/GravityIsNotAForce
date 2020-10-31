@@ -34,3 +34,12 @@ function drawArrowHead( a, b, size ) {
     ctx.lineTo(b.x - size * Math.cos(angle + Math.PI/6), b.y - size * Math.sin(angle + Math.PI/6));
     ctx.stroke();
 }
+
+function drawSpacedCircles(pts, r, color, nth=20) {
+    ctx.fillStyle = color;
+    for(var i=0;i<pts.length;i+=nth) {
+        ctx.beginPath();
+        ctx.arc(pts[i].x, pts[i].y, r, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+}

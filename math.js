@@ -166,3 +166,12 @@ function pseudosphere(p) {
     // Transform point p ( x in [-inf, inf], y in [0, 2pi] ) onto the pseudosphere
     return new P(sech(p.x) * Math.cos(p.y), sech(p.x) * Math.sin(p.y), p.x - Math.tanh(p.x));
 }
+
+function getLinePoints(a, b, n_pts=100) {
+    var pts = [];
+    for(var i=0;i<=n_pts;i++) {
+        var u = i / n_pts;
+        pts.push(lerp(a, b, u));
+    }
+    return pts;
+}

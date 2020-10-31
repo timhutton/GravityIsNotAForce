@@ -313,10 +313,10 @@ function drawSpaceTime(graph) {
     }
 
     // draw trajectories in free-fall
-    /*for(var i = 0; i < trajectories.length; i++) {
-        ctx.lineWidth = 2;
+    ctx.lineWidth = 2;
+    for(var i = 0; i < trajectories.length; i++) {
         drawGeodesic(trajectories[i], graph);
-    }*/
+    }
 
     ctx.restore(); // reset the clip
 
@@ -334,40 +334,39 @@ function textLabel(p, text, graph) {
     ctx.fillText(text, p.x, p.y);
 }
 
+function fromEarthSurfaceGravityAcceleratingFrameToInertialFrame(p) {
+    return transformBetweenAcceleratingReferenceFrames(p, 0 - earth_surface_gravity);
+}
+
+function fromInertialFrameToEarthSurfaceGravityAcceleratingFrame(p) {
+    return transformBetweenAcceleratingReferenceFrames(p, earth_surface_gravity - 0);
+}
+
 function drawGeodesic(trajectory, graph) {
     // draw a line that is straight in an inertial frame but may be not be straight in this frame, depending on its acceleration
-
-    ctx.strokeStyle = trajectory.default_color;
-    // convert spacetime coordinates from our familiar (earth_surface_gravity-accelerating) frame into the inertial frame
-    var delta_acceleration = 0.0 - earth_surface_gravity;
-    var start = transformBetweenAcceleratingReferenceFrames(trajectory.start, delta_acceleration)
-    var end = transformBetweenAcceleratingReferenceFrames(trajectory.end, delta_acceleration)
-    // step along that line, converting to the target frame
-    delta_acceleration = graph.frame_acceleration - 0.0;
-    drawAcceleratingLine(start, end, delta_acceleration, graph.transform);
+    
+    var start = fromEarthSurfaceGravityAcceleratingFrameToInertialFrame(trajectory.start);
+    var end = fromEarthSurfaceGravityAcceleratingFrameToInertialFrame(trajectory.end);
+    var pts = getLinePoints(start, end).map(fromInertialFrameToEarthSurfaceGravityAcceleratingFrame);
+    var screen_pts = pts.map(graph.transform.forwards);
+    drawLine(screen_pts, trajectory.default_color);
+    drawSpacedCircles(screen_pts, trajectory.mid_size, trajectory.default_color, 10);
     // draw an arrowhead to indicate the direction of travel
-    var a1 = graph.transform.forwards(transformBetweenAcceleratingReferenceFrames(lerp(start, end, 0.59), delta_acceleration));
-    var a2 = graph.transform.forwards(transformBetweenAcceleratingReferenceFrames(lerp(start, end, 0.60), delta_acceleration));
+    var a1 = graph.transform.forwards(fromInertialFrameToEarthSurfaceGravityAcceleratingFrame(lerp(start, end, 0.59)));
+    var a2 = graph.transform.forwards(fromInertialFrameToEarthSurfaceGravityAcceleratingFrame(lerp(start, end, 0.60)));
     drawArrowHead(a1, a2, 15);
-    // draw circles along the way
-    var n_steps = 10;
-    for(var i = 0; i <= n_steps; i++) {
-        var u = i / n_steps;
-        var c = lerp(start, end, u);
-        c = graph.transform.forwards(transformBetweenAcceleratingReferenceFrames(c, delta_acceleration));
-        ctx.beginPath();
-        var r = trajectory.mid_size;
-        ctx.fillStyle = trajectory.default_color;
-        if(i==0) {
-            r = trajectory.start_size;
-            ctx.fillStyle = trajectory.start_color;
-        } else if(i==n_steps) {
-            r = trajectory.end_size;
-            ctx.fillStyle = trajectory.end_color;
-        }
-        ctx.arc(c.x, c.y, r, 0, 2 * Math.PI);
-        ctx.fill();
-    }
+    // draw start blob
+    var screen_start = graph.transform.forwards(trajectory.start);
+    ctx.fillStyle = trajectory.start_color;
+    ctx.beginPath();
+    ctx.arc(screen_start.x, screen_start.y, trajectory.start_size, 0, 2 * Math.PI);
+    ctx.fill();
+    // draw end blob
+    var screen_end = graph.transform.forwards(trajectory.end);
+    ctx.fillStyle = trajectory.end_color;
+    ctx.beginPath();
+    ctx.arc(screen_end.x, screen_end.y, trajectory.end_size, 0, 2 * Math.PI);
+    ctx.fill();
 }
 
 function drawAcceleratingLine(p1, p2, transform) {
