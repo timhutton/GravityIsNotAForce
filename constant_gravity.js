@@ -287,16 +287,16 @@ function drawSpaceTime(graph) {
     var space_step = 10;
     for(var t = Math.ceil(spacetime_range.xmin); t<=Math.floor(spacetime_range.xmax); t+=time_step) {
         if(t==0.0) { continue; }
-        drawAcceleratingLine(new P(t, spacetime_range.ymin-space_extra), new P(t, spacetime_range.ymax+space_extra), graph.transform.forwards);
+        drawLine(getLinePoints(new P(t, spacetime_range.ymin-space_extra), new P(t, spacetime_range.ymax+space_extra)).map(graph.transform.forwards));
     }
     for(var s = Math.ceil(spacetime_range.ymin-space_extra); s<=Math.floor(spacetime_range.ymax+space_extra); s+=space_step) {
         if(s==0.0) { continue; }
-        drawAcceleratingLine(new P(spacetime_range.xmin, s), new P(spacetime_range.xmax, s), graph.transform.forwards);
+        drawLine(getLinePoints(new P(spacetime_range.xmin, s), new P(spacetime_range.xmax, s)).map(graph.transform.forwards));
     }
     // draw major axes
     ctx.strokeStyle = 'rgb(150,150,150)';
-    drawAcceleratingLine(new P(spacetime_range.xmin, 0.0), new P(spacetime_range.xmax, 0.0), graph.transform.forwards);
-    drawAcceleratingLine(new P(0.0, spacetime_range.ymin-space_extra), new P(0.0, spacetime_range.ymax+space_extra), graph.transform.forwards);
+    drawLine(getLinePoints(new P(spacetime_range.xmin, 0.0), new P(spacetime_range.xmax, 0.0)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(0.0, spacetime_range.ymin-space_extra), new P(0.0, spacetime_range.ymax+space_extra)).map(graph.transform.forwards));
 
     // label axes
     ctx.fillStyle = 'rgb(100,100,100)';
@@ -367,24 +367,6 @@ function drawGeodesic(trajectory, graph) {
     ctx.beginPath();
     ctx.arc(screen_end.x, screen_end.y, trajectory.end_size, 0, 2 * Math.PI);
     ctx.fill();
-}
-
-function drawAcceleratingLine(p1, p2, transform) {
-    // step along the line, applying the transform function
-    ctx.beginPath();
-    var n_steps = 100;
-    for(var i = 0; i <= n_steps; i++) {
-        var u = i / n_steps;
-        var ts = lerp(p1, p2, u);
-        var p = transform(ts);
-        if(i==0) {
-            ctx.moveTo(p.x, p.y);
-        }
-        else {
-            ctx.lineTo(p.x, p.y);
-        }
-    }
-    ctx.stroke();
 }
 
 function transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration) {
