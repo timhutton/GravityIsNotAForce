@@ -30,6 +30,11 @@ class Circle{
         this.p = p;
         this.r = r;
     }
+    invert(p) {
+        var r2 = this.r * this.r;
+        var d2 = dist2( p, this.p );
+        return add( this.p, scalar_mul( sub( p, this.p ), r2 / d2 ) );
+    }
 }
 
 class Rect {
@@ -110,12 +115,6 @@ function elementwise_div_2d(a, b) {
 
 function elementwise_div_3d(a, b) {
     return new P(a.x / b.x, a.y / b.y, a.z / b.z);
-}
-
-function inversion(p, circle) {
-    var r2 = circle.r * circle.r;
-    var d2 = dist2( p, circle.p );
-    return add( circle.p, scalar_mul( sub( p, circle.p ), r2 / d2 ) );
 }
 
 function lerp(a, b, u) {

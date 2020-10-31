@@ -178,7 +178,7 @@ function draw() {
 
     // define the Klein pseudosphere transforms
     var circle = new Circle(new P(1060, 50), 400);
-    var invert = p => { return inversion(p, circle); };
+    var invert = p => { return circle.invert(p); };
     var inversionTransform = new Transform( invert, invert );
     var spacing = 100;
     var kp_input_rect = new Rect(new P(circle.p.x-circle.r*x_extent,circle.p.y+circle.r), new P(2*circle.r*x_extent,circle.r*y_extent));
