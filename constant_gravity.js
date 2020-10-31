@@ -338,7 +338,7 @@ function textLabel(p, text, graph) {
 function drawCurvingLine(p1, p2, graph) {
     // draw a line that is straight in our familiar (accelerating upwards at earth_surface_gravity) reference frame but may not be straight in this frame, depending on its acceleration
     var delta_acceleration = graph.frame_acceleration - earth_surface_gravity;
-    drawLine(p1, p2, delta_acceleration, graph.transform);
+    drawAcceleratingLine(p1, p2, delta_acceleration, graph.transform);
 }
 
 function drawGeodesic(trajectory, graph) {
@@ -351,7 +351,7 @@ function drawGeodesic(trajectory, graph) {
     var end = transformBetweenAcceleratingReferenceFrames(trajectory.end, delta_acceleration)
     // step along that line, converting to the target frame
     delta_acceleration = graph.frame_acceleration - 0.0;
-    drawLine(start, end, delta_acceleration, graph.transform);
+    drawAcceleratingLine(start, end, delta_acceleration, graph.transform);
     // draw an arrowhead to indicate the direction of travel
     var a1 = graph.transform.forwards(transformBetweenAcceleratingReferenceFrames(lerp(start, end, 0.59), delta_acceleration));
     var a2 = graph.transform.forwards(transformBetweenAcceleratingReferenceFrames(lerp(start, end, 0.60), delta_acceleration));
@@ -377,7 +377,7 @@ function drawGeodesic(trajectory, graph) {
     }
 }
 
-function drawLine(p1, p2, delta_acceleration, transform) {
+function drawAcceleratingLine(p1, p2, delta_acceleration, transform) {
     // step along the line, converting to the target frame
     ctx.beginPath();
     var n_steps = 100;
