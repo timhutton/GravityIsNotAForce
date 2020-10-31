@@ -415,7 +415,7 @@ function findBestFitTransform(graph) {
     corners.push(transformBetweenAcceleratingReferenceFrames(new P(spacetime_range.center.x, spacetime_range.ymin), delta_acceleration));
     corners.push(transformBetweenAcceleratingReferenceFrames(new P(spacetime_range.center.x, spacetime_range.ymax), delta_acceleration));
     original_rect = boundingRect(corners);
-    return new LinearTransform(original_rect, graph.rect);
+    return new LinearTransform2D(original_rect, graph.rect);
 }
 
 window.onload = init;

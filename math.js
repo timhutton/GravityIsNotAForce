@@ -18,9 +18,10 @@
 // classes:
 
 class P{
-    constructor(x, y) {
+    constructor(x, y, z = 0) {
         this.x = x;
         this.y = y;
+        this.z = z;
     }
 }
 
@@ -32,6 +33,7 @@ class Circle{
 }
 
 class Rect {
+    // A 2D rect in the XY plane
     constructor(p, size) {
         this.p = p;
         this.size = size;
@@ -45,12 +47,13 @@ class Rect {
     get center() { return add( this.p, scalar_mul(this.size, 0.5) ); }
 }
 
-class LinearTransform {
+class LinearTransform2D {
+    // A 2D linear transform in the XY plane
     constructor(from_rect, to_rect) {
-        var scale = elementwise_div(to_rect.size, from_rect.size);
+        var scale = elementwise_div_2d(to_rect.size, from_rect.size);
         var offset = sub(to_rect.p, elementwise_mul(from_rect.p, scale));
         this.forwards = p => { return add( offset, elementwise_mul(p, scale) ); };
-        this.backwards = p => { return elementwise_div( sub( p, offset ), scale ); };
+        this.backwards = p => { return elementwise_div_2d( sub( p, offset ), scale ); };
     }
 }
 
@@ -71,7 +74,7 @@ class ComposedTransform {
 // functions:
 
 function dot(a, b) {
-    return a.x * b.x + a.y * b.y;
+    return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
 function dist2(a, b) {
@@ -84,23 +87,28 @@ function dist(a, b) {
 }
 
 function add(a, b) {
-    return new P(a.x + b.x, a.y + b.y);
+    return new P(a.x + b.x, a.y + b.y, a.z + b.z);
 }
 
 function sub(a, b) {
-    return new P(a.x - b.x, a.y - b.y);
+    return new P(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
 function scalar_mul(a, f) {
-    return new P(a.x * f, a.y * f);
+    return new P(a.x * f, a.y * f, a.z * f);
 }
 
 function elementwise_mul(a, b) {
-    return new P(a.x * b.x, a.y * b.y);
+    return new P(a.x * b.x, a.y * b.y, a.z * a.z);
 }
 
-function elementwise_div(a, b) {
+function elementwise_div_2d(a, b) {
+    // Specialized to avoid div0 when b.z is 0 in the 2D case
     return new P(a.x / b.x, a.y / b.y);
+}
+
+function elementwise_div_3d(a, b) {
+    return new P(a.x / b.x, a.y / b.y, a.z / b.z);
 }
 
 function inversion(p, circle) {

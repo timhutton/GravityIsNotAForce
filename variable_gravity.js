@@ -183,12 +183,12 @@ function draw() {
     var spacing = 100;
     var kp_input_rect = new Rect(new P(circle.p.x-circle.r*x_extent,circle.p.y+circle.r), new P(2*circle.r*x_extent,circle.r*y_extent));
     var kleinPseudosphereAxes = new Graph( rect2, 
-            new ComposedTransform( new LinearTransform(spacetime_range, kp_input_rect), inversionTransform ) );
+            new ComposedTransform( new LinearTransform2D(spacetime_range, kp_input_rect), inversionTransform ) );
     // TODO: turn Poincare into Klein
 
     // draw the graphs
-    var standardAxes = new Graph( rect1, new ComposedTransform( flipYTransform, new LinearTransform(spacetime_range, rect1) ) );
-    var distanceFallenAxes = new Graph( rect2, new ComposedTransform( distanceFallenTransform, new ComposedTransform( flipYTransform, new LinearTransform(spacetime_range, rect2)) ) );
+    var standardAxes = new Graph( rect1, new ComposedTransform( flipYTransform, new LinearTransform2D(spacetime_range, rect1) ) );
+    var distanceFallenAxes = new Graph( rect2, new ComposedTransform( distanceFallenTransform, new ComposedTransform( flipYTransform, new LinearTransform2D(spacetime_range, rect2)) ) );
     [ standardAxes, kleinPseudosphereAxes, /*, distanceFallenAxes*/ ].forEach(graph => {
         ctx.save(); // save the original clip for now
 
