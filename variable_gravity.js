@@ -164,10 +164,10 @@ function draw() {
     var inversionTransform = new Transform( invert, invert );
     var spacing = 100;
     var kp_input_rect = new Rect(new P(circle.p.x-circle.r*x_extent,circle.p.y+circle.r), new P(2*circle.r*x_extent,circle.r*y_extent));
-    var kleinPseudosphereAxes = new Graph( rect2, 
+    var kleinPseudosphereAxes = new Graph( rect2,
             new ComposedTransform( new LinearTransform2D(spacetime_range, kp_input_rect), inversionTransform ) ); // TODO add transform to rect2
     // TODO: turn Poincare into Klein
-    
+
     // define the 3D transforms
     var identityTransform = p => new P(p.x, p.y, p.z);
     var pseudosphereTransform = new Transform(pseudosphere, identityTransform); // TODO: need camera ray intersection for the reverse
@@ -201,7 +201,7 @@ function draw() {
             var pts = getParabolaPoints(parabola.peak.x, parabola.peak.y, spacetime_range.p.y, earth_mass);
             pts = pts.map(graph.transform.forwards);
             drawLine(pts, parabola.color);
-            drawSpacedCircles(pts, 1.5, parabola.color);
+            fillSpacedCircles(pts, 1.5, parabola.color);
         });
 
         ctx.restore(); // restore the original clip

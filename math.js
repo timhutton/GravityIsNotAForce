@@ -80,17 +80,29 @@ class ComposedTransform {
 class Camera {
     constructor(p, look_at, f, pp) {
         this.p = p;
-        this.z = normalize( sub(look_at, this.p) );
-        var default_up = new P(0,1,0);
-        this.x = normalize(cross(this.z, default_up));
-        this.y = normalize(cross(this.x, this.z));
+        this.look_at = look_at;
         this.f = f;
         this.pp = pp;
+        recompute_camera_space();
     }
     project(pt) {
         var ray = sub(pt, this.p); // the ray from camera center to point
         var cp = new P(dot(this.x, ray), dot(this.y, ray), dot(this.z, ray)); // the point in camera space
         return add(this.pp, scalar_mul(cp, this.f / cp.z)); // pinhole projection
+    }
+    set p(p) {
+        this.p = p;
+        recompute_camera_space();
+    }
+    set look_at(look_at) {
+        this.look_at = look_at;
+        recompute_camera_space();
+    }
+    recompute_camera_space() {
+        this.z = normalize( sub(this.look_at, this.p) );
+        var default_up = new P(0,1,0);
+        this.x = normalize(cross(this.z, default_up));
+        this.y = normalize(cross(this.x, this.z));
     }
 }
 

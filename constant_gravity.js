@@ -42,7 +42,7 @@ class Graph {
         this.rect = rect;
         this.frame_acceleration = frame_acceleration;
     }
-    get transform() { 
+    get transform() {
         var forwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, this.frame_acceleration - earth_surface_gravity);
         var backwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, earth_surface_gravity - this.frame_acceleration);
         return new ComposedTransform(new Transform(forwardsDistortion, backwardsDistortion), findBestFitTransform(this));
@@ -276,18 +276,17 @@ function fromInertialFrameToEarthSurfaceGravityAcceleratingFrame(p) {
 
 function drawGeodesic(trajectory, graph) {
     // draw a line that is straight in an inertial frame but may be not be straight in this frame, depending on its acceleration
-    
+
     var start_inertial = fromEarthSurfaceGravityAcceleratingFrameToInertialFrame(trajectory.ends[0]);
     var end_inertial = fromEarthSurfaceGravityAcceleratingFrameToInertialFrame(trajectory.ends[1]);
-    var pts = getLinePoints(start_inertial, end_inertial).map(fromInertialFrameToEarthSurfaceGravityAcceleratingFrame);
-    var screen_pts = pts.map(graph.transform.forwards);
+    var screen_pts = getLinePoints(start_inertial, end_inertial).map(fromInertialFrameToEarthSurfaceGravityAcceleratingFrame).map(graph.transform.forwards);
     drawLine(screen_pts, trajectory.color);
-    drawSpacedCircles(screen_pts, trajectory.mid_size, trajectory.color, 10);
+    fillSpacedCircles(screen_pts, trajectory.mid_size, trajectory.color, 10);
     var a1 = fromInertialFrameToEarthSurfaceGravityAcceleratingFrame(lerp(start_inertial, end_inertial, 0.59));
     var a2 = fromInertialFrameToEarthSurfaceGravityAcceleratingFrame(lerp(start_inertial, end_inertial, 0.60));
     drawArrowHead(graph.transform.forwards(a1), graph.transform.forwards(a2), 15);
     for(var iEnd = 0; iEnd < 2; iEnd++) {
-        drawCircle(graph.transform.forwards(trajectory.ends[iEnd]), trajectory.end_sizes[iEnd], trajectory.end_colors[iEnd]);
+        fillCircle(graph.transform.forwards(trajectory.ends[iEnd]), trajectory.end_sizes[iEnd], trajectory.end_colors[iEnd]);
     }
 }
 

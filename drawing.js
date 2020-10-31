@@ -25,16 +25,16 @@ function drawLine(pts, color) {
     ctx.stroke();
 }
 
-function drawCircle(p, r, color) {
+function fillCircle(p, r, color) {
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(p.x, p.y, r, 0, 2 * Math.PI);
     ctx.fill();
 }
 
-function drawSpacedCircles(pts, r, color, nth=20) {
+function fillSpacedCircles(pts, r, color, nth=20) {
     for(var i=0;i<pts.length;i+=nth) {
-        drawCircle(pts[i], r, color);
+        fillCircle(pts[i], r, color);
     }
 }
 
