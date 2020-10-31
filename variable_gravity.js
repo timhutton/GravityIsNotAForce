@@ -19,6 +19,7 @@ var canvas;
 var ctx;
 var spacetime_range;
 var time_range_offset;
+var view_angle;
 
 class Parabola {
     constructor(peak, color) {
@@ -106,6 +107,13 @@ function init() {
         draw();
     }
 
+    var viewAngleSlider = document.getElementById("viewAngleSlider");
+    view_angle = 0 - 6 * viewAngleSlider.value / 100.0;
+    viewAngleSlider.oninput = function() {
+        view_angle = 0 - 6 * viewAngleSlider.value / 100.0;
+        draw();
+    }
+
     fitTimeRange(time_range_offset);
 
     draw();
@@ -124,7 +132,8 @@ function draw() {
     for(var y = spacetime_range.ymin; y<=spacetime_range.ymax; y+= spacetime_range.size.y/10) {
         minor_axes.push(getLinePoints(new P(spacetime_range.xmin, y), new P(spacetime_range.xmax, y)));
     }
-    for(var x = spacetime_range.xmin; x<=spacetime_range.xmax; x+= spacetime_range.size.x/10) {
+    
+    for(var x = -7*spacetime_range.size.x/10; x<=7*spacetime_range.size.x/10; x+= spacetime_range.size.x/10) {
         minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax)));
     }
     var fall_time = freeFallTime(spacetime_range.ymax, spacetime_range.ymin, earth_mass);
@@ -157,9 +166,9 @@ function draw() {
     // define the 3D transforms
     var identityTransform = p => new P(p.x, p.y, p.z);
     var pseudosphereTransform = new Transform(pseudosphere, identityTransform); // TODO: need camera ray intersection for the reverse
-    var camera = new Camera(new P(0,-10,2), new P(0,0,0.5), new P(0,0,1), 2000, rect2.center);
+    var camera = new Camera(new P(-10,-0.5,view_angle), new P(0,0,0.5), new P(0,0,1), 2000, rect2.center);
     var cameraTransform = new Transform( p => camera.project(p), identityTransform );
-    var toPseudosphereCoords = new LinearTransform2D(spacetime_range, new Rect(new P(-10,0), new P(20,10)));
+    var toPseudosphereCoords = new LinearTransform2D(spacetime_range, new Rect(new P(-2,0), new P(4,2.5)));
     var pseudosphereAxes = new Graph( rect2, new ComposedTransform( toPseudosphereCoords, pseudosphereTransform, cameraTransform) );
 
     // draw the graphs
