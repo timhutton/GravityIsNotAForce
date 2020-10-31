@@ -21,7 +21,6 @@ var spacetime_range;
 var time_range_offset;
 var x_extent;
 var y_extent;
-var y_power;
 
 class Parabola {
     constructor(peak, color) {
@@ -141,13 +140,6 @@ function init() {
         draw();
     }
 
-    var yPowerSlider = document.getElementById("yPowerSlider");
-    y_power = 3 * yPowerSlider.value / 100.0;
-    yPowerSlider.oninput = function() {
-        y_power = 3 * yPowerSlider.value / 100.0;
-        draw();
-    }
-
     fitTimeRange(time_range_offset);
 
     draw();
@@ -190,10 +182,8 @@ function draw() {
     var inversionTransform = new Transform( invert, invert );
     var spacing = 100;
     var kp_input_rect = new Rect(new P(circle.p.x-circle.r*x_extent,circle.p.y+circle.r), new P(2*circle.r*x_extent,circle.r*y_extent));
-    var yPowerTransform = new Transform( p => { return new P(p.x, Math.pow(p.y, y_power)); },
-                                         p => { return new P(p.x, Math.pow(p.y, 1.0 / y_power)); } );
     var kleinPseudosphereAxes = new Graph( rect2, 
-            new ComposedTransform( new ComposedTransform( yPowerTransform, computeLinearTransform(spacetime_range, kp_input_rect) ), inversionTransform ) );
+            new ComposedTransform( computeLinearTransform(spacetime_range, kp_input_rect), inversionTransform ) );
     // TODO: turn Poincare into Klein
 
     // draw the graphs
