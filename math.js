@@ -162,6 +162,18 @@ function pseudosphere(p) {
     return new P(sech(u) * Math.cos(v), sech(u) * Math.sin(v), Math.tanh(u)-u);
 }
 
+function poincareToKlein(p, circle) {
+    var u = dist(p, circle.p) / circle.r;
+    var s = 2 * u / (1 + u * u);
+    return add(circle.p, scalar_mul(sub(p, circle.p), circle.r * s / u));
+}
+
+function kleinToPoincare(p, circle) {
+    var s = dist(p, circle.p) / circle.r;
+    var u = s / (1 + Math.sqrt(1 - s * s));
+    return add(circle.p, scalar_mul(sub(p, circle.p), circle.r * u / s));
+}
+
 function getLinePoints(a, b, n_pts=100) {
     var pts = [];
     for(var i=0;i<=n_pts;i++) {

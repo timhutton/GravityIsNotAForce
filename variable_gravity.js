@@ -28,10 +28,13 @@ class Parabola {
     }
 }
 
-class GraphT1S1 {
-    constructor(screen_rect, transform) {
+class Graph {
+    constructor(screen_rect, transform, top_text, left_text, bottom_text) {
         this.screen_rect = screen_rect;
         this.transform = transform;
+        this.top_text = top_text;
+        this.left_text = left_text;
+        this.bottom_text = bottom_text;
     }
 }
 
@@ -141,40 +144,48 @@ function draw() {
                      new Parabola(new P( 0.1*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.45), 'rgb(200,100,100)'),
                      new Parabola(new P( 0.2*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.32), 'rgb(200,100,200)'),
                      new Parabola(new P( 0.4*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.32), 'rgb(100,200,100)')];
-    for(var i=0;i<=10;i++) {
+    /*for(var i=0;i<=10;i++) {
         parabolas.push( new Parabola(new P(0, spacetime_range.ymin+i*spacetime_range.size.y/10.0), 'rgb(150,150,150)') );
-    }
+    }*/
 
-    var rect1 = new Rect( new P(40,50), new P(600,400));
-    var rect2 = new Rect( new P(760,50), new P(600,400));
+    var n_graphs = 4;
+    var margin = 40;
+    var size = (canvas.width-margin*(n_graphs+1)) / n_graphs;
+    var rect1 = new Rect( new P(margin+(margin+size)*0,50), new P(size,size));
+    var rect2 = new Rect( new P(margin+(margin+size)*1,50), new P(size,size));
+    var rect3 = new Rect( new P(margin+(margin+size)*2,50), new P(size,size));
+    var rect4 = new Rect( new P(margin+(margin+size)*3,50), new P(size,size));
     var distanceFallenTransform = new Transform( toDistanceFallenDistortedAxes, fromDistanceFallenDistortedAxes );
     var flipY = p => new P(p.x, spacetime_range.ymax - p.y + spacetime_range.ymin);
     var flipYTransform = new Transform( flipY, flipY );
 
     // define the Klein pseudosphere transforms
-    var circle = new Circle(new P(1060, 50), 400);
+    var circle = new Circle(new P(rect4.center.x, rect4.ymin), rect4.size.x); // TODO: make own space
     var invert = p => circle.invert(p);
     var inversionTransform = new Transform( invert, invert );
     var x_extent = 1;
     var y_extent = 1;
     var spacing = 100;
     var kp_input_rect = new Rect(new P(circle.p.x-circle.r*x_extent,circle.p.y+circle.r), new P(2*circle.r*x_extent,circle.r*y_extent));
-    var kleinPseudosphereAxes = new GraphT1S1( rect2,
-            new ComposedTransform( new LinearTransform2D(spacetime_range, kp_input_rect), inversionTransform ), "", "" ); // TODO add transform to rect2
-    // TODO: turn Poincare into Klein
+    var circle2 = new Circle(rect4.center, rect4.size.x/2); // the half-plane (~kp_input_rect) transformed into this circle
+    var poincareToKleinTransform = new Transform( p => poincareToKlein(p, circle2), p => kleinToPoincare(p, circle2) ); // TODO: doesn't work as expected
+    var kleinPseudosphereAxes = new Graph( rect4, new ComposedTransform( new LinearTransform2D(spacetime_range, kp_input_rect), 
+                        inversionTransform, /*poincareToKleinTransform*/ ), "Poincare-pseudosphere", "", "" ); // TODO add transform to rect4
 
     // define the 3D transforms
     var toPseudosphereCoords = new LinearTransform2D(spacetime_range, new Rect(new P(-2,0), new P(4,1.5)));
     var identityTransform = p => new P(p.x, p.y, p.z);
     var pseudosphereTransform = new Transform(pseudosphere, identityTransform); // TODO: need camera ray intersection for the reverse
-    var camera = new Camera(new P(-10,-0.5,-view_angle), new P(0,0,-0.5), new P(0,0,-1), 2000, rect2.center);
+    var camera = new Camera(new P(-10,-0.5,-view_angle), new P(0,0,-0.5), new P(0,0,-1), 1500, rect3.center);
     var cameraTransform = new Transform( p => camera.project(p), identityTransform );
-    var pseudosphereAxes = new GraphT1S1( rect2, new ComposedTransform( toPseudosphereCoords, pseudosphereTransform, cameraTransform), "", "" );
+    var pseudosphereAxes = new Graph( rect3, new ComposedTransform( toPseudosphereCoords, pseudosphereTransform, cameraTransform), "Pseudosphere", "", "" );
 
     // draw the graphs
-    var standardAxes = new GraphT1S1( rect1, new ComposedTransform( flipYTransform, new LinearTransform2D(spacetime_range, rect1) ), "", "" );
-    var distanceFallenAxes = new GraphT1S1( rect2, new ComposedTransform( distanceFallenTransform, flipYTransform, new LinearTransform2D(spacetime_range, rect2) ), "", "" );
-    [ standardAxes, pseudosphereAxes, /*kleinPseudosphereAxes,*/ /*, distanceFallenAxes*/ ].forEach(graph => {
+    var standardAxes = new Graph( rect1, new ComposedTransform( flipYTransform, new LinearTransform2D(spacetime_range, rect1) ),
+                                  "time "+rightArrow, "[Earth surface "+rightArrow+" "+(spacetime_range.size.y/1000).toFixed(0)+"km above Earth surface]", "" );
+    var distanceFallenAxes = new Graph( rect2, new ComposedTransform( distanceFallenTransform, flipYTransform, new LinearTransform2D(spacetime_range, rect2) ),
+                                  "time "+rightArrow, "space & time "+rightArrow, "" );
+    [ standardAxes, distanceFallenAxes, pseudosphereAxes, kleinPseudosphereAxes ].forEach(graph => {
         ctx.save(); // save the original clip for now
 
         // fill background with white
@@ -203,15 +214,21 @@ function draw() {
         });
 
         ctx.restore(); // restore the original clip
-    });
 
-    // show the height range as text next to the first graph
-    ctx.fillStyle = 'rgb(0,0,0)';
-    ctx.font = "20px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("Earth surface", rect1.center.x, (rect1.ymax+canvas.height)/2);
-    ctx.fillText((spacetime_range.size.y/1000).toFixed(0)+"km above Earth surface", rect1.center.x, rect1.ymin/2);
+        // show the graph labels
+        ctx.fillStyle = 'rgb(0,0,0)';
+        ctx.font = "20px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(graph.bottom_text, graph.screen_rect.center.x, graph.screen_rect.ymax + 15);
+        ctx.fillText(graph.top_text,    graph.screen_rect.center.x, graph.screen_rect.ymin - 15);
+        ctx.save();
+        ctx.translate(graph.screen_rect.xmin - 15, graph.screen_rect.center.y);
+        ctx.rotate(-Math.PI/2);
+        ctx.textAlign = "center";
+        ctx.fillText(graph.left_text, 0, 0);
+        ctx.restore();
+    });
 }
 
 window.onload = init;
