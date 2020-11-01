@@ -15,6 +15,11 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+var rightArrow = String.fromCharCode(0x2192);
+var sup2 = String.fromCharCode(0x00B2);
+var sup_minus = String.fromCharCode(0x207B);
+var sup_minus2 = sup_minus + sup2;
+
 function drawLine(pts, color) {
     ctx.strokeStyle = color;
     ctx.beginPath();

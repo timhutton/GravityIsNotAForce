@@ -160,7 +160,7 @@ function draw() {
     var spacing = 100;
     var kp_input_rect = new Rect(new P(circle.p.x-circle.r*x_extent,circle.p.y+circle.r), new P(2*circle.r*x_extent,circle.r*y_extent));
     var kleinPseudosphereAxes = new GraphT1S1( rect2,
-            new ComposedTransform( new LinearTransform2D(spacetime_range, kp_input_rect), inversionTransform ) ); // TODO add transform to rect2
+            new ComposedTransform( new LinearTransform2D(spacetime_range, kp_input_rect), inversionTransform ), "", "" ); // TODO add transform to rect2
     // TODO: turn Poincare into Klein
 
     // define the 3D transforms
@@ -169,11 +169,11 @@ function draw() {
     var pseudosphereTransform = new Transform(pseudosphere, identityTransform); // TODO: need camera ray intersection for the reverse
     var camera = new Camera(new P(-10,-0.5,-view_angle), new P(0,0,-0.5), new P(0,0,-1), 2000, rect2.center);
     var cameraTransform = new Transform( p => camera.project(p), identityTransform );
-    var pseudosphereAxes = new GraphT1S1( rect2, new ComposedTransform( toPseudosphereCoords, pseudosphereTransform, cameraTransform) );
+    var pseudosphereAxes = new GraphT1S1( rect2, new ComposedTransform( toPseudosphereCoords, pseudosphereTransform, cameraTransform), "", "" );
 
     // draw the graphs
-    var standardAxes = new GraphT1S1( rect1, new ComposedTransform( flipYTransform, new LinearTransform2D(spacetime_range, rect1) ) );
-    var distanceFallenAxes = new GraphT1S1( rect2, new ComposedTransform( distanceFallenTransform, flipYTransform, new LinearTransform2D(spacetime_range, rect2) ) );
+    var standardAxes = new GraphT1S1( rect1, new ComposedTransform( flipYTransform, new LinearTransform2D(spacetime_range, rect1) ), "", "" );
+    var distanceFallenAxes = new GraphT1S1( rect2, new ComposedTransform( distanceFallenTransform, flipYTransform, new LinearTransform2D(spacetime_range, rect2) ), "", "" );
     [ standardAxes, pseudosphereAxes, /*kleinPseudosphereAxes,*/ /*, distanceFallenAxes*/ ].forEach(graph => {
         ctx.save(); // save the original clip for now
 

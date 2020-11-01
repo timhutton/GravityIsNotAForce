@@ -41,3 +41,8 @@
 .text {
   width: 50%;
 }
+
+.textRight {
+  width: 20%;
+  float: right;
+}

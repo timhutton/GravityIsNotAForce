@@ -110,9 +110,9 @@ function init() {
     trajectories.push(new Trajectory(new P(-3.0, 0.0), new P(1.0, 0.0), 'rgb(100,100,255)', 'rgb(100,100,200)'));
 
     graphs = [];
-    graphs.push(new GraphT1S1(new Rect(new P(40,440), new P(400,-400)), earth_surface_gravity));
-    graphs.push(new GraphT1S1(new Rect(new P(480,440), new P(400,-400)), earth_surface_gravity/2));
-    graphs.push(new GraphT1S1(new Rect(new P(920,440), new P(400,-400)), 0.0));
+    graphs.push(new GraphT1S1(new Rect(new P(40,440), new P(400,-400)), earth_surface_gravity, "time "+rightArrow, "space "+rightArrow));
+    graphs.push(new GraphT1S1(new Rect(new P(480,440), new P(400,-400)), earth_surface_gravity/2, "", ""));
+    graphs.push(new GraphT1S1(new Rect(new P(920,440), new P(400,-400)), 0.0, "", ""));
 
     var frameAccelerationSlider = document.getElementById("frameAccelerationSlider");
     graphs[1].frame_acceleration = earth_surface_gravity - earth_surface_gravity * frameAccelerationSlider.value / 100.0;
@@ -149,9 +149,9 @@ function draw() {
     ctx.translate(graphs[0].rect.p.x/2, graphs[0].rect.center.y);
     ctx.rotate(-Math.PI/2);
     ctx.textAlign = "center";
-    ctx.fillText("space "+String.fromCharCode(0x2192), 0, 0);
+    ctx.fillText(graphs[0].left_text, 0, 0);
     ctx.restore();
-    ctx.fillText("time "+String.fromCharCode(0x2192), graphs[0].rect.center.x, graphs[0].rect.ymin/2);
+    ctx.fillText(graphs[0].top_text, graphs[0].rect.center.x, graphs[0].rect.ymin/2);
 }
 
 function drawSpaceTime(graph) {
@@ -208,7 +208,7 @@ function drawSpaceTime(graph) {
     ctx.font = "20px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("Frame acceleration = "+graph.frame_acceleration.toFixed(1)+" ms"+String.fromCharCode(0x207B)+String.fromCharCode(0x00B2),
+    ctx.fillText("Frame acceleration = "+graph.frame_acceleration.toFixed(1)+" ms"+sup_minus2,
         graph.rect.center.x, (graph.rect.ymax+canvas.height)/2);
 }
 

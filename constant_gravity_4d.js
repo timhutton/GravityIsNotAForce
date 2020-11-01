@@ -23,72 +23,6 @@ var dragTrajectory;
 var dragEnd;
 var view_angle;
 
-function resetMarkers() {
-    trajectories.forEach( trajectory => {
-        for(var iEnd = 0; iEnd < 2; iEnd++) {
-            trajectory.end_sizes[iEnd] = trajectory.default_end_sizes[iEnd];
-            trajectory.end_colors[iEnd] = trajectory.color;
-        }
-    });
-}
-
-function findClosestEnd(mousePos, graph, radius) {
-    var withinRadius = false;
-    var whichTrajectory;
-    var whichEnd;
-    var d_min = Number.MAX_VALUE;
-    trajectories.forEach( trajectory => {
-        for(var iEnd = 0; iEnd < 2; iEnd++) {
-            var d = dist(mousePos, graph.transform.forwards(trajectory.ends[iEnd]));
-            if( d < radius && d < d_min) {
-                d_min = d;
-                withinRadius = true;
-                whichTrajectory = trajectory;
-                whichEnd = iEnd;
-            }
-        }
-    });
-    return [withinRadius, whichTrajectory, whichEnd];
-}
-
-function onMouseMove( evt ) {
-    var mousePos = getMousePos(evt);
-    var targetGraph = graphs.find( graph => graph.rect.pointInRect(mousePos) );
-    if(targetGraph) {
-        if(isDragging) {
-            // move the handle being dragged
-            dragTrajectory.ends[dragEnd] = targetGraph.transform.backwards(mousePos);
-        }
-        else {
-            // indicate which marker is being hovered over
-            resetMarkers();
-            const [isHovering, hoveredTrajectory, hoveredEnd] = findClosestEnd(mousePos, targetGraph, 20);
-            if(isHovering) {
-                hoveredTrajectory.end_sizes[hoveredEnd] = hoveredTrajectory.hover_size;
-                hoveredTrajectory.end_colors[hoveredEnd] = hoveredTrajectory.hover_color;
-            }
-        }
-        draw();
-    }
-}
-
-function onMouseDown( evt ) {
-    var mousePos = getMousePos(evt);
-    var targetGraph = graphs.find( graph => graph.rect.pointInRect(mousePos) );
-    if(targetGraph) {
-        [isDragging, dragTrajectory, dragEnd] = findClosestEnd(mousePos, targetGraph, 20);
-        if(isDragging) {
-            dragTrajectory.end_sizes[dragEnd] = dragTrajectory.hover_size;
-            dragTrajectory.end_colors[dragEnd] = dragTrajectory.hover_color;
-        }
-    }
-}
-
-function onMouseUp( evt ) {
-    isDragging = false;
-    draw();
-}
-
 function init() {
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
@@ -122,12 +56,12 @@ function init() {
                  new Rect(new P(40,880), new P(400,-400)), new Rect(new P(480,880), new P(400,-400)), new Rect(new P(920,880), new P(400,-400))];
 
     graphs = [];
-    graphs.push(new GraphT1S1(rects[0], earth_surface_gravity));
-    graphs.push(new GraphT1S1(rects[1], 0));
-    graphs.push(new GraphT1S1(rects[2], 0));
-    graphs.push(new GraphS2(  rects[3], 0));
-    graphs.push(new GraphT1S2(rects[4], 0));
-    graphs.push(new GraphT1S3(rects[5], 0));
+    graphs.push(new GraphT1S1(rects[0], earth_surface_gravity, "time "+rightArrow, "space 1 "+rightArrow));
+    graphs.push(new GraphT1S1(rects[1], 0, "time "+rightArrow, "space 1 & time "+rightArrow));
+    graphs.push(new GraphT1S1(rects[2], 0, "time "+rightArrow, "space 1 & time "+rightArrow));
+    graphs.push(new GraphS2(  rects[3], 0, "space 2 "+rightArrow, "space 1 & time "+rightArrow));
+    graphs.push(new GraphT1S2(rects[4], 0, "time + space 1 + space 2", ""));
+    graphs.push(new GraphT1S3(rects[5], 0, "time + space 1 + space 2 + space 3", ""));
 
     var frameAccelerationSlider = document.getElementById("frameAccelerationSlider");
     var acc = earth_surface_gravity - earth_surface_gravity * frameAccelerationSlider.value / 100.0;
@@ -145,10 +79,6 @@ function init() {
     }
 
     draw();
-
-    canvas.addEventListener( 'mousemove', onMouseMove, false );
-    canvas.addEventListener( 'mousedown', onMouseDown, false );
-    canvas.addEventListener( 'mouseup',   onMouseUp, false );
 }
 
 function draw() {
@@ -162,19 +92,6 @@ function draw() {
     graphs.forEach( graph => {
         drawSpaceTime(graph);
     });
-
-    // label the space and time directions
-    ctx.fillStyle = 'rgb(0,0,0)';
-    ctx.font = "20px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.save();
-    ctx.translate(graphs[0].rect.p.x/2, graphs[0].rect.center.y);
-    ctx.rotate(-Math.PI/2);
-    ctx.textAlign = "center";
-    ctx.fillText("space "+String.fromCharCode(0x2192), 0, 0);
-    ctx.restore();
-    ctx.fillText("time "+String.fromCharCode(0x2192), graphs[0].rect.center.x, graphs[0].rect.ymin/2);
 }
 
 function drawSpaceTime(graph) {
@@ -253,7 +170,7 @@ function drawSpaceTime(graph) {
     drawLine(getLinePoints(new P(time_max, space_max, space_min, space_min), new P(time_max, space_max, space_min, space_max)).map(graph.transform.forwards));
     drawLine(getLinePoints(new P(time_max, space_max, space_max, space_min), new P(time_max, space_max, space_max, space_max)).map(graph.transform.forwards));
 
-    // label axes
+    // axes markers
     ctx.fillStyle = 'rgb(100,100,100)';
     ctx.font = "13px Arial";
     ctx.textAlign = "right";
@@ -274,15 +191,28 @@ function drawSpaceTime(graph) {
         drawGeodesic(trajectory, graph);
     });
 
+    // show the frame acceleration as text
+    ctx.fillStyle = 'rgb(100,100,100)';
+    ctx.font = "16px Arial";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Frame acceleration = "+graph.frame_acceleration.toFixed(1)+" ms"+sup_minus2,
+        graph.rect.xmin + 15, graph.rect.ymax - 15);
+
     ctx.restore(); // reset the clip
 
-    // show the frame acceleration as text
+    // label the axes directions
     ctx.fillStyle = 'rgb(0,0,0)';
     ctx.font = "20px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("Frame acceleration = "+graph.frame_acceleration.toFixed(1)+" ms"+String.fromCharCode(0x207B)+String.fromCharCode(0x00B2),
-        graph.rect.center.x, graph.rect.ymax+20);
+    ctx.save();
+    ctx.translate(graph.rect.xmin - 15, graph.rect.center.y);
+    ctx.rotate(-Math.PI/2);
+    ctx.textAlign = "center";
+    ctx.fillText(graph.left_text, 0, 0);
+    ctx.restore();
+    ctx.fillText(graph.top_text, graph.rect.center.x, graph.rect.ymin - 15);
 }
 
 window.onload = init;
