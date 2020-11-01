@@ -22,35 +22,6 @@ var isDragging;
 var dragTrajectory;
 var dragEnd;
 
-// classes:
-
-class Trajectory {
-    constructor(start, end, color, hover_color) {
-        this.ends = [start, end];
-        this.color = color;
-        this.end_colors = [color, color];
-        this.hover_color = hover_color;
-        this.end_sizes = [6, 4];
-        this.default_end_sizes = [6, 4];
-        this.mid_size = 2;
-        this.hover_size = 10;
-    }
-}
-
-class Graph {
-    constructor(rect, frame_acceleration) {
-        this.rect = rect;
-        this.frame_acceleration = frame_acceleration;
-    }
-    get transform() {
-        var forwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, this.frame_acceleration - earth_surface_gravity);
-        var backwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, earth_surface_gravity - this.frame_acceleration);
-        return new ComposedTransform(new Transform(forwardsDistortion, backwardsDistortion), new LinearTransform2D(spacetime_range, this.rect));
-    }
-}
-
-// functions:
-
 function resetMarkers() {
     trajectories.forEach( trajectory => {
         for(var iEnd = 0; iEnd < 2; iEnd++) {
@@ -115,15 +86,6 @@ function onMouseDown( evt ) {
 function onMouseUp( evt ) {
     isDragging = false;
     draw();
-}
-
-function clientToCanvas( clientPos ) {
-    var rect = canvas.getBoundingClientRect();
-    return new P( clientPos.x - rect.left, clientPos.y - rect.top );
-}
-
-function getMousePos(evt) {
-    return clientToCanvas(new P(evt.clientX, evt.clientY));
 }
 
 function init() {
@@ -235,7 +197,6 @@ function drawSpaceTime(graph) {
     }
 
     // draw trajectories in free-fall
-    ctx.lineWidth = 2;
     trajectories.forEach( trajectory => {
         drawGeodesic(trajectory, graph);
     });
@@ -249,38 +210,6 @@ function drawSpaceTime(graph) {
     ctx.textBaseline = "middle";
     ctx.fillText("Frame acceleration = "+graph.frame_acceleration.toFixed(1)+" ms"+String.fromCharCode(0x207B)+String.fromCharCode(0x00B2),
         graph.rect.center.x, (graph.rect.ymax+canvas.height)/2);
-}
-
-function fromEarthSurfaceGravityAcceleratingFrameToInertialFrame(p) {
-    return transformBetweenAcceleratingReferenceFrames(p, 0 - earth_surface_gravity);
-}
-
-function fromInertialFrameToEarthSurfaceGravityAcceleratingFrame(p) {
-    return transformBetweenAcceleratingReferenceFrames(p, earth_surface_gravity - 0);
-}
-
-function drawGeodesic(trajectory, graph) {
-    // draw a line that is straight in an inertial frame but may be not be straight in this frame, depending on its acceleration
-
-    var start_inertial = fromEarthSurfaceGravityAcceleratingFrameToInertialFrame(trajectory.ends[0]);
-    var end_inertial = fromEarthSurfaceGravityAcceleratingFrameToInertialFrame(trajectory.ends[1]);
-    var screen_pts = getLinePoints(start_inertial, end_inertial).map(fromInertialFrameToEarthSurfaceGravityAcceleratingFrame).map(graph.transform.forwards);
-    drawLine(screen_pts, trajectory.color);
-    fillSpacedCircles(screen_pts, trajectory.mid_size, trajectory.color, 10);
-    var a1 = fromInertialFrameToEarthSurfaceGravityAcceleratingFrame(lerp(start_inertial, end_inertial, 0.59));
-    var a2 = fromInertialFrameToEarthSurfaceGravityAcceleratingFrame(lerp(start_inertial, end_inertial, 0.60));
-    drawArrowHead(graph.transform.forwards(a1), graph.transform.forwards(a2), 15);
-    for(var iEnd = 0; iEnd < 2; iEnd++) {
-        fillCircle(graph.transform.forwards(trajectory.ends[iEnd]), trajectory.end_sizes[iEnd], trajectory.end_colors[iEnd]);
-    }
-}
-
-function transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration) {
-    var t_zero = spacetime_range.center.x; // central time point (e.g. t=0) gets no spatial distortion
-    var time_delta = ts.x - t_zero;
-    var x = ts.x;
-    var y = ts.y - distanceTravelledWithConstantAcceleration(time_delta, delta_acceleration);
-    return new P(x, y);
 }
 
 window.onload = init;
