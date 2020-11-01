@@ -64,8 +64,26 @@ class GraphS2 {
     }
 }
 
-// functions:
+class GraphT1S2 {
+    // A graph that plots one time and two space dimensions in a 3D view
+    constructor(rect, frame_acceleration) {
+        this.rect = rect;
+        this.frame_acceleration = frame_acceleration;
+    }
+    get transform() {
+        var forwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, this.frame_acceleration - earth_surface_gravity);
+        var backwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, earth_surface_gravity - this.frame_acceleration);
+        var accelerationDistortion = new Transform(forwardsDistortion, backwardsDistortion);
+        var scaleX = 20;
+        var scaleXTransform = new Transform( p => elementwise_mul(p,new P(scaleX,1,1,1)), p => elementwise_mul(p,new P(1/scaleX,1,1,1)) );
+        var camera = new Camera(new P(-1000,500,500,0), spacetime_range.center, new P(0,1,0,0), 3000, this.rect.center);
+        var identityTransform = p => new P(p.x, p.y, p.z, p.w);
+        var cameraTransform = new Transform( p => camera.project(p), identityTransform );
+        return new ComposedTransform(accelerationDistortion, scaleXTransform, cameraTransform);
+    }
+}
 
+// functions:
 
 function drawGeodesic(trajectory, graph) {
     // draw a line that is straight in an inertial frame but may be not be straight in this frame, depending on its acceleration

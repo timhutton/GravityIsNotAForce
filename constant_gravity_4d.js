@@ -104,15 +104,20 @@ function init() {
         draw();
     }
 
+    // coordinates: time, space1=up, space2, space3
     trajectories = [];
-    trajectories.push(new Trajectory(new P(0.0, 44.1, 20.0), new P(3.0, 0.0, 30.0), 'rgb(255,100,100)', 'rgb(200,100,100)')); // red
-    trajectories.push(new Trajectory(new P(-1.0, 0.0, 5.0), new P(2.0, 0.0, 45.0), 'rgb(0,200,0)', 'rgb(0,160,0)')); // green
-    trajectories.push(new Trajectory(new P(-3.0, 0.0, 5.0), new P(1.0, 0.0, 9.0), 'rgb(100,100,255)', 'rgb(100,100,200)')); // blue
+    trajectories.push(new Trajectory(new P(0, 44.1, 20, 10), new P(3, 0, 20, 10), 'rgb(255,100,100)', 'rgb(200,100,100)')); // red
+    trajectories.push(new Trajectory(new P(-1, 0, 5.0, 0), new P(2, 0, 45, 0), 'rgb(0,200,0)', 'rgb(0,160,0)')); // green
+    trajectories.push(new Trajectory(new P(-3, 0, 5.0, 0), new P(1, 0, 9, 0), 'rgb(100,100,255)', 'rgb(100,100,200)')); // blue
+    
+    var rects = [new Rect(new P(40,440), new P(400,-400)),
+                 new Rect(new P(480,440), new P(400,-400)),
+                 new Rect(new P(920,440), new P(400,-400))];
 
     graphs = [];
-    graphs.push(new GraphT1S1(new Rect(new P(40,440), new P(400,-400)), earth_surface_gravity));
-    graphs.push(new GraphS2(new Rect(new P(480,440), new P(400,-400)), earth_surface_gravity/2));
-    graphs.push(new GraphT1S1(new Rect(new P(920,440), new P(400,-400)), 0.0));
+    graphs.push(new GraphT1S1(rects[0], earth_surface_gravity));
+    graphs.push(new GraphT1S2(rects[1], 0.0));
+    graphs.push(new GraphS2(rects[2], earth_surface_gravity));
 
     var frameAccelerationSlider = document.getElementById("frameAccelerationSlider");
     graphs[1].frame_acceleration = earth_surface_gravity - earth_surface_gravity * frameAccelerationSlider.value / 100.0;
