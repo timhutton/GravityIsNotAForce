@@ -45,7 +45,7 @@ class Graph {
     get transform() {
         var forwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, this.frame_acceleration - earth_surface_gravity);
         var backwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, earth_surface_gravity - this.frame_acceleration);
-        return new ComposedTransform(new Transform(forwardsDistortion, backwardsDistortion), findBestFitTransform(this));
+        return new ComposedTransform(new Transform(forwardsDistortion, backwardsDistortion), new LinearTransform2D(spacetime_range, this.rect));
     }
 }
 
@@ -99,15 +99,6 @@ function onMouseMove( evt ) {
         }
         draw();
     }
-}
-
-function onTouchMove( evt ) {
-}
-
-function onTouchStart( evt ) {
-}
-
-function onTouchEnd( evt ) {
 }
 
 function onMouseDown( evt ) {
@@ -172,13 +163,8 @@ function init() {
     draw();
 
     canvas.addEventListener( 'mousemove',   onMouseMove, false );
-    canvas.addEventListener( 'touchmove',   onTouchMove, false );
-
     canvas.addEventListener( 'mousedown',   onMouseDown, false );
-    canvas.addEventListener( 'touchstart',  onTouchStart, false );
-
     canvas.addEventListener( 'mouseup',   onMouseUp, false );
-    canvas.addEventListener( 'touchend',  onTouchEnd, false );
 }
 
 function draw() {
@@ -296,12 +282,6 @@ function transformBetweenAcceleratingReferenceFrames(ts, delta_acceleration) {
     var x = ts.x;
     var y = ts.y - distanceTravelledWithConstantAcceleration(time_delta, delta_acceleration);
     return new P(x, y);
-}
-
-function findBestFitTransform(graph) {
-    var corners = [new P(spacetime_range.xmin, spacetime_range.ymin), new P(spacetime_range.xmin, spacetime_range.ymax),
-                   new P(spacetime_range.xmax, spacetime_range.ymin), new P(spacetime_range.xmax, spacetime_range.ymax)];
-    return new LinearTransform2D(boundingRect(corners), graph.rect);
 }
 
 window.onload = init;
