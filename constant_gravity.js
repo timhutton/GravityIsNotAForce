@@ -67,8 +67,7 @@ function findClosestEnd(mousePos, graph, radius) {
     var d_min = Number.MAX_VALUE;
     trajectories.forEach( trajectory => {
         for(var iEnd = 0; iEnd < 2; iEnd++) {
-            var m = graph.transform.forwards(trajectory.ends[iEnd]);
-            var d = dist(mousePos, m);
+            var d = dist(mousePos, graph.transform.forwards(trajectory.ends[iEnd]));
             if( d < radius && d < d_min) {
                 d_min = d;
                 withinRadius = true;
@@ -162,8 +161,8 @@ function init() {
 
     draw();
 
-    canvas.addEventListener( 'mousemove',   onMouseMove, false );
-    canvas.addEventListener( 'mousedown',   onMouseDown, false );
+    canvas.addEventListener( 'mousemove', onMouseMove, false );
+    canvas.addEventListener( 'mousedown', onMouseDown, false );
     canvas.addEventListener( 'mouseup',   onMouseUp, false );
 }
 

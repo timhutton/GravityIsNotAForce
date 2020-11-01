@@ -18,10 +18,11 @@
 // classes:
 
 class P{
-    constructor(x, y, z=0) {
+    constructor(x, y, z=0, w=0) {
         this.x = x;
         this.y = y;
         this.z = z;
+        this.w = w;
     }
 }
 
@@ -98,7 +99,7 @@ class Camera {
 // functions:
 
 function dot(a, b) {
-    return a.x * b.x + a.y * b.y + a.z * b.z;
+    return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 }
 
 function dist2(a, b) {
@@ -111,19 +112,19 @@ function dist(a, b) {
 }
 
 function add(a, b) {
-    return new P(a.x + b.x, a.y + b.y, a.z + b.z);
+    return new P(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
 }
 
 function sub(a, b) {
-    return new P(a.x - b.x, a.y - b.y, a.z - b.z);
+    return new P(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
 }
 
 function scalar_mul(a, f) {
-    return new P(a.x * f, a.y * f, a.z * f);
+    return new P(a.x * f, a.y * f, a.z * f, a.w * f);
 }
 
 function elementwise_mul(a, b) {
-    return new P(a.x * b.x, a.y * b.y, a.z * a.z);
+    return new P(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
 }
 
 function elementwise_div_2d(a, b) {
@@ -140,6 +141,7 @@ function normalize(a) {
 }
 
 function cross( a, b ) {
+    // Cross-product in xyz
     return new P(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
 }
 
@@ -148,21 +150,7 @@ function lerp(a, b, u) {
 }
 
 function invert_y(a) {
-    return new P(a.x, -a.y, a.z);
-}
-
-function boundingRect(points) {
-    var left = Number.MAX_VALUE;
-    var right = -Number.MAX_VALUE;
-    var top = Number.MAX_VALUE;
-    var bottom = -Number.MAX_VALUE;
-    for(var i = 0; i < points.length; i++) {
-        left = Math.min(left, points[i].x);
-        right = Math.max(right, points[i].x);
-        top = Math.min(top, points[i].y);
-        bottom = Math.max(bottom, points[i].y);
-    }
-    return new Rect(new P(left, top), new P(right-left, bottom-top));
+    return new P(a.x, -a.y, a.z, a.w);
 }
 
 function sech(x) { return 1 / Math.cosh(x); }
