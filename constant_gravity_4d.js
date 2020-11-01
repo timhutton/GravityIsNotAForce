@@ -105,13 +105,13 @@ function init() {
     }
 
     trajectories = [];
-    trajectories.push(new Trajectory(new P(0.0, 44.1), new P(3.0, 0.0), 'rgb(255,100,100)', 'rgb(200,100,100)'));
-    trajectories.push(new Trajectory(new P(-1.0, 0.0), new P(2.0, 0.0), 'rgb(0,200,0)', 'rgb(0,160,0)'));
-    trajectories.push(new Trajectory(new P(-3.0, 0.0), new P(1.0, 0.0), 'rgb(100,100,255)', 'rgb(100,100,200)'));
+    trajectories.push(new Trajectory(new P(0.0, 44.1, 20.0), new P(3.0, 0.0, 30.0), 'rgb(255,100,100)', 'rgb(200,100,100)')); // red
+    trajectories.push(new Trajectory(new P(-1.0, 0.0, 5.0), new P(2.0, 0.0, 45.0), 'rgb(0,200,0)', 'rgb(0,160,0)')); // green
+    trajectories.push(new Trajectory(new P(-3.0, 0.0, 5.0), new P(1.0, 0.0, 9.0), 'rgb(100,100,255)', 'rgb(100,100,200)')); // blue
 
     graphs = [];
     graphs.push(new GraphT1S1(new Rect(new P(40,440), new P(400,-400)), earth_surface_gravity));
-    graphs.push(new GraphT1S1(new Rect(new P(480,440), new P(400,-400)), earth_surface_gravity/2));
+    graphs.push(new GraphS2(new Rect(new P(480,440), new P(400,-400)), earth_surface_gravity/2));
     graphs.push(new GraphT1S1(new Rect(new P(920,440), new P(400,-400)), 0.0));
 
     var frameAccelerationSlider = document.getElementById("frameAccelerationSlider");
@@ -171,16 +171,19 @@ function drawSpaceTime(graph) {
     var space_step = 10;
     for(var t = Math.ceil(spacetime_range.xmin); t<=Math.floor(spacetime_range.xmax); t+=time_step) {
         if(t==0.0) { continue; }
-        drawLine(getLinePoints(new P(t, spacetime_range.ymin-space_extra), new P(t, spacetime_range.ymax+space_extra)).map(graph.transform.forwards));
+        drawLine(getLinePoints(new P(t, spacetime_range.ymin-space_extra, 0), new P(t, spacetime_range.ymax+space_extra, 0)).map(graph.transform.forwards));
     }
     for(var s = Math.ceil(spacetime_range.ymin-space_extra); s<=Math.floor(spacetime_range.ymax+space_extra); s+=space_step) {
         if(s==0.0) { continue; }
-        drawLine(getLinePoints(new P(spacetime_range.xmin, s), new P(spacetime_range.xmax, s)).map(graph.transform.forwards));
+        drawLine(getLinePoints(new P(spacetime_range.xmin, s, 0), new P(spacetime_range.xmax, s, 0)).map(graph.transform.forwards));
+        drawLine(getLinePoints(new P(0, spacetime_range.ymin-space_extra, s), new P(0, spacetime_range.ymax+space_extra, s)).map(graph.transform.forwards));
+        drawLine(getLinePoints(new P(0, s, spacetime_range.ymin-space_extra), new P(0, s, spacetime_range.ymax+space_extra)).map(graph.transform.forwards));
     }
     // draw major axes
     ctx.strokeStyle = 'rgb(150,150,150)';
     drawLine(getLinePoints(new P(spacetime_range.xmin, 0.0), new P(spacetime_range.xmax, 0.0)).map(graph.transform.forwards));
     drawLine(getLinePoints(new P(0.0, spacetime_range.ymin-space_extra), new P(0.0, spacetime_range.ymax+space_extra)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(0.0, 0.0, spacetime_range.ymin-space_extra), new P(0.0, 0.0, spacetime_range.ymax+space_extra)).map(graph.transform.forwards));
 
     // label axes
     ctx.fillStyle = 'rgb(100,100,100)';
@@ -188,7 +191,8 @@ function drawSpaceTime(graph) {
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
     var horizOffset = -0.1;
-    drawText(graph.transform.forwards(new P(horizOffset, 50.0)), "50m");
+    drawText(graph.transform.forwards(new P(horizOffset, 50, 0)), "50m");
+    drawText(graph.transform.forwards(new P(0, horizOffset, 50)), "50m");
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     var vertOffset = -2.0;

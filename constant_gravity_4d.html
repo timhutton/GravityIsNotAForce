@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <script src="math.js"></script>
+    <script src="drawing.js"></script>
+    <script src="physics.js"></script>
+    <script src="canvas_functions.js"></script>
+    <script src="constant_gravity_functions.js"></script>
+    <script src="constant_gravity_4d.js"></script>
+    <link rel="stylesheet" href="styles.css">
+
+    <noscript>
+    <p>For full functionality of this site it is necessary to enable JavaScript.
+    Here are the <a href="http://www.enable-javascript.com/" target="_blank">
+    instructions how to enable JavaScript in your web browser</a>.
+    </p></noscript>
+</head>
+
+<body class="sansserif">
+    <p align="center">
+    <canvas class="canvas" id="canvas" width="1360" height="480">(Canvas drawing not supported by your browser.)</canvas>
+    <div class="mainSlider">
+      Change the frame acceleration: <input type="range" min="0" max="100" value="50" class="slider" id="frameAccelerationSlider">
+    </div>
+    <div class="mainSlider">
+      Move the time window: <input type="range" min="0" max="100" value="50" class="slider" id="timeTranslationSlider">
+    </div>
+    </p>
+
+    <h4>Description:</h4>
+    <p class="text">
+    Under general relativity, gravity is not a force. Instead it is a distortion of spacetime. Objects in free-fall move along geodesics (straight lines) in spacetime, as seen in the inertial frame of reference on the right. When standing on Earth we experience a frame of reference that is accelerating upwards, causing objects in free-fall to move along parabolas, as seen on the left.
+    </p>
+
+    <p class="text">
+    In this system there is only one space dimension, shown on the vertical axis and labeled in meters. The time dimension is the horizontal axis and labeled in seconds. The gravitational field is constant within the area of interest. 
+    </p>
+
+    <p class="text">
+    Use the first slider to change the acceleration of the frame of reference in the middle. When the frame has zero acceleration it is said to be an inertial frame of reference.
+    </p>
+
+    <p class="text">
+    Use the second slider to move the time window. Note that all the trajectories remain as straight lines in the inertial frame of reference.
+    </p>
+
+    <p class="text">
+    You can drag the start and end position of each object to change their trajectories. All free-fall trajectories in the inertial frame of reference are straight lines.
+    </p>
+
+    <p class="text">
+    Code, more details, feedback: <a href="https://github.com/timhutton/GravityIsNotAForce">https://github.com/timhutton/GravityIsNotAForce</a>
+    </p>
+
+    <p class="text">
+    More on these concepts: <a href="https://youtu.be/XRr1kaXKBsU">https://youtu.be/XRr1kaXKBsU</a>
+    </p>
+
+</body>
+
+</html>
+

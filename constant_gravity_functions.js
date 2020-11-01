@@ -31,7 +31,8 @@ class Trajectory {
     }
 }
 
-class Graph {
+class GraphT1S1 {
+    // A graph that plots time on the x-axis and up on the y-axis
     constructor(rect, frame_acceleration) {
         this.rect = rect;
         this.frame_acceleration = frame_acceleration;
@@ -39,7 +40,27 @@ class Graph {
     get transform() {
         var forwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, this.frame_acceleration - earth_surface_gravity);
         var backwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, earth_surface_gravity - this.frame_acceleration);
-        return new ComposedTransform(new Transform(forwardsDistortion, backwardsDistortion), new LinearTransform2D(spacetime_range, this.rect));
+        var accelerationDistortion = new Transform(forwardsDistortion, backwardsDistortion);
+        var moveToPosition = new LinearTransform2D(spacetime_range, this.rect);
+        return new ComposedTransform(accelerationDistortion, moveToPosition);
+    }
+}
+
+class GraphS2 {
+    // A graph that plots one space dimension on the x-axis and up on the y-axis
+    constructor(rect, frame_acceleration) {
+        this.rect = rect;
+        this.frame_acceleration = frame_acceleration;
+    }
+    get transform() {
+        var forwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, this.frame_acceleration - earth_surface_gravity);
+        var backwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, earth_surface_gravity - this.frame_acceleration);
+        var accelerationDistortion = new Transform(forwardsDistortion, backwardsDistortion);
+        var swapXandZ = p => new P(p.z, p.y, p.x, p.w);
+        var swapXandZTransform = new Transform(swapXandZ, swapXandZ);
+        var spacespace_range = new Rect(new P(spacetime_range.ymin, spacetime_range.ymin), new P(spacetime_range.size.y, spacetime_range.size.y));
+        var moveToPosition = new LinearTransform2D(spacespace_range, this.rect);
+        return new ComposedTransform(accelerationDistortion, swapXandZTransform, moveToPosition);
     }
 }
 
