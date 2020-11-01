@@ -164,11 +164,11 @@ function draw() {
     // TODO: turn Poincare into Klein
 
     // define the 3D transforms
+    var toPseudosphereCoords = new LinearTransform2D(spacetime_range, new Rect(new P(-2,0), new P(4,1.5)));
     var identityTransform = p => new P(p.x, p.y, p.z);
     var pseudosphereTransform = new Transform(pseudosphere, identityTransform); // TODO: need camera ray intersection for the reverse
-    var camera = new Camera(new P(-10,-0.5,view_angle), new P(0,0,0.5), new P(0,0,1), 2000, rect2.center);
+    var camera = new Camera(new P(-10,-0.5,-view_angle), new P(0,0,-0.5), new P(0,0,-1), 2000, rect2.center);
     var cameraTransform = new Transform( p => camera.project(p), identityTransform );
-    var toPseudosphereCoords = new LinearTransform2D(spacetime_range, new Rect(new P(-2,0), new P(4,2.5)));
     var pseudosphereAxes = new Graph( rect2, new ComposedTransform( toPseudosphereCoords, pseudosphereTransform, cameraTransform) );
 
     // draw the graphs

@@ -18,7 +18,7 @@
 // classes:
 
 class P{
-    constructor(x, y, z = 0) {
+    constructor(x, y, z=0) {
         this.x = x;
         this.y = y;
         this.z = z;
@@ -54,7 +54,7 @@ class Rect {
 }
 
 class LinearTransform2D {
-    // A 2D linear transform in the XY plane
+    // A 2D scale and translation in the XY plane
     constructor(from_rect, to_rect) {
         var scale = elementwise_div_2d(to_rect.size, from_rect.size);
         var offset = sub(to_rect.p, elementwise_mul(from_rect.p, scale));
@@ -81,9 +81,9 @@ class Camera {
     constructor(p, look_at, up, f, pp) {
         this.p = p; // camera center
         this.look_at = look_at; // point we are looking at
-        this.f = f; // focal distance
-        this.pp = pp; // principal point
         this.up = up; // up-vector
+        this.f = f; // scalar focal distance
+        this.pp = pp; // 2D principal point
     }
     project(pt) {
         var z = normalize(sub(this.look_at, this.p));
@@ -91,7 +91,7 @@ class Camera {
         var y = normalize(cross(x, z));
         var ray = sub(pt, this.p); // the ray from camera center to point
         var cp = new P(dot(x, ray), dot(y, ray), dot(z, ray)); // the point in camera space
-        return sub(this.pp, scalar_mul(cp, this.f / cp.z)); // pinhole projection
+        return add(this.pp, invert_y(scalar_mul(cp, this.f / cp.z))); // pinhole projection
     }
 }
 
@@ -147,6 +147,10 @@ function lerp(a, b, u) {
     return add(a, scalar_mul(sub(b, a), u));
 }
 
+function invert_y(a) {
+    return new P(a.x, -a.y, a.z);
+}
+
 function boundingRect(points) {
     var left = Number.MAX_VALUE;
     var right = -Number.MAX_VALUE;
@@ -164,9 +168,10 @@ function boundingRect(points) {
 function sech(x) { return 1 / Math.cosh(x); }
 
 function pseudosphere(p) {
-    // Transform point p ( x in [0, 2pi], y in [-inf, inf], ) onto the pseudosphere
-    // (note that x and y are different to u and v here: https://mathworld.wolfram.com/Pseudosphere.html
-    return new P(sech(p.y) * Math.cos(p.x), sech(p.y) * Math.sin(p.x), p.y - Math.tanh(p.y));
+    // Transform point p ( x in [0, 2pi], y in [-inf, inf], ) onto the pseudosphere, following https://mathworld.wolfram.com/Pseudosphere.html
+    var u = p.y;
+    var v = p.x;
+    return new P(sech(u) * Math.cos(v), sech(u) * Math.sin(v), Math.tanh(u)-u);
 }
 
 function getLinePoints(a, b, n_pts=100) {
