@@ -21,6 +21,7 @@ var spacetime_range;
 var isDragging;
 var dragTrajectory;
 var dragEnd;
+var view_angle;
 
 function resetMarkers() {
     trajectories.forEach( trajectory => {
@@ -104,25 +105,42 @@ function init() {
         draw();
     }
 
+    var viewAngleSlider = document.getElementById("viewAngleSlider");
+    view_angle = 2 - 4 * viewAngleSlider.value / 100.0;
+    viewAngleSlider.oninput = function() {
+        view_angle = 2 - 4 * viewAngleSlider.value / 100.0;
+        draw();
+    }
+
     // coordinates: time, space1=up, space2, space3
     trajectories = [];
     trajectories.push(new Trajectory(new P(0, 44.1, 20, 10), new P(3, 0, 20, 10), 'rgb(255,100,100)', 'rgb(200,100,100)')); // red
     trajectories.push(new Trajectory(new P(-1, 0, 5.0, 0), new P(2, 0, 45, 0), 'rgb(0,200,0)', 'rgb(0,160,0)')); // green
     trajectories.push(new Trajectory(new P(-3, 0, 5.0, 0), new P(1, 0, 9, 0), 'rgb(100,100,255)', 'rgb(100,100,200)')); // blue
     
-    var rects = [new Rect(new P(40,440), new P(400,-400)),
-                 new Rect(new P(480,440), new P(400,-400)),
-                 new Rect(new P(920,440), new P(400,-400))];
+    var rects = [new Rect(new P(40,440), new P(400,-400)), new Rect(new P(480,440), new P(400,-400)), new Rect(new P(920,440), new P(400,-400)),
+                 new Rect(new P(40,880), new P(400,-400)), new Rect(new P(480,880), new P(400,-400)), new Rect(new P(920,880), new P(400,-400))];
 
     graphs = [];
     graphs.push(new GraphT1S1(rects[0], earth_surface_gravity));
-    graphs.push(new GraphT1S3(rects[1], 0.0));
-    graphs.push(new GraphS2(rects[2], earth_surface_gravity));
+    graphs.push(new GraphT1S1(rects[1], 0));
+    graphs.push(new GraphT1S1(rects[2], 0));
+    graphs.push(new GraphS2(  rects[3], 0));
+    graphs.push(new GraphT1S2(rects[4], 0));
+    graphs.push(new GraphT1S3(rects[5], 0));
 
     var frameAccelerationSlider = document.getElementById("frameAccelerationSlider");
-    graphs[1].frame_acceleration = earth_surface_gravity - earth_surface_gravity * frameAccelerationSlider.value / 100.0;
+    var acc = earth_surface_gravity - earth_surface_gravity * frameAccelerationSlider.value / 100.0;
+    graphs[1].frame_acceleration = acc;
+    graphs[3].frame_acceleration = acc;
+    graphs[4].frame_acceleration = acc;
+    graphs[5].frame_acceleration = acc;
     frameAccelerationSlider.oninput = function() {
-        graphs[1].frame_acceleration = earth_surface_gravity - earth_surface_gravity * this.value / 100.0;
+        var acc = earth_surface_gravity - earth_surface_gravity * this.value / 100.0;
+        graphs[1].frame_acceleration = acc;
+        graphs[3].frame_acceleration = acc;
+        graphs[4].frame_acceleration = acc;
+        graphs[5].frame_acceleration = acc;
         draw();
     }
 
@@ -174,24 +192,66 @@ function drawSpaceTime(graph) {
     var space_extra = 80; // extend space axes beyond just the minimum area
     var time_step = 1;
     var space_step = 10;
-    for(var t = Math.ceil(spacetime_range.xmin); t<=Math.floor(spacetime_range.xmax); t+=time_step) {
+    var space_min = spacetime_range.ymin-space_extra;
+    var space_max = spacetime_range.ymax+space_extra;
+    var time_min = spacetime_range.xmin;
+    var time_max = spacetime_range.xmax;
+    for(var t = Math.ceil(time_min); t<=Math.floor(time_max); t+=time_step) {
         if(t==0.0) { continue; }
-        drawLine(getLinePoints(new P(t, spacetime_range.ymin-space_extra, 0, 0), new P(t, spacetime_range.ymax+space_extra, 0, 0)).map(graph.transform.forwards)); // YX
+        drawLine(getLinePoints(new P(t, space_min, 0, 0), new P(t, space_max, 0, 0)).map(graph.transform.forwards)); // YX
     }
-    for(var s = Math.ceil(spacetime_range.ymin-space_extra); s<=Math.floor(spacetime_range.ymax+space_extra); s+=space_step) {
+    for(var s = Math.ceil(space_min); s<=Math.floor(space_max); s+=space_step) {
         if(s==0.0) { continue; }
-        drawLine(getLinePoints(new P(spacetime_range.xmin, s, 0, 0), new P(spacetime_range.xmax, s, 0, 0)).map(graph.transform.forwards)); // XY
-        drawLine(getLinePoints(new P(0, spacetime_range.ymin-space_extra, s, 0), new P(0, spacetime_range.ymax+space_extra, s, 0)).map(graph.transform.forwards)); // YZ
-        drawLine(getLinePoints(new P(0, s, spacetime_range.ymin-space_extra, 0), new P(0, s, spacetime_range.ymax+space_extra, 0)).map(graph.transform.forwards)); // ZY
-        drawLine(getLinePoints(new P(0, spacetime_range.ymin-space_extra, 0, s), new P(0, spacetime_range.ymax+space_extra, 0, s)).map(graph.transform.forwards)); // YW
-        drawLine(getLinePoints(new P(0, s, 0, spacetime_range.ymin-space_extra), new P(0, s, 0, spacetime_range.ymax+space_extra)).map(graph.transform.forwards)); // WY
+        drawLine(getLinePoints(new P(time_min, s, 0, 0), new P(time_max, s, 0, 0)).map(graph.transform.forwards)); // XY
+        drawLine(getLinePoints(new P(0, space_min, s, 0), new P(0, space_max, s, 0)).map(graph.transform.forwards)); // YZ
+        drawLine(getLinePoints(new P(0, s, space_min, 0), new P(0, s, space_max, 0)).map(graph.transform.forwards)); // ZY
+        drawLine(getLinePoints(new P(0, space_min, 0, s), new P(0, space_max, 0, s)).map(graph.transform.forwards)); // YW
+        drawLine(getLinePoints(new P(0, s, 0, space_min), new P(0, s, 0, space_max)).map(graph.transform.forwards)); // WY
     }
     // draw major axes
     ctx.strokeStyle = 'rgb(150,150,150)';
-    drawLine(getLinePoints(new P(spacetime_range.xmin, 0, 0, 0), new P(spacetime_range.xmax, 0, 0, 0)).map(graph.transform.forwards));
-    drawLine(getLinePoints(new P(0, spacetime_range.ymin-space_extra, 0, 0), new P(0, spacetime_range.ymax+space_extra, 0, 0)).map(graph.transform.forwards));
-    drawLine(getLinePoints(new P(0, 0, spacetime_range.ymin-space_extra, 0), new P(0, 0, spacetime_range.ymax+space_extra, 0)).map(graph.transform.forwards));
-    drawLine(getLinePoints(new P(0, 0, 0, spacetime_range.ymin-space_extra), new P(0, 0, 0, spacetime_range.ymax+space_extra)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_min, 0, 0, 0), new P(time_max, 0, 0, 0)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(0, space_min, 0, 0), new P(0, space_max, 0, 0)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(0, 0, space_min, 0), new P(0, 0, space_max, 0)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(0, 0, 0, space_min), new P(0, 0, 0, space_max)).map(graph.transform.forwards));
+    // draw bounds
+    ctx.strokeStyle = 'rgb(100,100,100)';
+    // x=time directions
+    drawLine(getLinePoints(new P(time_min, space_min, space_min, space_min), new P(time_max, space_min, space_min, space_min)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_min, space_max, space_min, space_min), new P(time_max, space_max, space_min, space_min)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_min, space_min, space_max, space_min), new P(time_max, space_min, space_max, space_min)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_min, space_min, space_min, space_max), new P(time_max, space_min, space_min, space_max)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_min, space_max, space_max, space_min), new P(time_max, space_max, space_max, space_min)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_min, space_min, space_max, space_max), new P(time_max, space_min, space_max, space_max)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_min, space_max, space_min, space_max), new P(time_max, space_max, space_min, space_max)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_min, space_max, space_max, space_max), new P(time_max, space_max, space_max, space_max)).map(graph.transform.forwards));
+    // y=space1 directions
+    drawLine(getLinePoints(new P(time_min, space_min, space_min, space_min), new P(time_min, space_max, space_min, space_min)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_max, space_min, space_min, space_min), new P(time_max, space_max, space_min, space_min)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_min, space_min, space_max, space_min), new P(time_min, space_max, space_max, space_min)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_min, space_min, space_min, space_max), new P(time_min, space_max, space_min, space_max)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_min, space_min, space_max, space_max), new P(time_min, space_max, space_max, space_max)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_max, space_min, space_min, space_max), new P(time_max, space_max, space_min, space_max)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_max, space_min, space_max, space_min), new P(time_max, space_max, space_max, space_min)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_max, space_min, space_max, space_max), new P(time_max, space_max, space_max, space_max)).map(graph.transform.forwards));
+    // z=space2 directions
+    drawLine(getLinePoints(new P(time_min, space_min, space_min, space_min), new P(time_min, space_min, space_max, space_min)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_max, space_min, space_min, space_min), new P(time_max, space_min, space_max, space_min)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_min, space_max, space_min, space_min), new P(time_min, space_max, space_max, space_min)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_min, space_min, space_min, space_max), new P(time_min, space_min, space_max, space_max)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_min, space_max, space_min, space_max), new P(time_min, space_max, space_max, space_max)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_max, space_min, space_min, space_max), new P(time_max, space_min, space_max, space_max)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_max, space_max, space_min, space_min), new P(time_max, space_max, space_max, space_min)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_max, space_max, space_min, space_max), new P(time_max, space_max, space_max, space_max)).map(graph.transform.forwards));
+    // w=space3 directions
+    drawLine(getLinePoints(new P(time_min, space_min, space_min, space_min), new P(time_min, space_min, space_min, space_max)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_max, space_min, space_min, space_min), new P(time_max, space_min, space_min, space_max)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_min, space_max, space_min, space_min), new P(time_min, space_max, space_min, space_max)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_min, space_min, space_max, space_min), new P(time_min, space_min, space_max, space_max)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_min, space_max, space_max, space_min), new P(time_min, space_max, space_max, space_max)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_max, space_min, space_max, space_min), new P(time_max, space_min, space_max, space_max)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_max, space_max, space_min, space_min), new P(time_max, space_max, space_min, space_max)).map(graph.transform.forwards));
+    drawLine(getLinePoints(new P(time_max, space_max, space_max, space_min), new P(time_max, space_max, space_max, space_max)).map(graph.transform.forwards));
 
     // label axes
     ctx.fillStyle = 'rgb(100,100,100)';
@@ -199,8 +259,9 @@ function drawSpaceTime(graph) {
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
     var horizOffset = -0.1;
-    drawText(graph.transform.forwards(new P(horizOffset, 50, 0)), "50m");
-    drawText(graph.transform.forwards(new P(0, horizOffset, 50)), "50m");
+    drawText(graph.transform.forwards(new P(horizOffset, 50, 0, 0)), "50m");
+    drawText(graph.transform.forwards(new P(0, horizOffset, 50, 0)), "50m");
+    drawText(graph.transform.forwards(new P(0, horizOffset, 0, 50)), "50m");
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     var vertOffset = -2.0;
@@ -221,7 +282,7 @@ function drawSpaceTime(graph) {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("Frame acceleration = "+graph.frame_acceleration.toFixed(1)+" ms"+String.fromCharCode(0x207B)+String.fromCharCode(0x00B2),
-        graph.rect.center.x, (graph.rect.ymax+canvas.height)/2);
+        graph.rect.center.x, graph.rect.ymax+20);
 }
 
 window.onload = init;

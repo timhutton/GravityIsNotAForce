@@ -74,9 +74,9 @@ class GraphT1S2 {
         var forwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, this.frame_acceleration - earth_surface_gravity);
         var backwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, earth_surface_gravity - this.frame_acceleration);
         var accelerationDistortion = new Transform(forwardsDistortion, backwardsDistortion);
-        var scaleX = 20;
+        var scaleX = 50;
         var scaleXTransform = new Transform( p => elementwise_mul(p,new P(scaleX,1,1,1)), p => elementwise_mul(p,new P(1/scaleX,1,1,1)) );
-        var camera = new Camera(new P(-1000,500,500,0), spacetime_range.center, new P(0,1,0,0), 3000, this.rect.center);
+        var camera = new Camera(new P(-1000,500,500*view_angle,0), spacetime_range.center, new P(0,1,0,0), 1000, this.rect.center);
         var identityTransform = p => new P(p.x, p.y, p.z, p.w);
         var cameraTransform = new Transform( p => camera.project(p), identityTransform );
         return new ComposedTransform(accelerationDistortion, scaleXTransform, cameraTransform);
@@ -93,13 +93,13 @@ class GraphT1S3 {
         var backwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, earth_surface_gravity - this.frame_acceleration);
         var accelerationDistortion = new Transform(forwardsDistortion, backwardsDistortion);
         var identityTransform = p => new P(p.x, p.y, p.z, p.w);
-        var scaleX = 20;
+        var scaleX = 100;
         var scaleXTransform = new Transform( p => elementwise_mul(p,new P(scaleX,1,1,1)), p => elementwise_mul(p,new P(1/scaleX,1,1,1)) );
-        var wVector = new P(0.6, 0.4, 0.2);
+        var wVector = new P(1,0,0);
         var projectWTransform = new Transform( p => add(p, scalar_mul(wVector, p.w)), identityTransform );
-        var camera = new Camera(new P(-1000,500,500,0), spacetime_range.center, new P(0,1,0,0), 2000, this.rect.center);
+        var camera = new Camera(new P(-1000,500,500*view_angle,0), spacetime_range.center, new P(0,1,0,0), 500, this.rect.center);
         var cameraTransform = new Transform( p => camera.project(p), identityTransform );
-        return new ComposedTransform(accelerationDistortion, projectWTransform, scaleXTransform, cameraTransform);
+        return new ComposedTransform(accelerationDistortion, scaleXTransform, projectWTransform, cameraTransform);
     }
 }
 

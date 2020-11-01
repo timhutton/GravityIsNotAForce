@@ -40,12 +40,14 @@ function fillSpacedCircles(pts, r, color, nth=20) {
 
 // adapted from http://stackoverflow.com/a/6333775/126823
 function drawArrowHead( a, b, size ) {
-    var angle = Math.atan2(b.y-a.y,b.x-a.x);
-    ctx.beginPath();
-    ctx.moveTo(b.x - size * Math.cos(angle - Math.PI/6), b.y - size * Math.sin(angle - Math.PI/6));
-    ctx.lineTo(b.x, b.y);
-    ctx.lineTo(b.x - size * Math.cos(angle + Math.PI/6), b.y - size * Math.sin(angle + Math.PI/6));
-    ctx.stroke();
+    if(dist(a,b)>0.1) {
+        var angle = Math.atan2(b.y-a.y,b.x-a.x);
+        ctx.beginPath();
+        ctx.moveTo(b.x - size * Math.cos(angle - Math.PI/6), b.y - size * Math.sin(angle - Math.PI/6));
+        ctx.lineTo(b.x, b.y);
+        ctx.lineTo(b.x - size * Math.cos(angle + Math.PI/6), b.y - size * Math.sin(angle + Math.PI/6));
+        ctx.stroke();
+    }
 }
 
 function drawText(p, text) {
