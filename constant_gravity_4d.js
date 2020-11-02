@@ -52,8 +52,14 @@ function init() {
     trajectories.push(new Trajectory(new P(-1, 0, 5.0, 0), new P(2, 0, 45, 0), 'rgb(0,200,0)', 'rgb(0,160,0)')); // green
     trajectories.push(new Trajectory(new P(-3, 0, 5.0, 0), new P(1, 0, 9, 0), 'rgb(100,100,255)', 'rgb(100,100,200)')); // blue
     
-    var rects = [new Rect(new P(40,440), new P(400,-400)), new Rect(new P(480,440), new P(400,-400)), new Rect(new P(920,440), new P(400,-400)),
-                 new Rect(new P(40,880), new P(400,-400)), new Rect(new P(480,880), new P(400,-400)), new Rect(new P(920,880), new P(400,-400))];
+    var margin = 50;
+    var size = 400;
+    var rects = [new Rect(new P(margin,size+margin), new P(size,-size)),
+                 new Rect(new P(margin+(size+margin)*1,size+margin), new P(size,-size)),
+                 new Rect(new P(margin+(size+margin)*2,size+margin), new P(size,-size)),
+                 new Rect(new P(margin,(size+margin)*2), new P(size,-size)),
+                 new Rect(new P(margin+(size+margin)*1,(size+margin)*2), new P(size,-size)),
+                 new Rect(new P(margin+(size+margin)*2,(size+margin)*2), new P(size,-size))];
 
     graphs = [];
     graphs.push(new GraphT1S1(rects[0], earth_surface_gravity, "time "+rightArrow, "space 1 "+rightArrow));
