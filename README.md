@@ -5,11 +5,11 @@ Live demo: https://timhutton.github.io/GravityIsNotAForce/
 [![image](https://user-images.githubusercontent.com/647092/96377209-06a49b80-117c-11eb-911e-76cd16c54db4.png)](https://timhutton.github.io/GravityIsNotAForce/)
 
 Updates:
-- [First version](https://timhutton.github.io/GravityIsNotAForce/) released 2020-10-19. Triggered discussions here:
- - Hacker News: [https://news.ycombinator.com/item?id=24821141](https://news.ycombinator.com/item?id=24821141)
- - Reddit r/physics: [https://www.reddit.com/r/Physics/comments/jdqlzf/gravity_is_not_a_force_freefall_parabolas_are/](https://www.reddit.com/r/Physics/comments/jdqlzf/gravity_is_not_a_force_freefall_parabolas_are/)
- - Twitter: [https://twitter.com/\_tim_hutton\_/status/1317923535105478656](https://twitter.com/_tim_hutton_/status/1317923535105478656)
-- [Second version](https://timhutton.github.io/GravityIsNotAForce/constant_gravity_4d.html) on 2020-11-01 tackled the cases of 2+1 and 3+1 with constant-gravity.
+- 2020-10-19: First version released. Triggered discussions here:
+    - Hacker News: [https://news.ycombinator.com/item?id=24821141](https://news.ycombinator.com/item?id=24821141)
+    - Reddit r/physics: [https://www.reddit.com/r/Physics/comments/jdqlzf/gravity_is_not_a_force_freefall_parabolas_are/](https://www.reddit.com/r/Physics/comments/jdqlzf/gravity_is_not_a_force_freefall_parabolas_are/)
+    - Twitter: [https://twitter.com/\_tim_hutton\_/status/1317923535105478656](https://twitter.com/_tim_hutton_/status/1317923535105478656)
+- 2020-11-01: Added [more complex view](https://timhutton.github.io/GravityIsNotAForce/constant_gravity_4d.html) tackling the cases of 2+1 and 3+1 with constant-gravity.
 
 History of the ideas: (please help fill in the gaps!)
 - 1985: The book [Relativity Visualized](https://books.google.de/books?id=lwZBAQAAIAAJ) by Lewis Carroll Epstein shows how [bending spacetime can make straight lines out of parabolas](http://demoweb.physics.ucla.edu/content/10-curved-spacetime).
