@@ -22,7 +22,7 @@ var time_range_offset;
 var vertical_vertical_view_angle;
 var horizontal_vertical_view_angle;
 
-class Parabola {
+class Geodesic {
     constructor(peak, color) {
         this.peak = peak;
         this.color = color;
@@ -59,7 +59,7 @@ function fromDistanceFallenDistortedAxes(p)
     return new P(time, height - freeFallDistance(time_diff, height, earth_mass));
 }
 
-function getParabolaPoints(peak_time, peak_height, min_height, planet_mass) {
+function getGeodesicPoints(peak_time, peak_height, min_height, planet_mass) {
     var fallTime = freeFallTime(peak_height, min_height, planet_mass);
     var pts = [];
     var n_pts = 100;
@@ -159,12 +159,12 @@ function draw() {
         minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax)));
     }
     var fall_time = freeFallTime(spacetime_range.ymax, spacetime_range.ymin, earth_mass);
-    var parabolas = [new Parabola(new P(0, spacetime_range.ymin+6000), 'rgb(100,100,200)'),
-                     new Parabola(new P(0, spacetime_range.ymin+500), 'rgb(200,100,100)'),
-                     new Parabola(new P(0, spacetime_range.ymin+2000), 'rgb(200,100,200)'),
-                     new Parabola(new P(0, spacetime_range.ymin+13000), 'rgb(100,200,100)')];
+    var geodesics = [new Geodesic(new P(0, spacetime_range.ymin+6000), 'rgb(100,100,200)'),
+                     new Geodesic(new P(0, spacetime_range.ymin+500), 'rgb(200,100,100)'),
+                     new Geodesic(new P(0, spacetime_range.ymin+2000), 'rgb(200,100,200)'),
+                     new Geodesic(new P(0, spacetime_range.ymin+13000), 'rgb(100,200,100)')];
     /*for(var i=0;i<=10;i++) {
-        parabolas.push( new Parabola(new P(0, spacetime_range.ymin+i*spacetime_range.size.y/10.0), 'rgb(150,150,150)') );
+        geodesics.push( new Geodesic(new P(0, spacetime_range.ymin+i*spacetime_range.size.y/10.0), 'rgb(150,150,150)') );
     }*/
 
     var n_graphs = 2;
@@ -248,12 +248,12 @@ function draw() {
             drawText(graph.transform.forwards(new P(0, h)), (h/1000).toFixed(2)+"km");
         });
 
-        // draw some parabolas
-        parabolas.forEach(parabola => {
-            var pts = getParabolaPoints(parabola.peak.x, parabola.peak.y, spacetime_range.p.y, earth_mass);
+        // draw some geodesics
+        geodesics.forEach(geodesic => {
+            var pts = getGeodesicPoints(geodesic.peak.x, geodesic.peak.y, spacetime_range.p.y, earth_mass);
             pts = pts.map(graph.transform.forwards);
-            drawLine(pts, parabola.color);
-            fillSpacedCircles(pts, 1.5, parabola.color);
+            drawLine(pts, geodesic.color);
+            fillSpacedCircles(pts, 1.5, geodesic.color);
         });
 
         ctx.restore(); // restore the original clip
