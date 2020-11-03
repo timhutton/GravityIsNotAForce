@@ -91,8 +91,7 @@ function init() {
 
     var lowest_height = earth_radius;
     spacetime_range = new Rect( new P(0, lowest_height), new P(0, 0)); // will fill in the rest shortly
-    //var highest_allowed_top = moon_distance;
-    var highest_allowed_top = earth_radius + 10000;
+    var highest_allowed_top = moon_distance;
     var lowest_allowed_top = lowest_height + 1000;
 
     var heightRangeSlider = document.getElementById("heightRangeSlider");
@@ -133,11 +132,16 @@ function draw() {
     var x_axis = getLinePoints(spacetime_range.min, new P(spacetime_range.xmax, spacetime_range.ymin));
     var y_axis = getLinePoints(new P(0, spacetime_range.ymin), new P(0, spacetime_range.ymax));
     var minor_axes = [];
-    for(var y = spacetime_range.ymin; y<=spacetime_range.ymax; y+= spacetime_range.size.y/10) {
+    var y_step = Math.pow(10, Math.floor(Math.log10(spacetime_range.size.y)))/2;
+    for(var y = spacetime_range.ymin; y<=spacetime_range.ymax; y+= y_step) {
         minor_axes.push(getLinePoints(new P(spacetime_range.xmin, y), new P(spacetime_range.xmax, y)));
     }
     
-    for(var x = -7*spacetime_range.size.x/10; x<=7*spacetime_range.size.x/10; x+= spacetime_range.size.x/10) {
+    var x_step = Math.pow(10, Math.floor(Math.log10(spacetime_range.size.x)))/2;
+    for(var x = x_step; x<=spacetime_range.xmax; x+= x_step) {
+        minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax)));
+    }
+    for(var x = -x_step; x>=spacetime_range.xmin; x-= x_step) {
         minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax)));
     }
     var fall_time = freeFallTime(spacetime_range.ymax, spacetime_range.ymin, earth_mass);
@@ -186,9 +190,9 @@ function draw() {
     var identityTransform = p => new P(p.x, p.y, p.z);
     //var JonssonEmbeddingInputSpace = new Rect(new P(-2,2.2), new P(4,1));
     //var toJonssonInputSpace = new LinearTransform2D(spacetime_range, JonssonEmbeddingInputSpace);
-    var toJonssonInputSpace = new Transform( p => new P(-2+4*p.x/spacetime_range.size.x, 2.2+(p.y-spacetime_range.ymin)/1000), identityTransform );
+    var toJonssonInputSpace = new Transform( p => new P((spacetime_range.xmin-p.x)/10, 2.2+(p.y-spacetime_range.ymin)/1000), identityTransform );
     var JonssonEmbeddingTransform = new Transform( p => JonssonEmbedding(p), identityTransform );
-    var camera = new Camera(new P(10,10,3+view_angle), new P(0,0,2), new P(0,0,1), 800, rect2.center);
+    var camera = new Camera(new P(0,10,3+view_angle), new P(0,0,2), new P(0,0,1), 800, rect2.center);
     var cameraTransform = new Transform( p => camera.project(p), identityTransform );
     var JonssonEmbeddingAxes = new Graph( rect2, new ComposedTransform( toJonssonInputSpace, JonssonEmbeddingTransform, cameraTransform), "Jonsson embedding", "");
 
