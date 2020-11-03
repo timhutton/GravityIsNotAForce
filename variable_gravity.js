@@ -91,7 +91,8 @@ function init() {
 
     var lowest_height = earth_radius;
     spacetime_range = new Rect( new P(0, lowest_height), new P(0, 0)); // will fill in the rest shortly
-    var highest_allowed_top = moon_distance;
+    //var highest_allowed_top = moon_distance;
+    var highest_allowed_top = earth_radius + 10000;
     var lowest_allowed_top = lowest_height + 1000;
 
     var heightRangeSlider = document.getElementById("heightRangeSlider");
@@ -148,9 +149,9 @@ function draw() {
         parabolas.push( new Parabola(new P(0, spacetime_range.ymin+i*spacetime_range.size.y/10.0), 'rgb(150,150,150)') );
     }*/
 
-    var n_graphs = 4;
+    var n_graphs = 2;
     var margin = 40;
-    var size = (canvas.width-margin*(n_graphs+1)) / n_graphs;
+    var size = Math.min(canvas.height-margin*2, (canvas.width-margin*(n_graphs+1)) / n_graphs);
     var rect1 = new Rect( new P(margin+(margin+size)*0,50), new P(size,size));
     var rect2 = new Rect( new P(margin+(margin+size)*1,50), new P(size,size));
     var rect3 = new Rect( new P(margin+(margin+size)*2,50), new P(size,size));
@@ -160,7 +161,7 @@ function draw() {
     var flipYTransform = new Transform( flipY, flipY );
 
     // define the Klein pseudosphere transforms
-    var circle = new Circle(new P(rect4.center.x, rect4.ymin), rect4.size.x); // TODO: make own space
+    /*var circle = new Circle(new P(rect4.center.x, rect4.ymin), rect4.size.x); // TODO: make own space
     var invert = p => circle.invert(p);
     var inversionTransform = new Transform( invert, invert );
     var x_extent = 1;
@@ -170,22 +171,33 @@ function draw() {
     var circle2 = new Circle(rect4.center, rect4.size.x/2); // the half-plane (~kp_input_rect) transformed into this circle
     var poincareToKleinTransform = new Transform( p => poincareToKlein(p, circle2), p => kleinToPoincare(p, circle2) ); // TODO: doesn't work as expected
     var kleinPseudosphereAxes = new Graph( rect4, new ComposedTransform( new LinearTransform2D(spacetime_range, kp_input_rect), 
-                        inversionTransform, /*poincareToKleinTransform*/ ), "Poincare-pseudosphere", "", "" ); // TODO add transform to rect4
+                        inversionTransform, /poincareToKleinTransform/ ), "Poincare-pseudosphere", "", "" ); // TODO add transform to rect4
+                        */
 
     // define the 3D transforms
-    var toPseudosphereCoords = new LinearTransform2D(spacetime_range, new Rect(new P(-2,0), new P(4,1.5)));
+    /*var toPseudosphereCoords = new LinearTransform2D(spacetime_range, new Rect(new P(-2,0), new P(4,1.5)));
     var identityTransform = p => new P(p.x, p.y, p.z);
     var pseudosphereTransform = new Transform(pseudosphere, identityTransform); // TODO: need camera ray intersection for the reverse
     var camera = new Camera(new P(-10,-0.5,-view_angle), new P(0,0,-0.5), new P(0,0,-1), 1500, rect3.center);
     var cameraTransform = new Transform( p => camera.project(p), identityTransform );
-    var pseudosphereAxes = new Graph( rect3, new ComposedTransform( toPseudosphereCoords, pseudosphereTransform, cameraTransform), "Pseudosphere", "", "" );
+    var pseudosphereAxes = new Graph( rect3, new ComposedTransform( toPseudosphereCoords, pseudosphereTransform, cameraTransform), "Pseudosphere", "", "" );*/
+    
+    // define the Jonsson embedding transforms
+    var identityTransform = p => new P(p.x, p.y, p.z);
+    //var JonssonEmbeddingInputSpace = new Rect(new P(-2,2.2), new P(4,1));
+    //var toJonssonInputSpace = new LinearTransform2D(spacetime_range, JonssonEmbeddingInputSpace);
+    var toJonssonInputSpace = new Transform( p => new P(-2+4*p.x/spacetime_range.size.x, 2.2+(p.y-spacetime_range.ymin)/1000), identityTransform );
+    var JonssonEmbeddingTransform = new Transform( p => JonssonEmbedding(p), identityTransform );
+    var camera = new Camera(new P(10,10,3+view_angle), new P(0,0,2), new P(0,0,1), 800, rect2.center);
+    var cameraTransform = new Transform( p => camera.project(p), identityTransform );
+    var JonssonEmbeddingAxes = new Graph( rect2, new ComposedTransform( toJonssonInputSpace, JonssonEmbeddingTransform, cameraTransform), "Jonsson embedding", "");
 
     // draw the graphs
     var standardAxes = new Graph( rect1, new ComposedTransform( flipYTransform, new LinearTransform2D(spacetime_range, rect1) ),
                                   "time "+rightArrow, "[Earth surface "+rightArrow+" "+(spacetime_range.size.y/1000).toFixed(0)+"km above Earth surface]", "" );
     var distanceFallenAxes = new Graph( rect2, new ComposedTransform( distanceFallenTransform, flipYTransform, new LinearTransform2D(spacetime_range, rect2) ),
                                   "time "+rightArrow, "space & time "+rightArrow, "" );
-    [ standardAxes, distanceFallenAxes, pseudosphereAxes, kleinPseudosphereAxes ].forEach(graph => {
+    [ standardAxes, /*distanceFallenAxes,*/ JonssonEmbeddingAxes, /*pseudosphereAxes, kleinPseudosphereAxes*/ ].forEach(graph => {
         ctx.save(); // save the original clip for now
 
         // fill background with white
