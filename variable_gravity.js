@@ -19,7 +19,8 @@ var canvas;
 var ctx;
 var spacetime_range;
 var time_range_offset;
-var view_angle;
+var vertical_vertical_view_angle;
+var horizontal_vertical_view_angle;
 
 class Parabola {
     constructor(peak, color) {
@@ -83,6 +84,7 @@ function fitTimeRange(time_range_offset) {
     // time_range_offset slides the time window left and right by multiples of the existing time range
     spacetime_range.p.x = -fall_time + fall_time*time_range_offset;
     spacetime_range.size.x = fall_time * 2;
+    console.log(spacetime_range.size.x);
 }
 
 function init() {
@@ -90,34 +92,46 @@ function init() {
     ctx = canvas.getContext('2d');
 
     var lowest_height = earth_radius;
-    spacetime_range = new Rect( new P(0, lowest_height), new P(0, 0)); // will fill in the rest shortly
-    var highest_allowed_top = moon_distance;
-    var lowest_allowed_top = lowest_height + 1000;
+    //var highest_allowed_top = moon_distance;
+    var highest_allowed_top = earth_radius + 10000;
+    var lowest_allowed_top = lowest_height + 500;
+    
+    spacetime_range = new Rect( new P(-30, lowest_height), new P(60, 20000)); // will fill in the rest shortly
 
-    var heightRangeSlider = document.getElementById("heightRangeSlider");
+    /*var heightRangeSlider = document.getElementById("heightRangeSlider");
     spacetime_range.size.y = lowest_allowed_top + (highest_allowed_top-lowest_allowed_top) * Math.pow(heightRangeSlider.value / 100.0, 3) - lowest_height;
     heightRangeSlider.oninput = function() {
         spacetime_range.size.y = lowest_allowed_top + (highest_allowed_top-lowest_allowed_top) * Math.pow(heightRangeSlider.value / 100.0, 3) - lowest_height;
+        console.log("spacetime_range.size.y: ",spacetime_range.size.y);
         fitTimeRange(time_range_offset);
         draw();
-    }
+    }*/
 
-    var timeTranslationSlider = document.getElementById("timeTranslationSlider");
+    /*var timeTranslationSlider = document.getElementById("timeTranslationSlider");
     time_range_offset = 1 - 2 * timeTranslationSlider.value / 100.0;
     timeTranslationSlider.oninput = function() {
         time_range_offset = 1 - 2 * timeTranslationSlider.value / 100.0;
         fitTimeRange(time_range_offset);
         draw();
-    }
+    }*/
+    //time_range_offset = 0;
+    //fitTimeRange(time_range_offset);
 
-    var viewAngleSlider = document.getElementById("viewAngleSlider");
-    view_angle = 0 - 6 * viewAngleSlider.value / 100.0;
-    viewAngleSlider.oninput = function() {
-        view_angle = 0 - 6 * viewAngleSlider.value / 100.0;
+    var verticalViewAngleSlider = document.getElementById("verticalViewAngleSlider");
+    vertical_view_angle = 0 - 6 * verticalViewAngleSlider.value / 100.0;
+    verticalViewAngleSlider.oninput = function() {
+        vertical_view_angle = 0 - 6 * verticalViewAngleSlider.value / 100.0;
         draw();
     }
 
-    fitTimeRange(time_range_offset);
+    var horizontalViewAngleSlider = document.getElementById("horizontalViewAngleSlider");
+    horizontal_view_angle = Math.PI + 2 * Math.PI * horizontalViewAngleSlider.value / 100.0;
+    horizontalViewAngleSlider.oninput = function() {
+        horizontal_view_angle = Math.PI + 2 * Math.PI * horizontalViewAngleSlider.value / 100.0;
+        draw();
+    }
+
+    //fitTimeRange(time_range_offset);
 
     draw();
 }
@@ -132,7 +146,7 @@ function draw() {
     var x_axis = getLinePoints(spacetime_range.min, new P(spacetime_range.xmax, spacetime_range.ymin));
     var y_axis = getLinePoints(new P(0, spacetime_range.ymin), new P(0, spacetime_range.ymax));
     var minor_axes = [];
-    var y_step = Math.pow(10, Math.floor(Math.log10(spacetime_range.size.y)))/2;
+    var y_step = Math.pow(10, Math.floor(Math.log10(spacetime_range.size.y)))/5;
     for(var y = spacetime_range.ymin; y<=spacetime_range.ymax; y+= y_step) {
         minor_axes.push(getLinePoints(new P(spacetime_range.xmin, y), new P(spacetime_range.xmax, y)));
     }
@@ -145,10 +159,10 @@ function draw() {
         minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax)));
     }
     var fall_time = freeFallTime(spacetime_range.ymax, spacetime_range.ymin, earth_mass);
-    var parabolas = [new Parabola(new P(-0.2*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.75), 'rgb(100,100,200)'),
-                     new Parabola(new P( 0.1*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.45), 'rgb(200,100,100)'),
-                     new Parabola(new P( 0.2*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.32), 'rgb(200,100,200)'),
-                     new Parabola(new P( 0.4*fall_time, spacetime_range.ymin+spacetime_range.size.y*0.32), 'rgb(100,200,100)')];
+    var parabolas = [new Parabola(new P(0, spacetime_range.ymin+6000), 'rgb(100,100,200)'),
+                     new Parabola(new P(0, spacetime_range.ymin+500), 'rgb(200,100,100)'),
+                     new Parabola(new P(0, spacetime_range.ymin+2000), 'rgb(200,100,200)'),
+                     new Parabola(new P(0, spacetime_range.ymin+13000), 'rgb(100,200,100)')];
     /*for(var i=0;i<=10;i++) {
         parabolas.push( new Parabola(new P(0, spacetime_range.ymin+i*spacetime_range.size.y/10.0), 'rgb(150,150,150)') );
     }*/
@@ -182,7 +196,7 @@ function draw() {
     /*var toPseudosphereCoords = new LinearTransform2D(spacetime_range, new Rect(new P(-2,0), new P(4,1.5)));
     var identityTransform = p => new P(p.x, p.y, p.z);
     var pseudosphereTransform = new Transform(pseudosphere, identityTransform); // TODO: need camera ray intersection for the reverse
-    var camera = new Camera(new P(-10,-0.5,-view_angle), new P(0,0,-0.5), new P(0,0,-1), 1500, rect3.center);
+    var camera = new Camera(new P(-10,-0.5,-vertical_view_angle), new P(0,0,-0.5), new P(0,0,-1), 1500, rect3.center);
     var cameraTransform = new Transform( p => camera.project(p), identityTransform );
     var pseudosphereAxes = new Graph( rect3, new ComposedTransform( toPseudosphereCoords, pseudosphereTransform, cameraTransform), "Pseudosphere", "", "" );*/
     
@@ -190,11 +204,11 @@ function draw() {
     var identityTransform = p => new P(p.x, p.y, p.z);
     //var JonssonEmbeddingInputSpace = new Rect(new P(-2,2.2), new P(4,1));
     //var toJonssonInputSpace = new LinearTransform2D(spacetime_range, JonssonEmbeddingInputSpace);
-    var toJonssonInputSpace = new Transform( p => new P((spacetime_range.xmin-p.x)/10, 2.2+(p.y-spacetime_range.ymin)/1000), identityTransform );
+    var toJonssonInputSpace = new Transform( p => new P(-p.x/10, 2.2+(p.y-spacetime_range.ymin)/3000), identityTransform );
     var JonssonEmbeddingTransform = new Transform( p => JonssonEmbedding(p), identityTransform );
-    var camera = new Camera(new P(0,10,3+view_angle), new P(0,0,2), new P(0,0,1), 800, rect2.center);
+    var camera = new Camera(new P(-10*Math.cos(horizontal_view_angle),-10*Math.sin(horizontal_view_angle),3+vertical_view_angle), new P(0,0,4), new P(0,0,1), 800, rect2.center);
     var cameraTransform = new Transform( p => camera.project(p), identityTransform );
-    var JonssonEmbeddingAxes = new Graph( rect2, new ComposedTransform( toJonssonInputSpace, JonssonEmbeddingTransform, cameraTransform), "Jonsson embedding", "");
+    var JonssonEmbeddingAxes = new Graph( rect2, new ComposedTransform( toJonssonInputSpace, JonssonEmbeddingTransform, cameraTransform), "Jonsson embedding", "", "");
 
     // draw the graphs
     var standardAxes = new Graph( rect1, new ComposedTransform( flipYTransform, new LinearTransform2D(spacetime_range, rect1) ),
@@ -220,6 +234,19 @@ function draw() {
         var axes_color = 'rgb(210,210,210)';
         minor_axes.forEach( axes => { drawLine(axes.map(graph.transform.forwards), axes_color); } );
 
+        // indicate scale
+        ctx.fillStyle = "rgb(0,0,0)";
+        ctx.font = "12px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        var time_labels = [x_step*2, x_step*4];
+        time_labels.forEach( t => {
+            drawText(graph.transform.forwards(new P(t, spacetime_range.ymin)), t.toFixed(0)+"s");
+        });
+        var space_labels = [spacetime_range.ymin, spacetime_range.ymin + y_step, spacetime_range.ymin + y_step*2];
+        space_labels.forEach( h => {
+            drawText(graph.transform.forwards(new P(0, h)), (h/1000).toFixed(2)+"km");
+        });
 
         // draw some parabolas
         parabolas.forEach(parabola => {
