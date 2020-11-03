@@ -206,7 +206,7 @@ function draw() {
     //var toJonssonInputSpace = new LinearTransform2D(spacetime_range, JonssonEmbeddingInputSpace);
     var toJonssonInputSpace = new Transform( p => new P(-p.x/10, 2.2+(p.y-spacetime_range.ymin)/3000), identityTransform );
     var JonssonEmbeddingTransform = new Transform( p => JonssonEmbedding(p), identityTransform );
-    var camera = new Camera(new P(-10*Math.cos(horizontal_view_angle),-10*Math.sin(horizontal_view_angle),3+vertical_view_angle), new P(0,0,4), new P(0,0,1), 800, rect2.center);
+    var camera = new Camera(new P(-10*Math.cos(horizontal_view_angle),-10*Math.sin(horizontal_view_angle),-3-vertical_view_angle), new P(0,0,4), new P(0,0,1), 800, rect2.center);
     var cameraTransform = new Transform( p => camera.project(p), identityTransform );
     var JonssonEmbeddingAxes = new Graph( rect2, new ComposedTransform( toJonssonInputSpace, JonssonEmbeddingTransform, cameraTransform), "Jonsson embedding", "", "");
 
