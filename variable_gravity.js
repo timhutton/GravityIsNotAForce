@@ -21,6 +21,8 @@ var spacetime_range;
 var time_range_offset;
 var vertical_vertical_view_angle;
 var horizontal_vertical_view_angle;
+var sin_theta_zero;
+var delta_tau_real;
 
 class Geodesic {
     constructor(peak, color) {
@@ -59,10 +61,9 @@ function fromDistanceFallenDistortedAxes(p)
     return new P(time, height - freeFallDistance(time_diff, height, earth_mass));
 }
 
-function getGeodesicPoints(peak_time, peak_height, min_height, planet_mass) {
+function getGeodesicPoints(peak_time, peak_height, min_height, planet_mass, n_pts = 100) {
     var fallTime = freeFallTime(peak_height, min_height, planet_mass);
     var pts = [];
-    var n_pts = 100;
     // from the left up
     for(var i=0;i<n_pts;i++) {
         var t = peak_time - fallTime + i*fallTime/n_pts;
@@ -91,9 +92,9 @@ function JonssonEmbedding(p) {
     // Following http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf
 
     // Pick the shape of funnel we want: (Eq. 46)
-    var sin_theta_zero = 0.8; // angle of slope at the bottom
+    //var sin_theta_zero = 1; // angle of slope at the bottom
     var r_0 = 1; // radius at the bottom
-    var delta_tau_real = 1; // proper time per circumference, in seconds
+    //var delta_tau_real = 1; // proper time per circumference, in seconds
 
     // Compute k, delta and alpha (Eq. 47)
     var x_0 = earth_radius / earth_schwarzschild_radius;
@@ -103,8 +104,8 @@ function JonssonEmbedding(p) {
     var delta = Math.pow(k / ( 2 * sin_theta_zero * Math.pow(x_0, 2) ), 2);
     var alpha = Math.pow(r_0, 2) / ( 4 * Math.pow(x_0, 4) * Math.pow(sin_theta_zero, 2) + Math.pow(k, 2) );
 
-    var t = p.x * 2 * Math.PI; // time direction
-    var x = p.y / earth_schwarzschild_radius; // up direction
+    var t = 2 * Math.PI * p.x / delta_tau_real; // convert time in seconds to angle
+    var x = p.y / earth_schwarzschild_radius;
     var delta_x = x - x_0;
     
     // compute the radius at this point (Eg. 48)
@@ -131,7 +132,7 @@ function init() {
     var highest_allowed_top = earth_radius + 10000;
     var lowest_allowed_top = lowest_height + 500;
     
-    spacetime_range = new Rect( new P(-0.5, lowest_height), new P(1, 2));
+    spacetime_range = new Rect( new P(-0.5, lowest_height), new P(1, 3));
 
     /*var heightRangeSlider = document.getElementById("heightRangeSlider");
     spacetime_range.size.y = lowest_allowed_top + (highest_allowed_top-lowest_allowed_top) * Math.pow(heightRangeSlider.value / 100.0, 3) - lowest_height;
@@ -166,6 +167,20 @@ function init() {
         draw();
     }
 
+    var slopeSlider = document.getElementById("slopeSlider");
+    sin_theta_zero = 0.999 * slopeSlider.value / 100.0;
+    slopeSlider.oninput = function() {
+        sin_theta_zero = 0.999 * slopeSlider.value / 100.0;
+        draw();
+    }
+
+    var timeWrappingSlider = document.getElementById("timeWrappingSlider");
+    delta_tau_real = 0.1 + 3 * timeWrappingSlider.value / 100.0;
+    timeWrappingSlider.oninput = function() {
+        delta_tau_real = 0.1 + 3 * timeWrappingSlider.value / 100.0;
+        draw();
+    }
+
     //fitTimeRange(time_range_offset);
 
     draw();
@@ -194,7 +209,7 @@ function draw() {
         minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax)));
     }
     var fall_time = freeFallTime(spacetime_range.ymax, spacetime_range.ymin, earth_mass);
-    var geodesics = [new Geodesic(new P(0, spacetime_range.ymin+0.6), 'rgb(100,100,200)'),
+    var geodesics = [new Geodesic(new P(0, spacetime_range.ymin+2.6), 'rgb(100,100,200)'),
                      new Geodesic(new P(0, spacetime_range.ymin+0.5), 'rgb(200,100,100)'),
                      new Geodesic(new P(0, spacetime_range.ymin+0.2), 'rgb(200,100,200)'),
                      new Geodesic(new P(0, spacetime_range.ymin+1.3), 'rgb(100,200,100)')];
@@ -284,7 +299,7 @@ function draw() {
 
         // draw some geodesics
         geodesics.forEach(geodesic => {
-            var pts = getGeodesicPoints(geodesic.peak.x, geodesic.peak.y, spacetime_range.p.y, earth_mass);
+            var pts = getGeodesicPoints(geodesic.peak.x, geodesic.peak.y, spacetime_range.p.y, earth_mass, 400);
             pts = pts.map(graph.transform.forwards);
             drawLine(pts, geodesic.color);
             fillSpacedCircles(pts, 1.5, geodesic.color);
