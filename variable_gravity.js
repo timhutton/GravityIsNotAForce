@@ -115,9 +115,11 @@ function JonssonEmbedding(p) {
     var t = p.x; // time direction
     var x = p.y; // up direction
     var delta_x = 0.1; //x - x_0;
+    
+    // compute the radius at this point (Eg. 48)
     var radius = k * Math.sqrt(alpha) / Math.sqrt( delta_x / Math.pow(x_0, 2) + delta);
 
-    // integrate over x to find delta_z
+    // integrate over x to find delta_z (Eg. 49)
     var delta_z = 0;
     var dx = 0.001;
     for(var delta_x_sample = 0; delta_x_sample < delta_x; delta_x_sample += dx) {
