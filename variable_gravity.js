@@ -175,9 +175,9 @@ function init() {
     }
 
     var timeWrappingSlider = document.getElementById("timeWrappingSlider");
-    delta_tau_real = 0.1 + 3 * timeWrappingSlider.value / 100.0;
+    delta_tau_real = 3 - 2.2 * timeWrappingSlider.value / 100.0;
     timeWrappingSlider.oninput = function() {
-        delta_tau_real = 0.1 + 3 * timeWrappingSlider.value / 100.0;
+        delta_tau_real = 3 - 2.2 * timeWrappingSlider.value / 100.0;
         draw();
     }
 
@@ -193,20 +193,20 @@ function draw() {
     ctx.rect(0,0,canvas.width, canvas.height);
     ctx.fill();
 
-    var x_axis = getLinePoints(spacetime_range.min, new P(spacetime_range.xmax, spacetime_range.ymin));
-    var y_axis = getLinePoints(new P(0, spacetime_range.ymin), new P(0, spacetime_range.ymax));
+    var x_axis = getLinePoints(spacetime_range.min, new P(spacetime_range.xmax, spacetime_range.ymin), 200);
+    var y_axis = getLinePoints(new P(0, spacetime_range.ymin), new P(0, spacetime_range.ymax), 200);
     var minor_axes = [];
     var y_step = Math.pow(10, Math.floor(Math.log10(spacetime_range.size.y)))/5;
     for(var y = spacetime_range.ymin; y<=spacetime_range.ymax; y+= y_step) {
-        minor_axes.push(getLinePoints(new P(spacetime_range.xmin, y), new P(spacetime_range.xmax, y)));
+        minor_axes.push(getLinePoints(new P(spacetime_range.xmin, y), new P(spacetime_range.xmax, y), 200));
     }
     
     var x_step = 0.1;
     for(var x = x_step; x<=spacetime_range.xmax; x+= x_step) {
-        minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax)));
+        minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax), 200));
     }
     for(var x = -x_step; x>=spacetime_range.xmin; x-= x_step) {
-        minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax)));
+        minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax), 200));
     }
     var fall_time = freeFallTime(spacetime_range.ymax, spacetime_range.ymin, earth_mass);
     var geodesics = [new Geodesic(new P(0, spacetime_range.ymin+2.6), 'rgb(100,100,200)'),
@@ -299,7 +299,7 @@ function draw() {
 
         // draw some geodesics
         geodesics.forEach(geodesic => {
-            var pts = getGeodesicPoints(geodesic.peak.x, geodesic.peak.y, spacetime_range.p.y, earth_mass, 400);
+            var pts = getGeodesicPoints(geodesic.peak.x, geodesic.peak.y, spacetime_range.p.y, earth_mass, 500);
             pts = pts.map(graph.transform.forwards);
             drawLine(pts, geodesic.color);
             fillSpacedCircles(pts, 1.5, geodesic.color);
