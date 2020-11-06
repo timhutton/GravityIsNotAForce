@@ -15,10 +15,13 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-var earth_surface_gravity = 9.8; // metres per second per second
+var earth_surface_gravity = 9.8; // m/s/s
 var earth_mass = 5.972e24; // kg
 var earth_radius = 6371e3; // m
 var moon_distance = 384400e3; // m
+var light_speed = 299792458; // m/s
+var earth_schwarzschild_radius = 8.87e-3; // m
+var universal_gravitational_constant = 6.67430e-11; // m^3 kg^-1 s^-2
 
 function findInitialHeight(time, final_height, planet_mass) {
     // Return the height you started from given that you reached final_height in the given time.

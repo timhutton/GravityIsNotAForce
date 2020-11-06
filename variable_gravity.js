@@ -87,6 +87,52 @@ function fitTimeRange(time_range_offset) {
     console.log(spacetime_range.size.x);
 }
 
+function JonssonEmbedding(p) {
+    // Following http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf
+
+    // Pick the shape of funnel we want: (Eq. 46)
+    var sin_theta_zero = 0.8; // angle of slope at the bottom
+    var r_0 = 1; // radius at the bottom
+    var delta_tau_real = 1; // proper time per circumference, in seconds
+
+    // Compute k, alpha and beta (Eq. 47)
+    var x_0 = earth_radius;
+    var a_e0 = 1 - 1 / x_0; // (Eq. 14, because using exterior metric)
+    var R_g = earth_schwarzschild_radius;
+    var k = delta_tau_real * light_speed / ( 2 * Math.PI * Math.sqrt(a_e0) * R_g ); // gives 5.38e9, as in the paper
+    var delta = Math.pow(k / ( 2 * sin_theta_zero * Math.pow(x_0, 2) ), 2); // ASK - gives the wrong value of 6.86e-9 (delta = 4.25e-17 in the paper)
+            // (not a numerical issue - wolfram alpha gives the same result of 6.86e-9)
+    delta = 4.25e-17; // hack - proceed with value from the paper
+    var alpha = Math.pow(r_0, 2) / ( 4 * Math.pow(x_0, 4) * Math.pow(sin_theta_zero, 2) + Math.pow(k, 2) );
+            // ASK - gives the wrong value of 2.37e-28 (alpha = 1.47e-36 in the paper)
+            // (again not a numerical issue - wolfram alpha gives the same result of 2.37e-28)
+    alpha = 1.47e-36; // hack - proceed with the value from the paper
+    
+    //console.log('k =',k);
+    //console.log('delta =', delta);
+    //console.log('alpha =', alpha);
+    
+    var t = p.x; // time direction
+    var x = p.y; // up direction
+    var delta_x = 0.1; //x - x_0;
+    var radius = k * Math.sqrt(alpha) / Math.sqrt( delta_x / Math.pow(x_0, 2) + delta);
+
+    // integrate over x to find delta_z
+    var delta_z = 0;
+    var dx = 0.001;
+    for(var delta_x_sample = 0; delta_x_sample < delta_x; delta_x_sample += dx) {
+        delta_z += dx * ( Math.sqrt(alpha) / ( delta_x_sample / Math.pow(x_0, 2) + delta ) ) *
+                        Math.sqrt( 1 - ( Math.pow(k, 2) / ( 4 * Math.pow(x_0, 4) ) ) *
+                                   ( 1 / ( delta_x_sample / Math.pow(x_0, 2) + delta ) ) );
+    }
+
+    //console.log('delta_x =', delta_x);
+    //console.log('radius =', radius);
+    //console.log('delta_z =', delta_z );
+    
+    return new P(radius*Math.cos(t), radius*Math.sin(t), delta_z);
+}
+
 function init() {
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');

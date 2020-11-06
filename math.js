@@ -162,22 +162,15 @@ function pseudosphere(p) {
     return new P(sech(u) * Math.cos(v), sech(u) * Math.sin(v), Math.tanh(u)-u);
 }
 
-// a bit like a pseudosphere but a different formula, from Eq. 22 of http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf
-function JonssonEmbedding(p) {
-    var t = p.x; // time direction
-    var s = p.y; // up direction
-    var radius = Math.sqrt((s-1)/(s-2));
-    return new P(radius*Math.cos(t), radius*Math.sin(t), s);
-}
-
-
 function poincareToKlein(p, circle) {
+    // untested
     var u = dist(p, circle.p) / circle.r;
     var s = 2 * u / (1 + u * u);
     return add(circle.p, scalar_mul(sub(p, circle.p), circle.r * s / u));
 }
 
 function kleinToPoincare(p, circle) {
+    // untested
     var s = dist(p, circle.p) / circle.r;
     var u = s / (1 + Math.sqrt(1 - s * s));
     return add(circle.p, scalar_mul(sub(p, circle.p), circle.r * u / s));
