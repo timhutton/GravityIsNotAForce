@@ -40,9 +40,9 @@ function init() {
     }
 
     var viewAngleSlider = document.getElementById("viewAngleSlider");
-    view_angle = 2 - 4 * viewAngleSlider.value / 100.0;
+    view_angle = 2 * Math.PI * viewAngleSlider.value / 100.0;
     viewAngleSlider.oninput = function() {
-        view_angle = 2 - 4 * viewAngleSlider.value / 100.0;
+        view_angle = 2 * Math.PI * viewAngleSlider.value / 100.0;
         draw();
     }
 
