@@ -114,17 +114,21 @@ function JonssonEmbedding(p) {
     var x = p.y / earth_schwarzschild_radius;
     var delta_x = x - x_0;
     
+    var sqrt_alpha = Math.sqrt(alpha);
+    var sqr_x_0 = Math.pow(x_0, 2);
+    
     // compute the radius at this point (Eg. 48)
-    var radius = k * Math.sqrt(alpha) / Math.sqrt( delta_x / Math.pow(x_0, 2) + delta);
+    var radius = k * sqrt_alpha / Math.sqrt( delta_x / sqr_x_0 + delta );
 
     // integrate over x to find delta_z (Eg. 49)
     var delta_z = 0;
     var dx = delta_x / 1000;
+    var term1 = Math.pow(k, 2) / ( 4 * Math.pow(x_0, 4) );
     for(var delta_x_sample = 0; delta_x_sample < delta_x; delta_x_sample += dx) {
-        delta_z += dx * ( Math.sqrt(alpha) / ( delta_x_sample / Math.pow(x_0, 2) + delta ) ) *
-                        Math.sqrt( 1 - ( Math.pow(k, 2) / ( 4 * Math.pow(x_0, 4) ) ) *
-                                   ( 1 / ( delta_x_sample / Math.pow(x_0, 2) + delta ) ) );
+        var term2 = 1 / ( delta_x_sample / sqr_x_0 + delta );
+        delta_z += term2 * Math.sqrt( 1 - term1 * term2 );
     }
+    delta_z *= dx * sqrt_alpha;
 
     return new P(radius*Math.cos(t), radius*Math.sin(t), delta_z);
 }
