@@ -21,8 +21,19 @@ var spacetime_range;
 var time_range_offset;
 var vertical_vertical_view_angle;
 var horizontal_vertical_view_angle;
-var sin_theta_zero;
-var delta_tau_real;
+
+// Following http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf :
+// Pick the shape of funnel we want: (Eq. 46)
+var sin_theta_zero = 0.8; // angle of slope at the bottom (controlled by a slider)
+var r_0 = 1; // radius at the bottom
+var delta_tau_real = 1; // proper time per circumference, in seconds (controlled by a slider)
+// Compute k, delta and alpha (Eq. 47)
+var x_0 = earth_radius / earth_schwarzschild_radius;
+var a_e0 = 1 - 1 / x_0; // (Eq. 14, because using exterior metric)
+var R_g = earth_schwarzschild_radius;
+var k;
+var delta;
+var alpha;
 
 class Geodesic {
     constructor(peak, color) {
@@ -88,21 +99,16 @@ function fitTimeRange(time_range_offset) {
     console.log(spacetime_range.size.x);
 }
 
+function computeJonssonShapeParameters() {
+    // Following http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf
+    // Compute k, delta and alpha (Eq. 47)
+    k = delta_tau_real * light_speed / ( 2 * Math.PI * Math.sqrt(a_e0) * R_g );
+    delta = Math.pow(k / ( 2 * sin_theta_zero * Math.pow(x_0, 2) ), 2);
+    alpha = Math.pow(r_0, 2) / ( 4 * Math.pow(x_0, 4) * Math.pow(sin_theta_zero, 2) + Math.pow(k, 2) );
+}
+
 function JonssonEmbedding(p) {
     // Following http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf
-
-    // Pick the shape of funnel we want: (Eq. 46)
-    //var sin_theta_zero = 1; // angle of slope at the bottom
-    var r_0 = 1; // radius at the bottom
-    //var delta_tau_real = 1; // proper time per circumference, in seconds
-
-    // Compute k, delta and alpha (Eq. 47)
-    var x_0 = earth_radius / earth_schwarzschild_radius;
-    var a_e0 = 1 - 1 / x_0; // (Eq. 14, because using exterior metric)
-    var R_g = earth_schwarzschild_radius;
-    var k = delta_tau_real * light_speed / ( 2 * Math.PI * Math.sqrt(a_e0) * R_g );
-    var delta = Math.pow(k / ( 2 * sin_theta_zero * Math.pow(x_0, 2) ), 2);
-    var alpha = Math.pow(r_0, 2) / ( 4 * Math.pow(x_0, 4) * Math.pow(sin_theta_zero, 2) + Math.pow(k, 2) );
 
     var t = 2 * Math.PI * p.x / delta_tau_real; // convert time in seconds to angle
     var x = p.y / earth_schwarzschild_radius;
@@ -187,6 +193,8 @@ function init() {
 }
 
 function draw() {
+    computeJonssonShapeParameters();
+    
     // fill canvas with light gray
     ctx.fillStyle = 'rgb(240,240,240)';
     ctx.beginPath();
