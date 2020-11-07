@@ -65,23 +65,6 @@ class GraphS2 extends Graph {
     }
 }
 
-class GraphT1S2 extends Graph {
-    // A graph that plots one time and two space dimensions in a 3D view
-    get transform() {
-        var forwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, this.frame_acceleration - earth_surface_gravity);
-        var backwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, earth_surface_gravity - this.frame_acceleration);
-        var accelerationDistortion = new Transform(forwardsDistortion, backwardsDistortion);
-        var scaleX = 50;
-        var scaleXTransform = new Transform( p => elementwise_mul(p,new P(scaleX,1,1,1)), p => elementwise_mul(p,new P(1/scaleX,1,1,1)) );
-        var camera_dist = 1500;
-        var camera = new Camera(new P(camera_dist * Math.cos(view_angle), camera_dist/4, camera_dist * Math.sin(view_angle), 0), 
-                                spacetime_range.center, new P(0, 1, 0, 0), 1400, this.rect.center);
-        var identityTransform = p => new P(p.x, p.y, p.z, p.w);
-        var cameraTransform = new Transform( p => camera.project(p), identityTransform );
-        return new ComposedTransform(accelerationDistortion, scaleXTransform, cameraTransform);
-    }
-}
-
 class GraphS3 extends Graph {
     // A graph that plots three space dimensions in a 3D view
     get transform() {
@@ -92,10 +75,27 @@ class GraphS3 extends Graph {
         var swapXandWTransform = new Transform(swapXandW, swapXandW);
         var camera_dist = 500;
         var camera = new Camera(new P(camera_dist * Math.cos(view_angle), camera_dist/4, camera_dist * Math.sin(view_angle), 0), 
-                                spacetime_range.center, new P(0, 1, 0, 0), 800, this.rect.center);
+                                spacetime_range.center, new P(0, 1, 0, 0), 1400, this.rect.center);
         var identityTransform = p => new P(p.x, p.y, p.z, p.w);
         var cameraTransform = new Transform( p => camera.project(p), identityTransform );
         return new ComposedTransform(accelerationDistortion, swapXandWTransform, cameraTransform);
+    }
+}
+
+class GraphT1S2 extends Graph {
+    // A graph that plots one time and two space dimensions in a 3D view
+    get transform() {
+        var forwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, this.frame_acceleration - earth_surface_gravity);
+        var backwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, earth_surface_gravity - this.frame_acceleration);
+        var accelerationDistortion = new Transform(forwardsDistortion, backwardsDistortion);
+        var scaleTime = 20;
+        var scaleTimeTransform = new Transform( p => elementwise_mul(p,new P(scaleTime,1,1,1)), p => elementwise_mul(p,new P(1/scaleTime,1,1,1)) );
+        var camera_dist = 500;
+        var camera = new Camera(new P(camera_dist * Math.cos(view_angle), camera_dist/4, camera_dist * Math.sin(view_angle), 0), 
+                                spacetime_range.center, new P(0, 1, 0, 0), 1400, this.rect.center);
+        var identityTransform = p => new P(p.x, p.y, p.z, p.w);
+        var cameraTransform = new Transform( p => camera.project(p), identityTransform );
+        return new ComposedTransform(accelerationDistortion, scaleTimeTransform, cameraTransform);
     }
 }
 
@@ -107,11 +107,11 @@ class GraphT1S3 extends Graph {
         var accelerationDistortion = new Transform(forwardsDistortion, backwardsDistortion);
         var identityTransform = p => new P(p.x, p.y, p.z, p.w);
         // map xyzw onto xyz so that we can use a 3D camera
-        var scaleX = 50;
-        var projectTransform = new Transform( p => new P( p.w + scaleX*0.8*p.x, p.y, p.z + scaleX*0.2*p.x ), identityTransform );
-        var camera_dist = 1500;
+        var scaleTime = 20;
+        var projectTransform = new Transform( p => new P( p.w + scaleTime*p.x, p.y, p.z ), identityTransform );
+        var camera_dist = 500;
         var camera = new Camera(new P(camera_dist * Math.cos(view_angle), camera_dist/4, camera_dist * Math.sin(view_angle), 0),
-                                spacetime_range.center, new P(0, 1, 0, 0), 1000, this.rect.center);
+                                spacetime_range.center, new P(0, 1, 0, 0), 1400, this.rect.center);
         var cameraTransform = new Transform( p => camera.project(p), identityTransform );
         return new ComposedTransform(accelerationDistortion, projectTransform, cameraTransform);
     }
