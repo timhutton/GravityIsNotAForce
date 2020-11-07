@@ -81,6 +81,24 @@ class GraphT1S2 extends Graph {
         return new ComposedTransform(accelerationDistortion, scaleXTransform, cameraTransform);
     }
 }
+
+class GraphS3 extends Graph {
+    // A graph that plots three space dimensions in a 3D view
+    get transform() {
+        var forwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, this.frame_acceleration - earth_surface_gravity);
+        var backwardsDistortion = p => transformBetweenAcceleratingReferenceFrames(p, earth_surface_gravity - this.frame_acceleration);
+        var accelerationDistortion = new Transform(forwardsDistortion, backwardsDistortion);
+        var swapXandW = p => new P(p.w, p.y, p.z, p.x);
+        var swapXandWTransform = new Transform(swapXandW, swapXandW);
+        var camera_dist = 500;
+        var camera = new Camera(new P(camera_dist * Math.cos(view_angle), camera_dist/4, camera_dist * Math.sin(view_angle), 0), 
+                                spacetime_range.center, new P(0, 1, 0, 0), 800, this.rect.center);
+        var identityTransform = p => new P(p.x, p.y, p.z, p.w);
+        var cameraTransform = new Transform( p => camera.project(p), identityTransform );
+        return new ComposedTransform(accelerationDistortion, swapXandWTransform, cameraTransform);
+    }
+}
+
 class GraphT1S3 extends Graph {
     // A graph that plots one time and three space dimensions in a 4D view
     get transform() {
