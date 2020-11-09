@@ -113,10 +113,10 @@ function JonssonEmbedding(p) {
     var t = 2 * Math.PI * p.x / delta_tau_real; // convert time in seconds to angle
     var x = p.y / earth_schwarzschild_radius;
     var delta_x = x - x_0;
-    
+
     var sqrt_alpha = Math.sqrt(alpha);
     var sqr_x_0 = Math.pow(x_0, 2);
-    
+
     // compute the radius at this point (Eg. 48)
     var radius = k * sqrt_alpha / Math.sqrt( delta_x / sqr_x_0 + delta );
 
@@ -141,7 +141,7 @@ function init() {
     //var highest_allowed_top = moon_distance;
     var highest_allowed_top = earth_radius + 10000;
     var lowest_allowed_top = lowest_height + 500;
-    
+
     spacetime_range = new Rect( new P(-0.5, lowest_height), new P(1, 3));
 
     /*var heightRangeSlider = document.getElementById("heightRangeSlider");
@@ -196,9 +196,25 @@ function init() {
     draw();
 }
 
+function testEmbedding() {
+    // generate trajectories that start and end at the same points, for different values of g
+    // measure their arc length on the embedding - the one for the correct g should be the shortest
+    var time_to_fall = 1; // pick a time
+    for(var dm = -earth_mass *0.7; dm < earth_mass / 2; dm += earth_mass / 20) {
+        var planet_mass = earth_mass + dm;
+        var h = findInitialHeight(time_to_fall, earth_radius, planet_mass);
+        var pts = getGeodesicPoints(0, h, earth_radius, planet_mass, 100).map(JonssonEmbedding);
+        var length = 0;
+        for(var iPt = 1; iPt < pts.length; iPt++) {
+            length += dist(pts[iPt], pts[iPt-1]);
+        }
+        console.log(dm, h, length);
+    }
+}
+
 function draw() {
     computeJonssonShapeParameters();
-    
+
     // fill canvas with light gray
     ctx.fillStyle = 'rgb(240,240,240)';
     ctx.beginPath();
@@ -212,7 +228,7 @@ function draw() {
     for(var y = spacetime_range.ymin; y<=spacetime_range.ymax; y+= y_step) {
         minor_axes.push(getLinePoints(new P(spacetime_range.xmin, y), new P(spacetime_range.xmax, y), 200));
     }
-    
+
     var x_step = 0.1;
     for(var x = x_step; x<=spacetime_range.xmax; x+= x_step) {
         minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax), 200));
@@ -250,7 +266,7 @@ function draw() {
     var kp_input_rect = new Rect(new P(circle.p.x-circle.r*x_extent,circle.p.y+circle.r), new P(2*circle.r*x_extent,circle.r*y_extent));
     var circle2 = new Circle(rect4.center, rect4.size.x/2); // the half-plane (~kp_input_rect) transformed into this circle
     var poincareToKleinTransform = new Transform( p => poincareToKlein(p, circle2), p => kleinToPoincare(p, circle2) ); // TODO: doesn't work as expected
-    var kleinPseudosphereAxes = new Graph( rect4, new ComposedTransform( new LinearTransform2D(spacetime_range, kp_input_rect), 
+    var kleinPseudosphereAxes = new Graph( rect4, new ComposedTransform( new LinearTransform2D(spacetime_range, kp_input_rect),
                         inversionTransform, /poincareToKleinTransform/ ), "Poincare-pseudosphere", "", "" ); // TODO add transform to rect4
                         */
 
@@ -261,14 +277,14 @@ function draw() {
     var camera = new Camera(new P(-10,-0.5,-vertical_view_angle), new P(0,0,-0.5), new P(0,0,-1), 1500, rect3.center);
     var cameraTransform = new Transform( p => camera.project(p), identityTransform );
     var pseudosphereAxes = new Graph( rect3, new ComposedTransform( toPseudosphereCoords, pseudosphereTransform, cameraTransform), "Pseudosphere", "", "" );*/
-    
+
     // define the Jonsson embedding transforms
     var identityTransform = p => new P(p.x, p.y, p.z);
     var JonssonEmbeddingTransform = new Transform( p => JonssonEmbedding(p), identityTransform );
     var camera = new Camera(new P(10*Math.cos(-horizontal_view_angle),10*Math.sin(-horizontal_view_angle),-3-vertical_view_angle),
                             new P(0,0,0.5), new P(0,0,1), 2000, rect2.center);
     var cameraTransform = new Transform( p => camera.project(p), identityTransform );
-    var JonssonEmbeddingAxes = new Graph( rect2, new ComposedTransform( JonssonEmbeddingTransform, cameraTransform), 
+    var JonssonEmbeddingAxes = new Graph( rect2, new ComposedTransform( JonssonEmbeddingTransform, cameraTransform),
                                           "Jonsson embedding", "", "");
 
     // draw the graphs
