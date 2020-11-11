@@ -136,10 +136,10 @@ function JonssonEmbeddingSurfaceNormal(p) {
     var delta_x = x - x_0;
 
     var term1 = delta_x / sqr_x_0 + delta;
-    var dr_dx = - k * sqrt_alpha / (2 * sqr_x_0 * Math.pow(term1, 3 / 2));
-    var dz_dx = sqrt_alpha * Math.sqrt(1 - Math.pow(k, 2) / (4 * Math.pow(x_0, 4) * term1)) / term1;
-    var dz_dr = -dz_dx / dr_dx;
-    var normal = normalize(new P(dz_dr, 0, 1));
+    var dr_dx = - k * sqrt_alpha / (2 * sqr_x_0 * Math.pow(term1, 3 / 2)); // derivative of Eq. 48 wrt. delta_x
+    var dz_dx = sqrt_alpha * Math.sqrt(1 - Math.pow(k, 2) / (4 * Math.pow(x_0, 4) * term1)) / term1; // from Eq. 49
+    var dz_dr = dz_dx / dr_dx;
+    var normal = normalize(new P(-dz_dr, 0, 1)); // in the XZ plane
     return rotateXY(normal, theta);
 }
 
@@ -206,7 +206,7 @@ function init() {
     draw();
 }
 
-function testEmbedding() {
+function testEmbeddingByPathLengths() {
     // generate trajectories that start and end at the same points, for different values of g
     // measure their arc length on the embedding - the one for the correct g should be the shortest
     var time_to_fall = 1; // pick a time
@@ -222,9 +222,16 @@ function testEmbedding() {
     }
 }
 
+function drawNormal(p, color, camera) {
+    var jp = JonssonEmbedding(p);
+    var jn = JonssonEmbeddingSurfaceNormal(p);
+    var pts = [jp, add(jp, scalar_mul(jn, 0.1))].map(p => camera.project(p));
+    drawLine(pts, color);
+}
+
 function draw() {
     computeJonssonShapeParameters();
-    
+
     // fill canvas with light gray
     ctx.fillStyle = 'rgb(240,240,240)';
     ctx.beginPath();
