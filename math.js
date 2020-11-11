@@ -123,6 +123,12 @@ function scalar_mul(a, f) {
     return new P(a.x * f, a.y * f, a.z * f, a.w * f);
 }
 
+function rotateXY(p, t) {
+    var c = Math.cos(t);
+    var s = Math.sin(t);
+    return new P(p.x * c - p.y * s, p.x * s + p.y * c, p.z, p.w);
+}
+
 function elementwise_mul(a, b) {
     return new P(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
 }

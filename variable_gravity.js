@@ -29,11 +29,13 @@ var r_0 = 1; // radius at the bottom
 var delta_tau_real = 1; // proper time per circumference, in seconds (controlled by a slider)
 // Compute k, delta and alpha (Eq. 47)
 var x_0 = earth_radius / earth_schwarzschild_radius;
+var sqr_x_0 = Math.pow(x_0, 2);
 var a_e0 = 1 - 1 / x_0; // (Eq. 14, because using exterior metric)
 var R_g = earth_schwarzschild_radius;
-var k;
+var k; // (these things are computed in computeJonssonShapeParameters())
 var delta;
 var alpha;
+var sqrt_alpha;
 
 class Geodesic {
     constructor(peak, color) {
@@ -103,8 +105,9 @@ function computeJonssonShapeParameters() {
     // Following http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf
     // Compute k, delta and alpha (Eq. 47)
     k = delta_tau_real * light_speed / ( 2 * Math.PI * Math.sqrt(a_e0) * R_g );
-    delta = Math.pow(k / ( 2 * sin_theta_zero * Math.pow(x_0, 2) ), 2);
+    delta = Math.pow(k / ( 2 * sin_theta_zero * sqr_x_0 ), 2);
     alpha = Math.pow(r_0, 2) / ( 4 * Math.pow(x_0, 4) * Math.pow(sin_theta_zero, 2) + Math.pow(k, 2) );
+    sqrt_alpha = Math.sqrt(alpha);
 }
 
 function JonssonEmbedding(p) {
@@ -113,9 +116,6 @@ function JonssonEmbedding(p) {
     var theta = 2 * Math.PI * p.x / delta_tau_real; // convert time in seconds to angle
     var x = p.y / earth_schwarzschild_radius;
     var delta_x = x - x_0;
-
-    var sqrt_alpha = Math.sqrt(alpha);
-    var sqr_x_0 = Math.pow(x_0, 2);
 
     // compute the radius at this point (Eg. 48)
     var radius = k * sqrt_alpha / Math.sqrt( delta_x / sqr_x_0 + delta );
@@ -128,6 +128,19 @@ function JonssonEmbedding(p) {
     });
     
     return new P(radius * Math.cos(theta), radius * Math.sin(theta), delta_z);
+}
+
+function JonssonEmbeddingSurfaceNormal(p) {
+    var theta = 2 * Math.PI * p.x / delta_tau_real; // convert time in seconds to angle
+    var x = p.y / earth_schwarzschild_radius;
+    var delta_x = x - x_0;
+
+    var term1 = delta_x / sqr_x_0 + delta;
+    var dr_dx = - k * sqrt_alpha / (2 * sqr_x_0 * Math.pow(term1, 3 / 2));
+    var dz_dx = sqrt_alpha * Math.sqrt(1 - Math.pow(k, 2) / (4 * Math.pow(x_0, 4) * term1)) / term1;
+    var dz_dr = -dz_dx / dr_dx;
+    var normal = normalize(new P(dz_dr, 0, 1));
+    return rotateXY(normal, theta);
 }
 
 function init() {
@@ -161,9 +174,9 @@ function init() {
     //fitTimeRange(time_range_offset);
 
     var verticalViewAngleSlider = document.getElementById("verticalViewAngleSlider");
-    vertical_view_angle = 0 - 6 * verticalViewAngleSlider.value / 100.0;
+    vertical_view_angle = 0 - 10 * verticalViewAngleSlider.value / 100.0;
     verticalViewAngleSlider.oninput = function() {
-        vertical_view_angle = 0 - 6 * verticalViewAngleSlider.value / 100.0;
+        vertical_view_angle = 0 - 10 * verticalViewAngleSlider.value / 100.0;
         draw();
     }
 
