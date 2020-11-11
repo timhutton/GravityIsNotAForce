@@ -143,6 +143,50 @@ function JonssonEmbeddingSurfaceNormal(p) {
     return rotateXY(normal, theta);
 }
 
+function testEmbeddingByPathLengths() {
+    // generate trajectories that start and end at the same points, for different values of g
+    // measure their arc length on the embedding - the one for the correct g should be the shortest
+    var time_to_fall = 1; // pick a time
+    for(var dm = -earth_mass *0.7; dm < earth_mass / 2; dm += earth_mass / 20) {
+        var planet_mass = earth_mass + dm;
+        var h = findInitialHeight(time_to_fall, earth_radius, planet_mass);
+        var pts = getGeodesicPoints(0, h, earth_radius, planet_mass, 100).map(JonssonEmbedding);
+        var length = 0;
+        for(var iPt = 1; iPt < pts.length; iPt++) {
+            length += dist(pts[iPt], pts[iPt-1]);
+        }
+        console.log(dm, h, length);
+    }
+    throw new Error(); // to stop the rest of the script
+}
+
+function testEmbeddingByPathTurning() {
+    // generate trajectories that start and end at the same points, for different values of g
+    // measure how much they deviate from the plane that includes the surface normal
+    var time_to_fall = 1; // pick a time
+    [/*-earth_mass * 0.1, 0,*/ earth_mass * 0.1].forEach( dm => {
+        var planet_mass = earth_mass + dm;
+        var h = findInitialHeight(time_to_fall, earth_radius, planet_mass);
+        var pts = getGeodesicPoints(0, h, earth_radius, planet_mass, 200);
+        var sum_turns = 0;
+        var sum_abs_turns = 0;
+        for(var iPt = 1; iPt < pts.length-1; iPt++) {
+            var p = JonssonEmbedding(pts[iPt]);
+            var n = JonssonEmbeddingSurfaceNormal(pts[iPt]);
+            var pre = JonssonEmbedding(pts[iPt-1]);
+            var post = JonssonEmbedding(pts[iPt+1]);
+            var incoming_segment = sub(p, pre);
+            var outgoing_segment = sub(post, p);
+            var norm_vec = normalize(cross(incoming_segment, n));
+            var turning_angle = Math.asin(dot(outgoing_segment, norm_vec) / len(outgoing_segment));
+            sum_turns += turning_angle;
+            sum_abs_turns += Math.abs(turning_angle);
+            console.log(turning_angle);
+        }
+    });
+    throw new Error(); // to stop the rest of the script
+}
+
 function init() {
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
@@ -204,22 +248,6 @@ function init() {
     //fitTimeRange(time_range_offset);
 
     draw();
-}
-
-function testEmbeddingByPathLengths() {
-    // generate trajectories that start and end at the same points, for different values of g
-    // measure their arc length on the embedding - the one for the correct g should be the shortest
-    var time_to_fall = 1; // pick a time
-    for(var dm = -earth_mass *0.7; dm < earth_mass / 2; dm += earth_mass / 20) {
-        var planet_mass = earth_mass + dm;
-        var h = findInitialHeight(time_to_fall, earth_radius, planet_mass);
-        var pts = getGeodesicPoints(0, h, earth_radius, planet_mass, 100).map(JonssonEmbedding);
-        var length = 0;
-        for(var iPt = 1; iPt < pts.length; iPt++) {
-            length += dist(pts[iPt], pts[iPt-1]);
-        }
-        console.log(dm, h, length);
-    }
 }
 
 function drawNormal(p, color, camera) {

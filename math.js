@@ -107,6 +107,10 @@ function dist2(a, b) {
     return dot(d, d);
 }
 
+function len(a) {
+    return Math.sqrt(dot(a, a));
+}
+
 function dist(a, b) {
     return Math.sqrt(dist2(a, b));
 }
@@ -143,7 +147,7 @@ function elementwise_div_3d(a, b) {
 }
 
 function normalize(a) {
-    return scalar_mul(a, 1 / Math.sqrt(dot(a, a)));
+    return scalar_mul(a, 1 / len(a));
 }
 
 function cross( a, b ) {
