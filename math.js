@@ -185,14 +185,13 @@ function getLinePoints(a, b, n_pts=100) {
     return pts;
 }
 
-function trapezoid_integrate(lower, upper, n_evaluations, func) {
-    var n = n_evaluations - 1;
-    var dx = (upper - lower) / n;
-    var inner_terms = 0;
-    var x = lower;
-    for(var iStep = 1; iStep < n; iStep++) {
+function midpoint_integrate(lower, upper, n_evaluations, func) {
+    var dx = (upper - lower) / n_evaluations;
+    var x = lower + dx / 2;
+    var result = 0;
+    for(var iStep = 0; iStep < n_evaluations; iStep++) {
+        result += func(x);
         x += dx;
-        inner_terms += func(x);
     }
-    return dx * (inner_terms + (func(lower) + func(upper)) / 2);
+    return dx * result;
 }

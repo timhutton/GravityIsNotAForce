@@ -122,7 +122,7 @@ function JonssonEmbedding(p) {
 
     // integrate over x to find delta_z (Eg. 49)
     var term1 = Math.pow(k, 2) / ( 4 * Math.pow(x_0, 4) );
-    var delta_z = sqrt_alpha * trapezoid_integrate( 0, delta_x, 1000, x => {
+    var delta_z = sqrt_alpha * midpoint_integrate( 0, delta_x, 1000, x => {
         var term2 = 1 / ( x / sqr_x_0 + delta );
         return term2 * Math.sqrt( 1 - term1 * term2 );
     });
