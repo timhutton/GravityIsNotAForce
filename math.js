@@ -195,3 +195,15 @@ function midpoint_integrate(lower, upper, n_evaluations, func) {
     }
     return dx * result;
 }
+
+function simpsons_integrate(lower, upper, n_evaluations, func) {
+    var n = n_evaluations + 1 - (n_evaluations % 2); // need an odd number of evaluation points
+    var dx = (upper - lower) / (n - 1);
+    var result = func(lower) + func(upper);
+    var x = lower;
+    for(var iStep = 1; iStep < n-1; iStep++) {
+        x += dx;
+        result += func(x) * (2 + 2 * (iStep%2));
+    }
+    return dx * result / 3;
+}
