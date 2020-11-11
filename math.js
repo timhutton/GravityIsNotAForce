@@ -184,3 +184,15 @@ function getLinePoints(a, b, n_pts=100) {
     }
     return pts;
 }
+
+function trapezoid_integrate(lower, upper, n_evaluations, func) {
+    var n = n_evaluations - 1;
+    var dx = (upper - lower) / n;
+    var inner_terms = 0;
+    var x = lower;
+    for(var iStep = 1; iStep < n; iStep++) {
+        x += dx;
+        inner_terms += func(x);
+    }
+    return dx * (inner_terms + (func(lower) + func(upper)) / 2);
+}

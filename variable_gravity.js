@@ -110,7 +110,7 @@ function computeJonssonShapeParameters() {
 function JonssonEmbedding(p) {
     // Following http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf
 
-    var t = 2 * Math.PI * p.x / delta_tau_real; // convert time in seconds to angle
+    var theta = 2 * Math.PI * p.x / delta_tau_real; // convert time in seconds to angle
     var x = p.y / earth_schwarzschild_radius;
     var delta_x = x - x_0;
 
@@ -121,16 +121,13 @@ function JonssonEmbedding(p) {
     var radius = k * sqrt_alpha / Math.sqrt( delta_x / sqr_x_0 + delta );
 
     // integrate over x to find delta_z (Eg. 49)
-    var delta_z = 0;
-    var dx = delta_x / 1000;
     var term1 = Math.pow(k, 2) / ( 4 * Math.pow(x_0, 4) );
-    for(var delta_x_sample = 0; delta_x_sample < delta_x; delta_x_sample += dx) {
-        var term2 = 1 / ( delta_x_sample / sqr_x_0 + delta );
-        delta_z += term2 * Math.sqrt( 1 - term1 * term2 );
-    }
-    delta_z *= dx * sqrt_alpha;
+    var delta_z = sqrt_alpha * trapezoid_integrate( 0, delta_x, 1000, x => {
+        var term2 = 1 / ( x / sqr_x_0 + delta );
+        return term2 * Math.sqrt( 1 - term1 * term2 );
+    });
 
-    return new P(radius*Math.cos(t), radius*Math.sin(t), delta_z);
+    return new P(radius * Math.cos(theta), radius * Math.sin(theta), delta_z);
 }
 
 function init() {
