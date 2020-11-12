@@ -219,10 +219,10 @@ function simpsons_integrate(lower, upper, n_evaluations, func) {
 }
 
 function bisection_search(target, a, b, tolerance, max_iterations, func) {
-    // Return the value x such that func(x) = target +/- tolerance. Function must be monotonic between a and b.
+    // Return the value x such that func(x +/- tolerance) == target. Function must be monotonic between a and b.
     var value_a = func(a);
     var value_b = func(b);
-    if((value_a < target && value_b < target) || (value_a > target && value_b > target)) {
+    if(Math.sign(target - value_a) == Math.sign(target - value_b)) {
         throw new Error("bisection_search needs target value to lie between func(a) and func(b)");
     }
     for(var it = 0; it < max_iterations; it++) {
