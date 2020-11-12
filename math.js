@@ -127,10 +127,24 @@ function scalar_mul(a, f) {
     return new P(a.x * f, a.y * f, a.z * f, a.w * f);
 }
 
-function rotateXY(p, t) {
-    var c = Math.cos(t);
-    var s = Math.sin(t);
+function rotateXY(p, theta) {
+    var s = Math.sin(theta);
+    var c = Math.cos(theta);
     return new P(p.x * c - p.y * s, p.x * s + p.y * c, p.z, p.w);
+}
+
+function rotateAroundVector(v, k, theta) {
+    // Rotate point v around axis k, following https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+    var s = Math.sin(theta);
+    var c = Math.cos(theta);
+    return add(add(scalar_mul(v, c), scalar_mul(cross(k, v), s)), scalar_mul(k, dot(k, v) * (1 - c)));
+}
+
+function rotateAroundPointAndVector(v, p, k, theta) {
+    // Rotate point v around vector k from point p by angle theta
+    var v2 = sub(v, p);
+    var q = rotateAroundVector(v2, k, theta);
+    return add(q, p);
 }
 
 function elementwise_mul(a, b) {
