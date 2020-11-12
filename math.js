@@ -217,3 +217,28 @@ function simpsons_integrate(lower, upper, n_evaluations, func) {
     }
     return dx * result / 3;
 }
+
+function bisection_search(target, a, b, tolerance, max_iterations, func) {
+    // Return the value x such that func(x) = target +/- tolerance. Function must be monotonic between a and b.
+    var value_a = func(a);
+    var value_b = func(b);
+    if((value_a < target && value_b < target) || (value_a > target && value_b > target)) {
+        throw new Error("bisection_search needs target value to lie between func(a) and func(b)");
+    }
+    for(var it = 0; it < max_iterations; it++) {
+        var mid = (a + b) / 2;
+        var value_mid = func(mid);
+        if(Math.sign(target - value_a) == Math.sign(target - value_mid)) {
+            a = mid; 
+            value_a = value_mid;
+        }
+        else {
+            b = mid;
+            value_b = value_mid;
+        }
+        if(Math.abs((b - a) / 2) < tolerance) {
+            return mid;
+        }
+    }
+    throw new Error("Max iterations exceeded in bisection_search");
+}
