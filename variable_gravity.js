@@ -108,6 +108,31 @@ function computeJonssonShapeParameters() {
     delta = Math.pow(k / ( 2 * sin_theta_zero * sqr_x_0 ), 2);
     alpha = Math.pow(r_0, 2) / ( 4 * Math.pow(x_0, 4) * Math.pow(sin_theta_zero, 2) + Math.pow(k, 2) );
     sqrt_alpha = Math.sqrt(alpha);
+
+    // DEBUG
+    //var h = 2.6;
+    //var a = new P(0, earth_radius + h);
+    //var b = new P(0.001, earth_radius + h);
+    //geodesic_pts = getGeodesicPoints(a, b, 2000);
+}
+
+function JonssonEmbeddingRadius(delta_x) {
+    // Following http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf
+
+    // compute the radius at this point (Eg. 48)
+    return k * sqrt_alpha / Math.sqrt( delta_x / sqr_x_0 + delta );
+}
+
+function JonssonEmbeddingDeltaZ(delta_x) {
+    // Following http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf
+
+    // integrate over x to find delta_z (Eg. 49)
+    var term1 = Math.pow(k, 2) / ( 4 * Math.pow(x_0, 4) );
+    return sqrt_alpha * simpsons_integrate( 0, delta_x, 1000,
+        x => {
+            var term2 = 1 / ( x / sqr_x_0 + delta );
+            return term2 * Math.sqrt( 1 - term1 * term2 );
+        });
 }
 
 function JonssonEmbedding(p) {
@@ -117,30 +142,69 @@ function JonssonEmbedding(p) {
     var x = p.y / earth_schwarzschild_radius;
     var delta_x = x - x_0;
 
-    // compute the radius at this point (Eg. 48)
-    var radius = k * sqrt_alpha / Math.sqrt( delta_x / sqr_x_0 + delta );
-
-    // integrate over x to find delta_z (Eg. 49)
-    var term1 = Math.pow(k, 2) / ( 4 * Math.pow(x_0, 4) );
-    var delta_z = sqrt_alpha * simpsons_integrate( 0, delta_x, 1000, x => {
-        var term2 = 1 / ( x / sqr_x_0 + delta );
-        return term2 * Math.sqrt( 1 - term1 * term2 );
-    });
+    var radius = JonssonEmbeddingRadius(delta_x);
+    var delta_z = JonssonEmbeddingDeltaZ(delta_x);
     
     return new P(radius * Math.cos(theta), radius * Math.sin(theta), delta_z);
 }
 
-function JonssonEmbeddingSurfaceNormal(p) {
+function getJonssonEmbeddingSurfaceNormalFromSpacetime(p) {
     var theta = 2 * Math.PI * p.x / delta_tau_real; // convert time in seconds to angle
     var x = p.y / earth_schwarzschild_radius;
     var delta_x = x - x_0;
+    return getJonssonEmbeddingSurfaceNormal(delta_x, theta);
+}
 
+function getJonssonEmbeddingSurfaceNormal(delta_x, theta) {
     var term1 = delta_x / sqr_x_0 + delta;
     var dr_dx = - k * sqrt_alpha / (2 * sqr_x_0 * Math.pow(term1, 3 / 2)); // derivative of Eq. 48 wrt. delta_x
     var dz_dx = sqrt_alpha * Math.sqrt(1 - Math.pow(k, 2) / (4 * Math.pow(x_0, 4) * term1)) / term1; // from Eq. 49
     var dz_dr = dz_dx / dr_dx;
     var normal = normalize(new P(-dz_dr, 0, 1)); // in the XZ plane
     return rotateXY(normal, theta);
+}
+
+function getJonssonEmbeddingDeltaXFromDeltaZ(delta_z) {
+    var delta_x_max = earth_radius * 2 / earth_schwarzschild_radius - x_0;
+    return bisection_search(delta_z, 0, delta_x_max, 1e-6, 100, delta_x => JonssonEmbeddingDeltaZ(delta_x));
+}
+
+function getSurfaceNormalAtJonssonEmbeddingPoint(p) {
+    var delta_z = p.z;
+    var delta_x = getJonssonEmbeddingDeltaXFromDeltaZ(delta_z);
+    var theta = Math.atan2(p.y, p.x);
+    return getJonssonEmbeddingSurfaceNormal(delta_x, theta);
+}
+
+function getGeodesicPoints(a, b, max_points) {
+    // Walk along the embedding following the geodesic until we hit delta_x = 0 or have enough points
+    var ja = JonssonEmbedding(a);
+    var jb = JonssonEmbedding(b);
+    var pts = [ja, jb]; // TODO: eventually we want the spacetime coordinates for the points, not the embedding ones
+    for(var iPt = 0; iPt < max_points; iPt++) {
+        var n = getSurfaceNormalAtJonssonEmbeddingPoint(jb);
+        var incoming_segment = sub(jb, ja);
+        var norm_vec = normalize(cross(incoming_segment, n));
+        var theta = bisection_search(0, Math.PI / 2 , 3 * Math.PI / 2, 1e-6, 200, theta => {
+            var jc = rotateAroundPointAndVector(ja, jb, norm_vec, theta);
+            // decide if this point is inside or outside the funnel
+            var actual_radius = len(new P(jc.x, jc.y));
+            var delta_z = Math.max(0, jc.z); // not sure what to do here
+            var delta_x = getJonssonEmbeddingDeltaXFromDeltaZ(delta_z);
+            var expected_radius = JonssonEmbeddingRadius(delta_x);
+            return expected_radius - actual_radius;
+        });
+        var jc = rotateAroundPointAndVector(ja, jb, norm_vec, theta);
+        if( jc.z < 0 ) { 
+            console.log('jc.z < 0');
+            break;
+        }
+        pts.push(jc);
+        ja = jb;
+        jb = jc;
+        // TODO: find the spacetime coordinates that correspond to this point on the embedding
+    }
+    return pts;
 }
 
 function testEmbeddingByPathLengths() {
@@ -235,6 +299,7 @@ function init() {
     sin_theta_zero = 0.999 * slopeSlider.value / 100.0;
     slopeSlider.oninput = function() {
         sin_theta_zero = 0.999 * slopeSlider.value / 100.0;
+        computeJonssonShapeParameters();
         draw();
     }
 
@@ -242,11 +307,13 @@ function init() {
     delta_tau_real = 3 - 2.2 * timeWrappingSlider.value / 100.0;
     timeWrappingSlider.oninput = function() {
         delta_tau_real = 3 - 2.2 * timeWrappingSlider.value / 100.0;
+        computeJonssonShapeParameters();
         draw();
     }
 
     //fitTimeRange(time_range_offset);
 
+    computeJonssonShapeParameters();
     draw();
 }
 
@@ -258,8 +325,6 @@ function drawNormal(p, color, camera) {
 }
 
 function draw() {
-    computeJonssonShapeParameters();
-
     // fill canvas with light gray
     ctx.fillStyle = 'rgb(240,240,240)';
     ctx.beginPath();
@@ -394,6 +459,10 @@ function draw() {
         ctx.fillText(graph.left_text, 0, 0);
         ctx.restore();
     });
+    
+    // DEBUG: draw a constructed geodesic
+    //var screen_geodesic_pts = geodesic_pts.map(p => camera.project(p));
+    //drawLine(screen_geodesic_pts, 'rgb(255,0,0)');
 }
 
 window.onload = init;
