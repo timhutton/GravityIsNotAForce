@@ -74,7 +74,7 @@ function fromDistanceFallenDistortedAxes(p)
     return new P(time, height - freeFallDistance(time_diff, height, earth_mass));
 }
 
-function getGeodesicPoints(peak_time, peak_height, min_height, planet_mass, n_pts = 100) {
+function getFreeFallPoints(peak_time, peak_height, min_height, planet_mass, n_pts = 100) {
     var fallTime = freeFallTime(peak_height, min_height, planet_mass);
     var pts = [];
     // from the left up
@@ -150,7 +150,7 @@ function testEmbeddingByPathLengths() {
     for(var dm = -earth_mass *0.7; dm < earth_mass / 2; dm += earth_mass / 20) {
         var planet_mass = earth_mass + dm;
         var h = findInitialHeight(time_to_fall, earth_radius, planet_mass);
-        var pts = getGeodesicPoints(0, h, earth_radius, planet_mass, 100).map(JonssonEmbedding);
+        var pts = getFreeFallPoints(0, h, earth_radius, planet_mass, 100).map(JonssonEmbedding);
         var length = 0;
         for(var iPt = 1; iPt < pts.length; iPt++) {
             length += dist(pts[iPt], pts[iPt-1]);
@@ -167,7 +167,7 @@ function testEmbeddingByPathTurning() {
     [/*-earth_mass * 0.1, 0,*/ earth_mass * 0.1].forEach( dm => {
         var planet_mass = earth_mass + dm;
         var h = findInitialHeight(time_to_fall, earth_radius, planet_mass);
-        var pts = getGeodesicPoints(0, h, earth_radius, planet_mass, 200);
+        var pts = getFreeFallPoints(0, h, earth_radius, planet_mass, 200);
         var sum_turns = 0;
         var sum_abs_turns = 0;
         for(var iPt = 1; iPt < pts.length-1; iPt++) {
@@ -372,7 +372,7 @@ function draw() {
 
         // draw some geodesics
         geodesics.forEach(geodesic => {
-            var pts = getGeodesicPoints(geodesic.peak.x, geodesic.peak.y, spacetime_range.p.y, earth_mass, 500);
+            var pts = getFreeFallPoints(geodesic.peak.x, geodesic.peak.y, spacetime_range.p.y, earth_mass, 500);
             pts = pts.map(graph.transform.forwards);
             drawLine(pts, geodesic.color);
             fillSpacedCircles(pts, 1.5, geodesic.color);
