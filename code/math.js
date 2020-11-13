@@ -281,7 +281,7 @@ function bisection_search(target, a, b, tolerance, max_iterations, func) {
             return mid;
         }
     }
-    throw new Error("Max iterations exceeded in bisection_search");
+    throw new Error("Max iterations exceeded in bisection_search. Remaining gap: " + Math.abs((b - a) / 2).toFixed(8));
 }
 
 function divideNicely(x, n_divisions) {
