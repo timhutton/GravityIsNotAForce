@@ -69,7 +69,7 @@ class JonssonEmbedding {
     
     getDeltaXFromDeltaZ(delta_z) {
         // inverse of above getDeltaZFromDeltaX, using bisection search
-        var delta_x_max = this.getDeltaXFromSpace(earth_radius * 2);
+        var delta_x_max = this.getDeltaXFromSpace(earth_radius * 100);
         return bisection_search(delta_z, 0, delta_x_max, 1e-6, 100, delta_x => this.getDeltaZFromDeltaX(delta_x));
     }
     
