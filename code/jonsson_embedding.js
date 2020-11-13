@@ -1,3 +1,20 @@
+/*  GravityIsNotAForce - Visualising geodesics in general relativity
+    Copyright (C) 2020 Tim J. Hutton
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 // Following http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf
 
 class JonssonEmbedding {
@@ -6,27 +23,32 @@ class JonssonEmbedding {
         this.sin_theta_zero = 0.8; // angle of slope at the bottom (controlled by a slider)
         this.r_0 = 1; // radius at the bottom
         this.delta_tau_real = 1; // proper time per circumference, in seconds (controlled by a slider)
+        // Precompute some values
         this.x_0 = earth_radius / earth_schwarzschild_radius;
         this.sqr_x_0 = Math.pow(this.x_0, 2);
         this.a_e0 = 1 - 1 / this.x_0; // (Eq. 14, because using exterior metric)
-        this.computeJonssonShapeParameters();
+        // Precompute other values that depend on the funnel shape
+        this.computeShapeParameters();
     }
     
     setSlopeAngle(val) {
+        val = Math.min(0.999, Math.max(0.001, val)); // clamp to valid range
         this.sin_theta_zero = val;
-        this.computeJonssonShapeParameters();
+        this.computeShapeParameters();
     }
 
     setTimeWrapping(val) {
+        val = Math.max(0, val); // clamp to valid range
         this.delta_tau_real = val;
-        this.computeJonssonShapeParameters();
+        this.computeShapeParameters();
     }
 
-    computeJonssonShapeParameters() {
+    computeShapeParameters() {
         // Compute k, delta and alpha (Eq. 47)
         this.k = this.delta_tau_real * light_speed / ( 2 * Math.PI * Math.sqrt(this.a_e0) * earth_schwarzschild_radius );
         this.delta = Math.pow(this.k / ( 2 * this.sin_theta_zero * this.sqr_x_0 ), 2);
         this.alpha = Math.pow(this.r_0, 2) / ( 4 * Math.pow(this.x_0, 4) * Math.pow(this.sin_theta_zero, 2) + Math.pow(this.k, 2) );
+        // Precompute other values
         this.sqrt_alpha = Math.sqrt(this.alpha);
     }
 
@@ -45,8 +67,12 @@ class JonssonEmbedding {
             });
     }
     
+    getAngleFromTime(t) {
+        return 2 * Math.PI * t / this.delta_tau_real; // convert time in seconds to angle in radians
+    }
+    
     getEmbeddingPointFromSpacetime(p) {
-        var theta = 2 * Math.PI * p.x / this.delta_tau_real; // convert time in seconds to angle
+        var theta = this.getAngleFromTime(p.x);
         var x = p.y / earth_schwarzschild_radius;
         var delta_x = x - this.x_0;
 
@@ -66,7 +92,7 @@ class JonssonEmbedding {
     }
     
     getSurfaceNormalFromSpacetime(p) {
-        var theta = 2 * Math.PI * p.x / this.delta_tau_real; // convert time in seconds to angle
+        var theta = this.getAngleFromTime(p.x);
         var x = p.y / earth_schwarzschild_radius;
         var delta_x = x - this.x_0;
         return this.getSurfaceNormalFromDeltaXAndTheta(delta_x, theta);
@@ -93,18 +119,19 @@ class JonssonEmbedding {
             var n = this.getSurfaceNormalFromEmbeddingPoint(jb);
             var incoming_segment = sub(jb, ja);
             var norm_vec = normalize(cross(incoming_segment, n));
-            var theta = bisection_search(0, Math.PI / 2 , 3 * Math.PI / 2, 1e-6, 200, theta => {
+            // search for optimal theta between 90 degrees and 270 degrees
+            var theta = bisection_search(0, Math.PI / 2, 3 * Math.PI / 2, 1e-6, 200, theta => {
                 var jc = rotateAroundPointAndVector(ja, jb, norm_vec, theta);
                 // decide if this point is inside or outside the funnel
                 var actual_radius = len(new P(jc.x, jc.y));
-                var delta_z = Math.max(0, jc.z); // not sure what to do here
+                var delta_z = Math.max(0, jc.z); // not sure what to do if jc.z < 0 here
                 var delta_x = this.getDeltaXFromDeltaZ(delta_z);
                 var expected_radius = this.getRadiusFromDeltaX(delta_x);
                 return expected_radius - actual_radius;
             });
             var jc = rotateAroundPointAndVector(ja, jb, norm_vec, theta);
             if( jc.z < 0 ) { 
-                console.log('jc.z < 0');
+                // have hit the edge of the embedding
                 break;
             }
             pts.push(jc);
@@ -115,49 +142,3 @@ class JonssonEmbedding {
         return pts;
     }
 }
-
-/*
-function testEmbeddingByPathLengths() {
-    // generate trajectories that start and end at the same points, for different values of g
-    // measure their arc length on the embedding - the one for the correct g should be the shortest
-    var time_to_fall = 1; // pick a time
-    for(var dm = -earth_mass *0.7; dm < earth_mass / 2; dm += earth_mass / 20) {
-        var planet_mass = earth_mass + dm;
-        var h = findInitialHeight(time_to_fall, earth_radius, planet_mass);
-        var pts = getFreeFallPoints(0, h, earth_radius, planet_mass, 100).map(JonssonEmbedding);
-        var length = 0;
-        for(var iPt = 1; iPt < pts.length; iPt++) {
-            length += dist(pts[iPt], pts[iPt-1]);
-        }
-        console.log(dm, h, length);
-    }
-    throw new Error(); // to stop the rest of the script
-}
-
-function testEmbeddingByPathTurning() {
-    // generate trajectories that start and end at the same points, for different values of g
-    // measure how much they deviate from the plane that includes the surface normal
-    var time_to_fall = 1; // pick a time
-    [-earth_mass * 0.1, 0, earth_mass * 0.1].forEach( dm => {
-        var planet_mass = earth_mass + dm;
-        var h = findInitialHeight(time_to_fall, earth_radius, planet_mass);
-        var pts = getFreeFallPoints(0, h, earth_radius, planet_mass, 200);
-        var sum_turns = 0;
-        var sum_abs_turns = 0;
-        for(var iPt = 1; iPt < pts.length-1; iPt++) {
-            var p = JonssonEmbedding(pts[iPt]);
-            var n = JonssonEmbeddingSurfaceNormal(pts[iPt]);
-            var pre = JonssonEmbedding(pts[iPt-1]);
-            var post = JonssonEmbedding(pts[iPt+1]);
-            var incoming_segment = sub(p, pre);
-            var outgoing_segment = sub(post, p);
-            var norm_vec = normalize(cross(incoming_segment, n));
-            var turning_angle = Math.asin(dot(outgoing_segment, norm_vec) / len(outgoing_segment));
-            sum_turns += turning_angle;
-            sum_abs_turns += Math.abs(turning_angle);
-            console.log(dm, turning_angle);
-        }
-    });
-    throw new Error(); // to stop the rest of the script
-}
-*/
