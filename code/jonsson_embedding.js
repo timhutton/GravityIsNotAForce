@@ -20,9 +20,9 @@
 class JonssonEmbedding {
     constructor() {
         // Pick the shape of funnel we want: (Eq. 46)
-        this.sin_theta_zero = 0.8; // angle of slope at the bottom (controlled by a slider)
+        this.sin_theta_zero = 0.8; // angle of slope at the bottom
         this.r_0 = 1; // radius at the bottom
-        this.delta_tau_real = 1; // proper time per circumference, in seconds (controlled by a slider)
+        this.delta_tau_real = 1; // proper time per circumference, in seconds
         // Precompute some values
         this.x_0 = earth_radius / earth_schwarzschild_radius;
         this.sqr_x_0 = Math.pow(this.x_0, 2);
@@ -71,10 +71,25 @@ class JonssonEmbedding {
         return 2 * Math.PI * t / this.delta_tau_real; // convert time in seconds to angle in radians
     }
     
+    getAngleFromEmbeddingPoint(p) {
+        return Math.atan2(p.y, p.x);
+    }
+    
+    getTimeDeltaFromAngleDelta(angle_delta) {
+        return angle_delta * this.delta_tau_real / (2 * Math.PI);
+    }
+    
+    getDeltaXFromSpace(x) {
+        return x / earth_schwarzschild_radius - this.x_0;
+    }
+    
+    getSpaceFromDeltaX(delta_x) {
+        return (delta_x + this.x_0) * earth_schwarzschild_radius;
+    }
+    
     getEmbeddingPointFromSpacetime(p) {
         var theta = this.getAngleFromTime(p.x);
-        var x = p.y / earth_schwarzschild_radius;
-        var delta_x = x - this.x_0;
+        var delta_x = this.getDeltaXFromSpace(p.y);
 
         var radius = this.getRadiusFromDeltaX(delta_x);
         var delta_z = this.getDeltaZFromDeltaX(delta_x);
@@ -101,7 +116,7 @@ class JonssonEmbedding {
     getSurfaceNormalFromEmbeddingPoint(p) {
         var delta_z = p.z;
         var delta_x = getDeltaXFromDeltaZ(delta_z);
-        var theta = Math.atan2(p.y, p.x);
+        var theta = getAngleFromEmbeddingPoint(p);
         return this.getSurfaceNormalFromDeltaXAndTheta(delta_x, theta);
     }
     
@@ -114,9 +129,9 @@ class JonssonEmbedding {
         // Walk along the embedding following the geodesic until we hit delta_x = 0 or have enough points
         var ja = this.getEmbeddingPointFromSpacetime(a);
         var jb = this.getEmbeddingPointFromSpacetime(b);
-        var pts = [ja, jb]; // TODO: eventually we want the spacetime coordinates for the points, not the embedding ones
+        var pts = [a, b];
         for(var iPt = 0; iPt < max_points; iPt++) {
-            var n = this.getSurfaceNormalFromEmbeddingPoint(jb);
+            var n = this.getSurfaceNormalFromSpacetime(b);
             var incoming_segment = sub(jb, ja);
             var norm_vec = normalize(cross(incoming_segment, n));
             // search for optimal theta between 90 degrees and 270 degrees
@@ -134,10 +149,15 @@ class JonssonEmbedding {
                 // have hit the edge of the embedding
                 break;
             }
-            pts.push(jc);
+            // convert to spacetime coordinates
+            var delta_x = this.getDeltaXFromDeltaZ(jc.z);
+            var delta_theta = this.getAngleFromEmbeddingPoint(jc) - this.getAngleFromEmbeddingPoint(jb);
+            var delta_time = this.getTimeDeltaFromAngleDelta(delta_theta);
+            var c = new P(b.x + delta_time, this.getSpaceFromDeltaX(delta_x));
+            pts.push(c);
             ja = jb;
             jb = jc;
-            // TODO: find the spacetime coordinates that correspond to this point on the embedding
+            b = c;
         }
         return pts;
     }
