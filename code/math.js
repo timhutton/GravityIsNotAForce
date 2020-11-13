@@ -147,6 +147,10 @@ function rotateAroundPointAndVector(v, p, k, theta) {
     return add(q, p);
 }
 
+function angleBetweenTwoVectors(a, b) {
+    return Math.acos(dot(a, b) / (len(a) * len(b)));
+}
+
 function elementwise_mul(a, b) {
     return new P(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
 }
