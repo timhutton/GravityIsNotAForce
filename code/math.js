@@ -27,6 +27,7 @@ class P{
 }
 
 class Circle{
+    // Actually an N-sphere but a circle in the 2D case
     constructor(p, r) {
         this.p = p;
         this.r = r;
@@ -52,6 +53,7 @@ class Rect {
     get max() { return new P(this.xmax, this.ymax); }
     get center() { return add( this.p, scalar_mul(this.size, 0.5) ); }
     pointInRect(p) { return p.x >= this.xmin && p.x <= this.xmax && p.y >= this.ymin && p.y <= this.ymax; }
+    clamp(p) { return new P(Math.min(Math.max(p.x, this.xmin), this.xmax), Math.min(Math.max(p.y, this.ymin), this.ymax)); }
 }
 
 class LinearTransform2D {
@@ -79,12 +81,13 @@ class ComposedTransform {
 }
 
 class Camera {
-    constructor(p, look_at, up, f, pp) {
+    constructor(p, look_at, up, f, pp, near = 1) {
         this.p = p; // camera center
         this.look_at = look_at; // point we are looking at
         this.up = up; // up-vector
         this.f = f; // scalar focal distance
         this.pp = pp; // 2D principal point
+        this.near = near; // the near plane
     }
     project(pt) {
         var z = normalize(sub(this.look_at, this.p));
@@ -92,6 +95,7 @@ class Camera {
         var y = normalize(cross(x, z));
         var ray = sub(pt, this.p); // the ray from camera center to point
         var cp = new P(dot(x, ray), dot(y, ray), dot(z, ray)); // the point in camera space
+        cp.z = Math.max(cp.z, this.near);
         return add(this.pp, invert_y(scalar_mul(cp, this.f / cp.z))); // pinhole projection
     }
 }
@@ -221,6 +225,17 @@ function getLinePoints(a, b, n_pts=100) {
     return pts;
 }
 
+function getEllipsePoints(c, a, b, n_pts=100, repeat_first_point=true) {
+    // Return a list of points spaced around an ellipse with center c and radii vectors a and b.
+    var pts = [];
+    var last = repeat_first_point ? n_pts : n_pts - 1;
+    for(var i = 0; i <= last; i++) {
+        var theta = 2 * Math.PI * i / n_pts;
+        pts.push(add(c, add(scalar_mul(a, Math.cos(theta)), scalar_mul(b, Math.sin(theta)))));
+    }
+    return pts;
+}
+
 function midpoint_integrate(lower, upper, n_evaluations, func) {
     var dx = (upper - lower) / n_evaluations;
     var x = lower + dx / 2;
@@ -267,4 +282,18 @@ function bisection_search(target, a, b, tolerance, max_iterations, func) {
         }
     }
     throw new Error("Max iterations exceeded in bisection_search");
+}
+
+function divideNicely(x, n_divisions) {
+    // Return a value that divides x into roughly the specified number of divisions
+    // such that the value is either a power of 10 or the same x2 or the same x5
+    var value1 = Math.pow(10, Math.floor(Math.log10(x / n_divisions)));
+    var value2 = value1 * 2;
+    var value5 = value1 * 5;
+    var value1_closeness = Math.abs(n_divisions - x / value1);
+    var value2_closeness = Math.abs(n_divisions - x / value2);
+    var value5_closeness = Math.abs(n_divisions - x / value5);
+    if( value1_closeness < value2_closeness ) { return value1; }
+    else if( value2_closeness < value5_closeness ) { return value2; }
+    else { return value5; }
 }

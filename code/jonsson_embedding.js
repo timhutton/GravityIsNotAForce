@@ -18,11 +18,11 @@
 // Following http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf
 
 class JonssonEmbedding {
-    constructor() {
+    constructor(sin_theta_zero = 0.8, delta_tau_real = 1) {
         // Pick the shape of funnel we want: (Eq. 46)
-        this.sin_theta_zero = 0.8; // angle of slope at the bottom
+        this.sin_theta_zero = sin_theta_zero; // angle of slope at the bottom
         this.r_0 = 1; // radius at the bottom
-        this.delta_tau_real = 1; // proper time per circumference, in seconds
+        this.delta_tau_real = delta_tau_real; // proper time per circumference, in seconds
         // Precompute some values
         this.x_0 = earth_radius / earth_schwarzschild_radius;
         this.sqr_x_0 = Math.pow(this.x_0, 2);
@@ -38,7 +38,7 @@ class JonssonEmbedding {
     }
 
     setTimeWrapping(val) {
-        val = Math.max(0, val); // clamp to valid range
+        val = Math.max(1e-6, val); // clamp to valid range
         this.delta_tau_real = val;
         this.computeShapeParameters();
     }
