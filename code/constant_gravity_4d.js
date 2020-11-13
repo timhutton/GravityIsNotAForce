@@ -62,27 +62,32 @@ function init() {
                  new Rect(new P(margin+(size+margin)*2,(size+margin)*2), new P(size,-size))];
 
     graphs = [];
-    graphs.push(new GraphT1S1(rects[0], earth_surface_gravity, "time "+rightArrow, "space 1 "+rightArrow));
+    /*graphs.push(new GraphT1S1(rects[0], earth_surface_gravity, "time "+rightArrow, "space 1 "+rightArrow));
     graphs.push(new GraphT1S1(rects[1], 0, "time "+rightArrow, "space 1 & time "+rightArrow));
     graphs.push(new GraphS3(  rects[2], 0, "space 1 + space 2 + space 3", "space 1 & time "+rightArrow));
     graphs.push(new GraphS2(  rects[3], 0, "space 2 "+rightArrow, "space 1 & time "+rightArrow));
     graphs.push(new GraphT1S2(rects[4], 0, "time + space 1 + space 2", ""));
-    graphs.push(new GraphT1S3(rects[5], 0, "time + space 1 + space 2 + space 3", ""));
+    graphs.push(new GraphT1S3(rects[5], 0, "time + space 1 + space 2 + space 3", ""));*/
+    graphs.push(new GraphS3(  rects[0], 0, "space 1 + space 2 + space 3", "space 1 & time "+rightArrow));
+    graphs.push(new GraphT1S2(rects[1], 0, "time + space 1 + space 2", ""));
+    graphs.push(new GraphT1S3(rects[2], 0, "time + space 1 + space 2 + space 3", ""));
 
     var frameAccelerationSlider = document.getElementById("frameAccelerationSlider");
     var acc = earth_surface_gravity - earth_surface_gravity * frameAccelerationSlider.value / 100.0;
-    graphs[1].frame_acceleration = acc;
+    /*graphs[1].frame_acceleration = acc;
     graphs[2].frame_acceleration = acc;
     graphs[3].frame_acceleration = acc;
     graphs[4].frame_acceleration = acc;
-    graphs[5].frame_acceleration = acc;
+    graphs[5].frame_acceleration = acc;*/
+    graphs.forEach(graph => { graph.frame_acceleration = acc; });
     frameAccelerationSlider.oninput = function() {
         var acc = earth_surface_gravity - earth_surface_gravity * this.value / 100.0;
-        graphs[1].frame_acceleration = acc;
+        /*graphs[1].frame_acceleration = acc;
         graphs[2].frame_acceleration = acc;
         graphs[3].frame_acceleration = acc;
         graphs[4].frame_acceleration = acc;
-        graphs[5].frame_acceleration = acc;
+        graphs[5].frame_acceleration = acc;*/
+        graphs.forEach(graph => { graph.frame_acceleration = acc; });
         draw();
     }
 
