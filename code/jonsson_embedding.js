@@ -67,16 +67,10 @@ class JonssonEmbedding {
             });
     }
     
-    getAngleFromTime(t) {
-        return 2 * Math.PI * t / this.delta_tau_real; // convert time in seconds to angle in radians
-    }
-    
-    getAngleFromEmbeddingPoint(p) {
-        return Math.atan2(p.y, p.x);
-    }
-    
-    getTimeDeltaFromAngleDelta(angle_delta) {
-        return angle_delta * this.delta_tau_real / (2 * Math.PI);
+    getDeltaXFromDeltaZ(delta_z) {
+        // inverse of above getDeltaZFromDeltaX, using bisection search
+        var delta_x_max = earth_radius * 2 / earth_schwarzschild_radius - this.x_0;
+        return bisection_search(delta_z, 0, delta_x_max, 1e-6, 100, delta_x => this.getDeltaZFromDeltaX(delta_x));
     }
     
     getDeltaXFromSpace(x) {
@@ -85,6 +79,21 @@ class JonssonEmbedding {
     
     getSpaceFromDeltaX(delta_x) {
         return (delta_x + this.x_0) * earth_schwarzschild_radius;
+    }
+    
+    getAngleFromTime(t) {
+        return 2 * Math.PI * t / this.delta_tau_real; // convert time in seconds to angle in radians
+    }
+    
+    getAngleDifferenceFromEmbeddingPoints(a, b) {
+        var theta = Math.atan2(a.y, a.x) - Math.atan2(b.y, b.x);
+        if(theta > Math.PI) { theta -= 2 * Math.PI; }
+        else if (theta <= -Math.PI) { theta += 2 * Math.PI; }
+        return theta;
+    }
+    
+    getTimeDeltaFromAngleDelta(angle_delta) {
+        return angle_delta * this.delta_tau_real / (2 * Math.PI);
     }
     
     getEmbeddingPointFromSpacetime(p) {
@@ -120,11 +129,6 @@ class JonssonEmbedding {
         return this.getSurfaceNormalFromDeltaXAndTheta(delta_x, theta);
     }
     
-    getDeltaXFromDeltaZ(delta_z) {
-        var delta_x_max = earth_radius * 2 / earth_schwarzschild_radius - this.x_0;
-        return bisection_search(delta_z, 0, delta_x_max, 1e-6, 100, delta_x => this.getDeltaZFromDeltaX(delta_x));
-    }
-    
     getGeodesicPoints(a, b, max_points) {
         // Walk along the embedding following the geodesic until we hit delta_x = 0 or have enough points
         var ja = this.getEmbeddingPointFromSpacetime(a);
@@ -151,7 +155,7 @@ class JonssonEmbedding {
             }
             // convert to spacetime coordinates
             var delta_x = this.getDeltaXFromDeltaZ(jc.z);
-            var delta_theta = this.getAngleFromEmbeddingPoint(jc) - this.getAngleFromEmbeddingPoint(jb);
+            var delta_theta = this.getAngleDifferenceFromEmbeddingPoints(jc, jb);
             var delta_time = this.getTimeDeltaFromAngleDelta(delta_theta);
             var c = new P(b.x + delta_time, this.getSpaceFromDeltaX(delta_x));
             pts.push(c);
