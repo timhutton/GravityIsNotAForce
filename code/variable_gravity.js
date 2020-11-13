@@ -133,7 +133,7 @@ function testEmbeddingByPathTurning() {
 }
 
 function getTimeLabel(t) {
-    var label = t.toFixed(1)+"s";
+    var label = t.toFixed(2)+"s";
     if(Math.abs(t) > 24 * 60 * 60 * 2) {
         label = (t/(24 * 60 * 60)).toFixed(0)+"d";
     }
