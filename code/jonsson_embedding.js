@@ -69,7 +69,7 @@ class JonssonEmbedding {
     
     getDeltaXFromDeltaZ(delta_z) {
         // inverse of above getDeltaZFromDeltaX, using bisection search
-        var delta_x_max = earth_radius * 2 / earth_schwarzschild_radius - this.x_0;
+        var delta_x_max = this.getDeltaXFromSpace(earth_radius * 2);
         return bisection_search(delta_z, 0, delta_x_max, 1e-6, 100, delta_x => this.getDeltaZFromDeltaX(delta_x));
     }
     
@@ -85,11 +85,8 @@ class JonssonEmbedding {
         return 2 * Math.PI * t / this.delta_tau_real; // convert time in seconds to angle in radians
     }
     
-    getAngleDifferenceFromEmbeddingPoints(a, b) {
-        var theta = Math.atan2(a.y, a.x) - Math.atan2(b.y, b.x);
-        if(theta > Math.PI) { theta -= 2 * Math.PI; }
-        else if (theta <= -Math.PI) { theta += 2 * Math.PI; }
-        return theta;
+    getAngleFromEmbeddingPoint(p) {
+        return Math.atan2(p.y, p.x);
     }
     
     getTimeDeltaFromAngleDelta(angle_delta) {
@@ -117,14 +114,12 @@ class JonssonEmbedding {
     
     getSurfaceNormalFromSpacetime(p) {
         var theta = this.getAngleFromTime(p.x);
-        var x = p.y / earth_schwarzschild_radius;
-        var delta_x = x - this.x_0;
+        var delta_x = this.getDeltaXFromSpace(p.y);
         return this.getSurfaceNormalFromDeltaXAndTheta(delta_x, theta);
     }
     
     getSurfaceNormalFromEmbeddingPoint(p) {
-        var delta_z = p.z;
-        var delta_x = getDeltaXFromDeltaZ(delta_z);
+        var delta_x = getDeltaXFromDeltaZ(p.z);
         var theta = getAngleFromEmbeddingPoint(p);
         return this.getSurfaceNormalFromDeltaXAndTheta(delta_x, theta);
     }
@@ -155,7 +150,7 @@ class JonssonEmbedding {
             }
             // convert to spacetime coordinates
             var delta_x = this.getDeltaXFromDeltaZ(jc.z);
-            var delta_theta = this.getAngleDifferenceFromEmbeddingPoints(jc, jb);
+            var delta_theta = signedAngleBetweenTwoPointsXY(jb, jc);
             var delta_time = this.getTimeDeltaFromAngleDelta(delta_theta);
             var c = new P(b.x + delta_time, this.getSpaceFromDeltaX(delta_x));
             pts.push(c);

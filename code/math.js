@@ -151,6 +151,14 @@ function angleBetweenTwoVectors(a, b) {
     return Math.acos(dot(a, b) / (len(a) * len(b)));
 }
 
+function signedAngleBetweenTwoPointsXY(a, b) {
+    // Returns the angle required to rotate a to b
+    var theta = Math.atan2(b.y, b.x) - Math.atan2(a.y, a.x);
+    if(theta > Math.PI) { theta -= 2 * Math.PI; }
+    else if (theta <= -Math.PI) { theta += 2 * Math.PI; }
+    return theta;
+}
+
 function elementwise_mul(a, b) {
     return new P(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
 }
