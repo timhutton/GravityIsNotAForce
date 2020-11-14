@@ -64,7 +64,7 @@ class JonssonEmbedding {
 
     getDeltaZFromDeltaX(delta_x) {
         // use linear interpolatation into the lookup table
-        return this.memoize_getDeltaZFromDeltaX.interpolate(delta_x);
+        return this.memoize_getDeltaZFromDeltaX.lookup(delta_x);
         // compute:
         //return this.computeDeltaZFromDeltaX(delta_x);
     }
@@ -79,9 +79,15 @@ class JonssonEmbedding {
     }
 
     getDeltaXFromDeltaZ(delta_z) {
+        // use linear interpolatation into the lookup table
+        return this.memoize_getDeltaZFromDeltaX.reverse_lookup(delta_z);
+        // compute:
+        //return this.computeDeltaXFromDeltaZ(delta_z);
+    }
+
+    computeDeltaXFromDeltaZ(delta_z) {
         // inverse of above getDeltaZFromDeltaX, using bisection search
-        var delta_x_max = this.max_delta_x;
-        return bisection_search(delta_z, 0, delta_x_max, 1e-6, 100, delta_x => this.getDeltaZFromDeltaX(delta_x));
+        return bisection_search(delta_z, this.min_delta_x, this.max_delta_x, 1e-6, 100, delta_x => this.getDeltaZFromDeltaX(delta_x));
     }
 
     getDeltaXFromSpace(x) {
@@ -175,10 +181,11 @@ class JonssonEmbedding {
 
     precomputeMemoization() {
         // Memoize getDeltaZFromDeltaX
-        this.memoize_getDeltaZFromDeltaX = new LogMemoization(this.getDeltaXFromSpace(this.min_space), this.getDeltaXFromSpace(this.max_space), 1000);
-        var last_delta_x = this.memoize_getDeltaZFromDeltaX.getIntervalMin(0);
+        this.min_delta_x = this.getDeltaXFromSpace(this.min_space);
+        this.max_delta_x = this.getDeltaXFromSpace(this.max_space);
+        this.memoize_getDeltaZFromDeltaX = new LogMemoization(this.min_delta_x, this.max_delta_x, 1000);
+        var last_delta_x = this.min_delta_x;
         var last_delta_z = this.computeDeltaZFromDeltaX(last_delta_x);
-        this.min_delta_x = last_delta_x;
         this.min_delta_z = last_delta_z;
         this.memoize_getDeltaZFromDeltaX.values[0] = last_delta_z;
         for(var i = 1; i < this.memoize_getDeltaZFromDeltaX.values.length; i++) {

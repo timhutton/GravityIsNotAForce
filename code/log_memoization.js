@@ -42,10 +42,10 @@ class LogMemoization {
         return value;
     }
 
-    interpolate(x) {
+    lookup(x) {
         // Look up the interval containing x and do linear interpolation along it
         if(x < this.min || x > this.max) {
-            throw new Error("interpolate: value " + x + " not in range [" + this.min + " - " + this.max + "]");
+            throw new Error("lookup: value " + x + " not in range [" + this.min + " - " + this.max + "]");
         }
         var index = this.getIndex(x);
         var value_low = this.values[index];
@@ -56,5 +56,30 @@ class LogMemoization {
         var x_low = this.getIntervalMin(index);
         var x_high = this.getIntervalMin(index + 1);
         return value_low + (value_high - value_low) * (x - x_low) / (x_high - x_low);
+    }
+
+    reverse_lookup(value) {
+        // Find the interval containing value by binary search and do linear interpolation along it
+        if(value < this.values[0] || value > this.values[this.values.length - 1]) {
+            throw new Error("reverse_lookup: value not in range");
+        }
+        var a = 0;
+        var b = this.values.length - 1;
+        while(a !== b) {
+            var mid = Math.floor((a + 1 + b) / 2);
+            var value_mid = this.values[mid];
+            if(value_mid > value) {
+                b = mid - 1;
+            }
+            else {
+                a = mid;
+            }
+        }
+        var index = a;
+        var x_low = this.getIntervalMin(index);
+        var x_high = this.getIntervalMin(index + 1);
+        var value_low = this.values[index];
+        var value_high = this.values[index + 1];
+        return x_low + (x_high - x_low) * (value - value_low) / (value_high - value_low);
     }
 }
