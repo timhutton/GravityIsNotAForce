@@ -51,7 +51,7 @@ function init() {
     trajectories.push(new Trajectory(new P(0, 44.1, 20, 10), new P(3, 0, 20, 10), 'rgb(255,100,100)', 'rgb(200,100,100)')); // red
     trajectories.push(new Trajectory(new P(-1, 0, 5, 20), new P(2, 0, 45, 40), 'rgb(0,200,0)', 'rgb(0,160,0)')); // green
     trajectories.push(new Trajectory(new P(-3, 0, 56, 65), new P(1, 0, 9, -20), 'rgb(100,100,255)', 'rgb(100,100,200)')); // blue
-    
+
     var margin = 50;
     var size = 400;
     var rects = [new Rect(new P(margin,size+margin), new P(size,-size)),

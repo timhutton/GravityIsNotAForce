@@ -74,7 +74,7 @@ class GraphS3 extends Graph {
         var swapXandW = p => new P(p.w, p.y, p.z, p.x);
         var swapXandWTransform = new Transform(swapXandW, swapXandW);
         var camera_dist = 500;
-        var camera = new Camera(new P(camera_dist * Math.cos(view_angle), camera_dist/4, camera_dist * Math.sin(view_angle), 0), 
+        var camera = new Camera(new P(camera_dist * Math.cos(view_angle), camera_dist/4, camera_dist * Math.sin(view_angle), 0),
                                 new P(spacetime_range.center.y, spacetime_range.center.y, spacetime_range.center.y), new P(0, 1, 0, 0), 1400, this.rect.center);
         var identityTransform = p => new P(p.x, p.y, p.z, p.w);
         var cameraTransform = new Transform( p => camera.project(p), identityTransform );
@@ -91,7 +91,7 @@ class GraphT1S2 extends Graph {
         var scaleTime = 20;
         var scaleTimeTransform = new Transform( p => elementwise_mul(p,new P(scaleTime,1,1,1)), p => elementwise_mul(p,new P(1/scaleTime,1,1,1)) );
         var camera_dist = 500;
-        var camera = new Camera(new P(camera_dist * Math.cos(view_angle), camera_dist/4, camera_dist * Math.sin(view_angle), 0), 
+        var camera = new Camera(new P(camera_dist * Math.cos(view_angle), camera_dist/4, camera_dist * Math.sin(view_angle), 0),
                                 spacetime_range.center, new P(0, 1, 0, 0), 1400, this.rect.center);
         var identityTransform = p => new P(p.x, p.y, p.z, p.w);
         var cameraTransform = new Transform( p => camera.project(p), identityTransform );

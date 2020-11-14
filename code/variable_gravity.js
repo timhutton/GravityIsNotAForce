@@ -67,12 +67,14 @@ function getFreeFallPoints(peak_time, peak_height, min_height, planet_mass, n_pt
     for(var i=0;i<n_pts;i++) {
         var t = peak_time - fallTime + i*fallTime/n_pts;
         var h = peak_height - freeFallDistance(peak_time-t, peak_height, planet_mass);
+        h = Math.max(earth_radius, h);
         pts.push(new P(t,h));
     }
     // from the top down
     for(var i=0;i<=n_pts;i++) {
         var t = peak_time + i*fallTime/n_pts;
         var h = peak_height - freeFallDistance(t - peak_time, peak_height, planet_mass);
+        h = Math.max(earth_radius, h);
         pts.push(new P(t,h));
     }
     return pts;
@@ -226,9 +228,9 @@ function init() {
         Jonsson_embedding.setTimeWrapping(3 * spacetime_range.size.x * timeWrappingSlider.value / 100.0);
         draw();
     }
-    
+
     //top_peak = spacetime_range.ymax;
-    //test_geodesic = Jonsson_embedding.getGeodesicPoints(new P(0, top_peak), new P(0.002, top_peak), 500);
+    //test_geodesic = Jonsson_embedding.getGeodesicPoints(new P(0, top_peak), new P(0.2, top_peak), 50000);
 
     draw();
 }
@@ -335,7 +337,7 @@ function draw() {
         ctx.font = "12px Arial";
         ctx.textAlign = "center";
         ctx.textBaseline = "bottom";
-        var drawTimeLabel = x => { 
+        var drawTimeLabel = x => {
             var label = getTimeLabel(x);
             drawText(graph.transform.forwards(new P(x, spacetime_range.ymin)), label);
         };
@@ -356,7 +358,7 @@ function draw() {
             drawLine(pts, geodesic.color);
             fillSpacedCircles(pts, 1.5, geodesic.color);
         });
-        
+
         // draw the test geodesic
         //var test_geodesic_screen_pts = test_geodesic.map(graph.transform.forwards);
         //drawLine(test_geodesic_screen_pts, 'rgb(0,0,0)');
@@ -377,7 +379,7 @@ function draw() {
         ctx.fillText(graph.left_text, 0, 0);
         ctx.restore();
     });
-    
+
     // axes that go in the time direction (circles)
     var time_minor_axes_h = [earth_radius, earth_radius + 0.1, earth_radius + 0.25, earth_radius + 0.5];
     for(var i = 1; i < 10; i++) {
@@ -403,7 +405,7 @@ function draw() {
         return [delta_z, radius, x];
     });
     var time_minor_axes = time_minor_axes_zrh.map(zrh => getEllipsePoints(new P(0,0,zrh[0]), new P(zrh[1],0), new P(0,zrh[1]), 60));
-    
+
     // axes that go in the space directions (curved lines to infinity, repeated by rotation)
     var space_axis_delta_z = [];
     var h = 0;
@@ -452,7 +454,7 @@ function draw() {
         ctx.font = "12px Arial";
         ctx.textAlign = "center";
         ctx.textBaseline = "bottom";
-        var drawTimeLabel = x => { 
+        var drawTimeLabel = x => {
             var label = getTimeLabel(x);
             drawText(graph.transform.forwards(new P(x, spacetime_range.ymin)), label);
         };
@@ -484,7 +486,7 @@ function draw() {
             drawLine(pts, geodesic.color);
             fillSpacedCircles(pts, 1.5, geodesic.color, 60);
         });
-        
+
         // draw the test geodesic
         //var test_geodesic_screen_pts = test_geodesic.map(graph.transform.forwards);
         //drawLine(test_geodesic_screen_pts, 'rgb(0,0,0)');

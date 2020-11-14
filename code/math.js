@@ -270,7 +270,7 @@ function bisection_search(target, a, b, tolerance, max_iterations, func) {
         var mid = (a + b) / 2;
         var value_mid = func(mid);
         if(Math.sign(target - value_a) == Math.sign(target - value_mid)) {
-            a = mid; 
+            a = mid;
             value_a = value_mid;
         }
         else {

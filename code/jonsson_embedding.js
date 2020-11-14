@@ -27,23 +27,25 @@ class JonssonEmbedding {
         this.x_0 = earth_radius / earth_schwarzschild_radius;
         this.sqr_x_0 = Math.pow(this.x_0, 2);
         this.a_e0 = 1 - 1 / this.x_0; // (Eq. 14, because using exterior metric)
+        // Memoize some functions for speed
+        this.memoize_getDeltaZFromDeltaX = new LogMemoization(this.getDeltaXFromSpace(earth_radius), this.getDeltaXFromSpace(1e15), 1000);
         // Precompute other values that depend on the funnel shape
-        this.computeShapeParameters();
+        this.precomputeShapeDependentValues();
     }
-    
+
     setSlopeAngle(val) {
         val = Math.min(0.999, Math.max(0.001, val)); // clamp to valid range
         this.sin_theta_zero = val;
-        this.computeShapeParameters();
+        this.precomputeShapeDependentValues();
     }
 
     setTimeWrapping(val) {
         val = Math.max(1e-6, val); // clamp to valid range
         this.delta_tau_real = val;
-        this.computeShapeParameters();
+        this.precomputeShapeDependentValues();
     }
 
-    computeShapeParameters() {
+    precomputeShapeDependentValues() {
         // Compute k, delta and alpha (Eq. 47)
         this.k = this.delta_tau_real * light_speed / ( 2 * Math.PI * Math.sqrt(this.a_e0) * earth_schwarzschild_radius );
         this.delta = Math.pow(this.k / ( 2 * this.sin_theta_zero * this.sqr_x_0 ), 2);
@@ -51,59 +53,74 @@ class JonssonEmbedding {
         // Precompute other values
         this.sqrt_alpha = Math.sqrt(this.alpha);
         this.k2_over_4x04 = Math.pow(this.k, 2) / ( 4 * Math.pow(this.x_0, 4) );
+        this.precomputeMemoization();
     }
 
     getRadiusFromDeltaX(delta_x) {
         // compute the radius at this point (Eg. 48)
+        if(delta_x < 0) { throw new Error("getRadiusFromDeltaX: delta_x must be positive"); }
         return this.k * this.sqrt_alpha / Math.sqrt( delta_x / this.sqr_x_0 + this.delta );
     }
-    
-    getDeltaZFromDeltaX(delta_x, delta_x_0 = 0, delta_z_0 = 0) {
+
+    getDeltaZFromDeltaX(delta_x) {
+        if(delta_x < 0) { throw new Error("getDeltaZFromDeltaX: delta_x must be positive"); }
+        // use linear interpolatation into the lookup table
+        return this.memoize_getDeltaZFromDeltaX.interpolate(delta_x);
+        // compute:
+        //return this.computeDeltaZFromDeltaX(delta_x);
+    }
+
+    computeDeltaZFromDeltaX(delta_x, delta_x_0 = 0, delta_z_0 = 0) {
         // integrate over x between delta_x_0 and delta_x to find delta_z (Eg. 49)
+        if(delta_x < 0) { throw new Error("computeDeltaZFromDeltaX: delta_x must be positive"); }
+        if(delta_x_0 < 0) { throw new Error("computeDeltaZFromDeltaX: delta_x_0 must be positive"); }
         return delta_z_0 + this.sqrt_alpha * simpsons_integrate( delta_x_0, delta_x, 1000,
             x => {
                 var term1 = 1 / ( x / this.sqr_x_0 + this.delta );
                 return term1 * Math.sqrt( 1 - this.k2_over_4x04 * term1 );
             });
     }
-    
+
     getDeltaXFromDeltaZ(delta_z) {
         // inverse of above getDeltaZFromDeltaX, using bisection search
         var delta_x_max = this.getDeltaXFromSpace(earth_radius * 100);
         return bisection_search(delta_z, 0, delta_x_max, 1e-6, 100, delta_x => this.getDeltaZFromDeltaX(delta_x));
     }
-    
+
     getDeltaXFromSpace(x) {
+        if(x < earth_radius) { throw new Error("getDeltaXFromSpace: x must be >= earth_radius"); }
         return x / earth_schwarzschild_radius - this.x_0;
     }
-    
+
     getSpaceFromDeltaX(delta_x) {
+        if(delta_x < 0) { throw new Error("getSpaceFromDeltaX: delta_x must be positive"); }
         return (delta_x + this.x_0) * earth_schwarzschild_radius;
     }
-    
+
     getAngleFromTime(t) {
         return 2 * Math.PI * t / this.delta_tau_real; // convert time in seconds to angle in radians
     }
-    
+
     getAngleFromEmbeddingPoint(p) {
         return Math.atan2(p.y, p.x);
     }
-    
+
     getTimeDeltaFromAngleDelta(angle_delta) {
         return angle_delta * this.delta_tau_real / (2 * Math.PI);
     }
-    
+
     getEmbeddingPointFromSpacetime(p) {
         var theta = this.getAngleFromTime(p.x);
         var delta_x = this.getDeltaXFromSpace(p.y);
 
         var radius = this.getRadiusFromDeltaX(delta_x);
         var delta_z = this.getDeltaZFromDeltaX(delta_x);
-        
+
         return new P(radius * Math.cos(theta), radius * Math.sin(theta), delta_z);
     }
-    
+
     getSurfaceNormalFromDeltaXAndTheta(delta_x, theta) {
+        if(delta_x < 0) { throw new Error("getSurfaceNormalFromDeltaXAndTheta: delta_x must be positive"); }
         var term1 = delta_x / this.sqr_x_0 + this.delta;
         var dr_dx = - this.k * this.sqrt_alpha / (2 * this.sqr_x_0 * Math.pow(term1, 3 / 2)); // derivative of Eq. 48 wrt. delta_x
         var dz_dx = this.sqrt_alpha * Math.sqrt(1 - this.k2_over_4x04 / term1) / term1; // from Eq. 49
@@ -111,19 +128,19 @@ class JonssonEmbedding {
         var normal = normalize(new P(-dz_dr, 0, 1)); // in the XZ plane
         return rotateXY(normal, theta);
     }
-    
+
     getSurfaceNormalFromSpacetime(p) {
         var theta = this.getAngleFromTime(p.x);
         var delta_x = this.getDeltaXFromSpace(p.y);
         return this.getSurfaceNormalFromDeltaXAndTheta(delta_x, theta);
     }
-    
+
     getSurfaceNormalFromEmbeddingPoint(p) {
         var delta_x = getDeltaXFromDeltaZ(p.z);
         var theta = getAngleFromEmbeddingPoint(p);
         return this.getSurfaceNormalFromDeltaXAndTheta(delta_x, theta);
     }
-    
+
     getGeodesicPoints(a, b, max_points) {
         // Walk along the embedding following the geodesic until we hit delta_x = 0 or have enough points
         var ja = this.getEmbeddingPointFromSpacetime(a);
@@ -145,7 +162,7 @@ class JonssonEmbedding {
                 return expected_radius - actual_radius;
             });
             var jc = rotateAroundPointAndVector(ja, jb, norm_vec, theta);
-            if( jc.z < 0 ) { 
+            if( jc.z < 0 ) {
                 // have hit the edge of the embedding
                 break;
             }
@@ -160,5 +177,19 @@ class JonssonEmbedding {
             b = c;
         }
         return pts;
+    }
+
+    precomputeMemoization() {
+        // Memoize getDeltaZFromDeltaX
+        var last_delta_x = this.memoize_getDeltaZFromDeltaX.getIntervalMin(0);
+        var last_delta_z = this.computeDeltaZFromDeltaX(last_delta_x);
+        this.memoize_getDeltaZFromDeltaX.values[0] = last_delta_z;
+        for(var i = 1; i < this.memoize_getDeltaZFromDeltaX.values.length; i++) {
+            var delta_x = this.memoize_getDeltaZFromDeltaX.getIntervalMin(i);
+            var delta_z = this.computeDeltaZFromDeltaX(delta_x, last_delta_x, last_delta_z);
+            this.memoize_getDeltaZFromDeltaX.values[i] = delta_z;
+            last_delta_x = delta_x;
+            last_delta_z = delta_z;
+        }
     }
 }
