@@ -19,6 +19,8 @@
 
 class JonssonEmbedding {
     constructor(sin_theta_zero = 0.8, delta_tau_real = 1) {
+        this.min_space = earth_radius;
+        this.max_space = 1e15;
         // Pick the shape of funnel we want: (Eq. 46)
         this.sin_theta_zero = sin_theta_zero; // angle of slope at the bottom
         this.r_0 = 1; // radius at the bottom
@@ -27,8 +29,6 @@ class JonssonEmbedding {
         this.x_0 = earth_radius / earth_schwarzschild_radius;
         this.sqr_x_0 = Math.pow(this.x_0, 2);
         this.a_e0 = 1 - 1 / this.x_0; // (Eq. 14, because using exterior metric)
-        // Memoize some functions for speed
-        this.memoize_getDeltaZFromDeltaX = new LogMemoization(this.getDeltaXFromSpace(earth_radius), this.getDeltaXFromSpace(1e15), 1000);
         // Precompute other values that depend on the funnel shape
         this.precomputeShapeDependentValues();
     }
@@ -63,7 +63,6 @@ class JonssonEmbedding {
     }
 
     getDeltaZFromDeltaX(delta_x) {
-        if(delta_x < 0) { throw new Error("getDeltaZFromDeltaX: delta_x must be positive"); }
         // use linear interpolatation into the lookup table
         return this.memoize_getDeltaZFromDeltaX.interpolate(delta_x);
         // compute:
@@ -72,8 +71,6 @@ class JonssonEmbedding {
 
     computeDeltaZFromDeltaX(delta_x, delta_x_0 = 0, delta_z_0 = 0) {
         // integrate over x between delta_x_0 and delta_x to find delta_z (Eg. 49)
-        if(delta_x < 0) { throw new Error("computeDeltaZFromDeltaX: delta_x must be positive"); }
-        if(delta_x_0 < 0) { throw new Error("computeDeltaZFromDeltaX: delta_x_0 must be positive"); }
         return delta_z_0 + this.sqrt_alpha * simpsons_integrate( delta_x_0, delta_x, 1000,
             x => {
                 var term1 = 1 / ( x / this.sqr_x_0 + this.delta );
@@ -83,17 +80,15 @@ class JonssonEmbedding {
 
     getDeltaXFromDeltaZ(delta_z) {
         // inverse of above getDeltaZFromDeltaX, using bisection search
-        var delta_x_max = this.getDeltaXFromSpace(earth_radius * 100);
+        var delta_x_max = this.max_delta_x;
         return bisection_search(delta_z, 0, delta_x_max, 1e-6, 100, delta_x => this.getDeltaZFromDeltaX(delta_x));
     }
 
     getDeltaXFromSpace(x) {
-        if(x < earth_radius) { throw new Error("getDeltaXFromSpace: x must be >= earth_radius"); }
         return x / earth_schwarzschild_radius - this.x_0;
     }
 
     getSpaceFromDeltaX(delta_x) {
-        if(delta_x < 0) { throw new Error("getSpaceFromDeltaX: delta_x must be positive"); }
         return (delta_x + this.x_0) * earth_schwarzschild_radius;
     }
 
@@ -120,7 +115,6 @@ class JonssonEmbedding {
     }
 
     getSurfaceNormalFromDeltaXAndTheta(delta_x, theta) {
-        if(delta_x < 0) { throw new Error("getSurfaceNormalFromDeltaXAndTheta: delta_x must be positive"); }
         var term1 = delta_x / this.sqr_x_0 + this.delta;
         var dr_dx = - this.k * this.sqrt_alpha / (2 * this.sqr_x_0 * Math.pow(term1, 3 / 2)); // derivative of Eq. 48 wrt. delta_x
         var dz_dx = this.sqrt_alpha * Math.sqrt(1 - this.k2_over_4x04 / term1) / term1; // from Eq. 49
@@ -159,7 +153,7 @@ class JonssonEmbedding {
                 var delta_z = Math.max(0, jc.z); // not sure what to do if jc.z < 0 here
                 var delta_x = this.getDeltaXFromDeltaZ(delta_z);
                 var expected_radius = this.getRadiusFromDeltaX(delta_x);
-                return expected_radius - actual_radius;
+                return expected_radius - actual_radius; // signed distance to the funnel surface
             });
             var jc = rotateAroundPointAndVector(ja, jb, norm_vec, theta);
             if( jc.z < 0 ) {
@@ -181,8 +175,11 @@ class JonssonEmbedding {
 
     precomputeMemoization() {
         // Memoize getDeltaZFromDeltaX
+        this.memoize_getDeltaZFromDeltaX = new LogMemoization(this.getDeltaXFromSpace(this.min_space), this.getDeltaXFromSpace(this.max_space), 1000);
         var last_delta_x = this.memoize_getDeltaZFromDeltaX.getIntervalMin(0);
         var last_delta_z = this.computeDeltaZFromDeltaX(last_delta_x);
+        this.min_delta_x = last_delta_x;
+        this.min_delta_z = last_delta_z;
         this.memoize_getDeltaZFromDeltaX.values[0] = last_delta_z;
         for(var i = 1; i < this.memoize_getDeltaZFromDeltaX.values.length; i++) {
             var delta_x = this.memoize_getDeltaZFromDeltaX.getIntervalMin(i);
@@ -191,5 +188,7 @@ class JonssonEmbedding {
             last_delta_x = delta_x;
             last_delta_z = delta_z;
         }
+        this.max_delta_x = last_delta_x;
+        this.max_delta_z = last_delta_z;
     }
 }
