@@ -50,6 +50,7 @@ class JonssonEmbedding {
         this.alpha = Math.pow(this.r_0, 2) / ( 4 * Math.pow(this.x_0, 4) * Math.pow(this.sin_theta_zero, 2) + Math.pow(this.k, 2) );
         // Precompute other values
         this.sqrt_alpha = Math.sqrt(this.alpha);
+        this.k2_over_4x04 = Math.pow(this.k, 2) / ( 4 * Math.pow(this.x_0, 4) );
     }
 
     getRadiusFromDeltaX(delta_x) {
@@ -57,13 +58,12 @@ class JonssonEmbedding {
         return this.k * this.sqrt_alpha / Math.sqrt( delta_x / this.sqr_x_0 + this.delta );
     }
     
-    getDeltaZFromDeltaX(delta_x) {
-        // integrate over x to find delta_z (Eg. 49)
-        var term1 = Math.pow(this.k, 2) / ( 4 * Math.pow(this.x_0, 4) );
-        return this.sqrt_alpha * simpsons_integrate( 0, delta_x, 1000,
+    getDeltaZFromDeltaX(delta_x, delta_x_0 = 0, delta_z_0 = 0) {
+        // integrate over x between delta_x_0 and delta_x to find delta_z (Eg. 49)
+        return delta_z_0 + this.sqrt_alpha * simpsons_integrate( delta_x_0, delta_x, 1000,
             x => {
-                var term2 = 1 / ( x / this.sqr_x_0 + this.delta );
-                return term2 * Math.sqrt( 1 - term1 * term2 );
+                var term1 = 1 / ( x / this.sqr_x_0 + this.delta );
+                return term1 * Math.sqrt( 1 - this.k2_over_4x04 * term1 );
             });
     }
     
@@ -106,7 +106,7 @@ class JonssonEmbedding {
     getSurfaceNormalFromDeltaXAndTheta(delta_x, theta) {
         var term1 = delta_x / this.sqr_x_0 + this.delta;
         var dr_dx = - this.k * this.sqrt_alpha / (2 * this.sqr_x_0 * Math.pow(term1, 3 / 2)); // derivative of Eq. 48 wrt. delta_x
-        var dz_dx = this.sqrt_alpha * Math.sqrt(1 - Math.pow(this.k, 2) / (4 * Math.pow(this.x_0, 4) * term1)) / term1; // from Eq. 49
+        var dz_dx = this.sqrt_alpha * Math.sqrt(1 - this.k2_over_4x04 / term1) / term1; // from Eq. 49
         var dz_dr = dz_dx / dr_dx;
         var normal = normalize(new P(-dz_dr, 0, 1)); // in the XZ plane
         return rotateXY(normal, theta);
@@ -133,7 +133,8 @@ class JonssonEmbedding {
             var n = this.getSurfaceNormalFromSpacetime(b);
             var incoming_segment = sub(jb, ja);
             var norm_vec = normalize(cross(incoming_segment, n));
-            // search for optimal theta between 90 degrees and 270 degrees
+            // we rotate ja around norm_vec through jb, at an angle theta somewhere between 90 degrees and 270 degrees
+            // such that the new point lies on the funnel
             var theta = bisection_search(0, Math.PI / 2, 3 * Math.PI / 2, 1e-6, 200, theta => {
                 var jc = rotateAroundPointAndVector(ja, jb, norm_vec, theta);
                 // decide if this point is inside or outside the funnel
