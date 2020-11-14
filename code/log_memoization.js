@@ -48,13 +48,13 @@ class LogMemoization {
             throw new Error("interpolate: value " + x + " not in range [" + this.min + " - " + this.max + "]");
         }
         var index = this.getIndex(x);
-        var z_low = this.values[index];
+        var value_low = this.values[index];
         if(index >= this.values.length - 1) {
-            return z_low;
+            return value_low;
         }
-        var z_high = this.values[index + 1];
+        var value_high = this.values[index + 1];
         var x_low = this.getIntervalMin(index);
         var x_high = this.getIntervalMin(index + 1);
-        return z_low + (z_high - z_low) * (x - x_low) / (x_high - x_low);
+        return value_low + (value_high - value_low) * (x - x_low) / (x_high - x_low);
     }
 }
