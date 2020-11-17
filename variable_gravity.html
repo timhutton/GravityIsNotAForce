@@ -27,17 +27,23 @@
     <div class="mainSlider">
       Change the vertical view angle: <input type="range" min="0" max="100" value="60" class="slider" id="verticalViewAngleSlider">
     </div>
-    <!--<div class="mainSlider">
-      Move the time window: <input type="range" min="0" max="100" value="50" class="slider" id="timeTranslationSlider">
-    </div>
-    <div class="mainSlider">
-      Change the height range: <input type="range" min="0" max="100" value="0" class="slider" id="heightRangeSlider">
-    </div>-->
     </p>
 
     <h4>Description:</h4>
     <p class="text">
-    Work in progress. Above is a space-time diagram of some free-falls from various distances to Earth. The 3D scene on the right is the 3D embedding proposed by <a href="http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf">Rickard Jonsson</a>. See that paper for details.
+    In this system there is only one space dimension, shown on the vertical axis and labeled in millions of meters (Mm). The time dimension is the horizontal axis and labeled in minutes. The curving lines show four cannonballs, shot straight upwards at various speeds and then falling back to Earth, ignoring air resistance. At such heights (around 5% of the distance to the moon), the force of gravity drops considerably, down to just 0.57 ms<sup>-2</sup> from 9.8 ms<sup>-2</sup> at the surface. As a result, the trajectories are no longer parabolas.
+    </p>
+
+    <p class="text">
+    The 3D scene on the right is a different way of showing the same graph. We have taken the graph on the left and rolled it up like paper, such that the time axis is now wrapped up in a circle. By adding a little bulge at the bottom this surface acquires a very special property: all the trajectories are now <i>geodesics</i> (straight lines) on this surface. (Imagine a tiny ant walking on the surface. If the ant always walks forwards, never turning left or right, then the path it takes will be a geodesic.)
+    </p>
+
+    <p class="text">
+    This graph illustrates a key property of general relativity, that inertial objects (objects like cannonballs that are free to fall) move in straight lines through spacetime. Gravity works because the mass of the Earth distorts spacetime, causing the bulge we can see at the bottom. The curvature of the surface steers the geodesics back down to Earth, so to an Earth-base observer it seems like the cannonballs are being pulled towards us by some invisible force.
+    </p>
+
+    <p class="text">
+    This 3D embedding was created by <a href="http://relativitet.se/">Rickard Jonsson</a> in a <a href="http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf">2001 paper</a>. Many thanks to Rickard for helping me implement it.
     </p>
 
     <p class="text">

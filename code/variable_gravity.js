@@ -142,7 +142,7 @@ function init() {
     ctx = canvas.getContext('2d');
 
     Jonsson_embedding = new JonssonEmbedding();
-    const height = 20000000;
+    const height = 21e6;
     const time_width = freeFallTime(height + earth_radius, earth_radius, earth_mass);
     spacetime_range = new Rect( new P(-time_width, earth_radius), new P(2 * time_width, height));
 
@@ -163,7 +163,7 @@ function init() {
     // To validate the surface, we compute a geodesic by walking along it, using the surface normals.
     // We get a good agreement with our free-fall code.
     if(false) { // (set to true to see the comparison)
-        const top_peak = earth_radius + (spacetime_range.ymax - earth_radius) * 1;
+        const top_peak = earth_radius + 20e6;
         test_geodesic = Jonsson_embedding.getGeodesicPoints(new P(0, top_peak), new P(2, top_peak), 5000);
     }
 
@@ -185,7 +185,7 @@ function draw() {
         minor_axes.push(getLinePoints(new P(spacetime_range.xmin, y), new P(spacetime_range.xmax, y), 200));
     }
 
-    const x_step = divideNicely(spacetime_range.size.x, 7);
+    const x_step = 60 * divideNicely(spacetime_range.size.x / 60, 7); // divide into a nice number of minutes
     for(let x = x_step; x<=spacetime_range.xmax; x+= x_step) {
         minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax), 200));
     }
@@ -193,10 +193,10 @@ function draw() {
         minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax), 200));
     }
     const fall_time = freeFallTime(spacetime_range.ymax, spacetime_range.ymin, earth_mass);
-    const geodesics = [new Geodesic(new P(0, spacetime_range.ymax), 'rgb(100,100,200)'),
-                       new Geodesic(new P(0, spacetime_range.ymin + spacetime_range.size.y * 0.05), 'rgb(200,100,100)'),
-                       new Geodesic(new P(0, spacetime_range.ymin + spacetime_range.size.y * 0.25), 'rgb(200,100,200)'),
-                       new Geodesic(new P(0, spacetime_range.ymin + spacetime_range.size.y * 0.125), 'rgb(100,200,100)')];
+    const geodesics = [new Geodesic(new P(0, earth_radius + 20e6), 'rgb(100,100,200)'),
+                       new Geodesic(new P(0, earth_radius + 5e6), 'rgb(200,100,100)'),
+                       new Geodesic(new P(0, earth_radius + 2.5e6), 'rgb(200,100,200)'),
+                       new Geodesic(new P(0, earth_radius + 1.25e6), 'rgb(100,200,100)')];
 
     const n_graphs = 2;
     const margin = 40;
@@ -286,7 +286,7 @@ function draw() {
 
     // axes that go in the time direction (circles)
     let time_minor_axes_h = [earth_radius, earth_radius + 0.1, earth_radius + 0.25, earth_radius + 0.5];
-    for(let i = 1; i < 10; i++) {
+    for(let i = 5; i < 1000; i+=5) {
         /*time_minor_axes_h.push(earth_radius + i);
         time_minor_axes_h.push(earth_radius + 10*i);
         time_minor_axes_h.push(earth_radius + 100*i);
@@ -294,13 +294,13 @@ function draw() {
         time_minor_axes_h.push(earth_radius + 10000*i);
         time_minor_axes_h.push(earth_radius + 100000*i);*/
         time_minor_axes_h.push(earth_radius + 1000000*i);
-        time_minor_axes_h.push(earth_radius + 10000000*i);
+        /*time_minor_axes_h.push(earth_radius + 10000000*i);
         time_minor_axes_h.push(earth_radius + 100000000*i);
         time_minor_axes_h.push(earth_radius + 1000000000*i);
         time_minor_axes_h.push(earth_radius + 10000000000*i);
         time_minor_axes_h.push(earth_radius + 100000000000*i);
         time_minor_axes_h.push(earth_radius + 1000000000000*i);
-        time_minor_axes_h.push(earth_radius + 10000000000000*i);
+        time_minor_axes_h.push(earth_radius + 10000000000000*i);*/
     }
     const time_minor_axes_zrh = time_minor_axes_h.map(h => {
         const x = Jonsson_embedding.getXFromSpace(h);
@@ -368,7 +368,7 @@ function draw() {
             const x = i * time_step;
             drawTimeLabel(x);
         }
-        for(let h = 1e6; h < 1e15; h *= 10) {
+        for(let h = 5e6; h < 50e6; h += 5e6) {
             const x = Jonsson_embedding.getXFromSpace(h + earth_radius);
             const delta_z = Jonsson_embedding.getDeltaZFromX(x);
             const radius = Jonsson_embedding.getRadiusFromX(x);
