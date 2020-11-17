@@ -15,13 +15,12 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-var canvas;
-var ctx;
-var spacetime_range;
-var time_range_offset;
-var vertical_vertical_view_angle;
-var horizontal_vertical_view_angle;
-var Jonsson_embedding;
+let canvas;
+let ctx;
+let spacetime_range;
+let vertical_vertical_view_angle;
+let horizontal_vertical_view_angle;
+let Jonsson_embedding;
 
 class Geodesic {
     constructor(peak, color) {
@@ -40,66 +39,36 @@ class Graph {
     }
 }
 
-function toDistanceFallenDistortedAxes(p)
-{
-    // return the corresponding location on the axes where the space dimension is shifted up by the distance fallen
-    var time = p.x;
-    var final_height = p.y;
-    var time_mid = spacetime_range.center.x; // center of the current time window
-    var time_diff = Math.abs(time - time_mid);
-    return new P(time, findInitialHeight(time_diff, final_height, earth_mass));
-}
-
-function fromDistanceFallenDistortedAxes(p)
-{
-    // return the corresponding location on the orthogonal axes given the location on the ones where the space dimension is shifted up by the distance fallen
-    var time = p.x;
-    var height = p.y;
-    var time_mid = spacetime_range.center.x; // center of the current time window
-    var time_diff = Math.abs(time - time_mid);
-    return new P(time, height - freeFallDistance(time_diff, height, earth_mass));
-}
-
 function getFreeFallPoints(peak_time, peak_height, min_height, planet_mass, n_pts = 100) {
-    var fallTime = freeFallTime(peak_height, min_height, planet_mass);
-    var pts = [];
+    const fallTime = freeFallTime(peak_height, min_height, planet_mass);
+    let pts = [];
     // from the left up
-    for(var i=0;i<n_pts;i++) {
-        var t = peak_time - fallTime + i*fallTime/n_pts;
-        var h = peak_height - freeFallDistance(peak_time-t, peak_height, planet_mass);
+    for(let i=0;i<n_pts;i++) {
+        const t = peak_time - fallTime + i*fallTime/n_pts;
+        let h = peak_height - freeFallDistance(peak_time-t, peak_height, planet_mass);
         h = Math.max(earth_radius, h);
         pts.push(new P(t,h));
     }
     // from the top down
-    for(var i=0;i<=n_pts;i++) {
-        var t = peak_time + i*fallTime/n_pts;
-        var h = peak_height - freeFallDistance(t - peak_time, peak_height, planet_mass);
+    for(let i=0;i<=n_pts;i++) {
+        const t = peak_time + i*fallTime/n_pts;
+        let h = peak_height - freeFallDistance(t - peak_time, peak_height, planet_mass);
         h = Math.max(earth_radius, h);
         pts.push(new P(t,h));
     }
     return pts;
 }
 
-function fitTimeRange(time_range_offset) {
-    // pick the time range to allow for a free-fall from the max height to the min height
-    var fall_time = freeFallTime(spacetime_range.ymax, spacetime_range.ymin, earth_mass);
-    // time_range_offset slides the time window left and right by multiples of the existing time range
-    spacetime_range.p.x = -fall_time + fall_time*time_range_offset;
-    spacetime_range.size.x = fall_time * 2;
-    console.log(spacetime_range.size.x);
-}
-
-
 function testEmbeddingByPathLengths() {
     // generate trajectories that start and end at the same points, for different values of g
     // measure their arc length on the embedding - the one for the correct g should be the shortest
-    var time_to_fall = 1; // pick a time
-    for(var dm = -earth_mass *0.7; dm < earth_mass / 2; dm += earth_mass / 20) {
-        var planet_mass = earth_mass + dm;
-        var h = findInitialHeight(time_to_fall, earth_radius, planet_mass);
-        var pts = getFreeFallPoints(0, h, earth_radius, planet_mass, 100).map(p => Jonsson_embedding.getEmbeddingPointFromSpacetime(p));
-        var length = 0;
-        for(var iPt = 1; iPt < pts.length; iPt++) {
+    const time_to_fall = 1; // pick a time
+    for(let dm = -earth_mass *0.7; dm < earth_mass / 2; dm += earth_mass / 20) {
+        const planet_mass = earth_mass + dm;
+        const h = findInitialHeight(time_to_fall, earth_radius, planet_mass);
+        const pts = getFreeFallPoints(0, h, earth_radius, planet_mass, 100).map(p => Jonsson_embedding.getEmbeddingPointFromSpacetime(p));
+        let length = 0;
+        for(let iPt = 1; iPt < pts.length; iPt++) {
             length += dist(pts[iPt], pts[iPt-1]);
         }
         console.log(dm, h, length);
@@ -110,22 +79,22 @@ function testEmbeddingByPathLengths() {
 function testEmbeddingByPathTurning() {
     // generate trajectories that start and end at the same points, for different values of g
     // measure how much they deviate from the plane that includes the surface normal
-    var time_to_fall = 1; // pick a time
+    const time_to_fall = 1; // pick a time
     [-earth_mass * 0.1, 0, earth_mass * 0.1].forEach( dm => {
-        var planet_mass = earth_mass + dm;
-        var h = findInitialHeight(time_to_fall, earth_radius, planet_mass);
-        var pts = getFreeFallPoints(0, h, earth_radius, planet_mass, 200);
-        var sum_turns = 0;
-        var sum_abs_turns = 0;
-        for(var iPt = 1; iPt < pts.length-1; iPt++) {
-            var p = Jonsson_embedding.getEmbeddingPointFromSpacetime(pts[iPt]);
-            var n = Jonsson_embedding.getSurfaceNormalFromSpacetime(pts[iPt]);
-            var pre = Jonsson_embedding.getEmbeddingPointFromSpacetime(pts[iPt-1]);
-            var post = Jonsson_embedding.getEmbeddingPointFromSpacetime(pts[iPt+1]);
-            var incoming_segment = sub(p, pre);
-            var outgoing_segment = sub(post, p);
-            var norm_vec = normalize(cross(incoming_segment, n));
-            var turning_angle = Math.asin(dot(outgoing_segment, norm_vec) / len(outgoing_segment));
+        const planet_mass = earth_mass + dm;
+        const h = findInitialHeight(time_to_fall, earth_radius, planet_mass);
+        const pts = getFreeFallPoints(0, h, earth_radius, planet_mass, 200);
+        let sum_turns = 0;
+        let sum_abs_turns = 0;
+        for(let iPt = 1; iPt < pts.length-1; iPt++) {
+            const p = Jonsson_embedding.getEmbeddingPointFromSpacetime(pts[iPt]);
+            const n = Jonsson_embedding.getSurfaceNormalFromSpacetime(pts[iPt]);
+            const pre = Jonsson_embedding.getEmbeddingPointFromSpacetime(pts[iPt-1]);
+            const post = Jonsson_embedding.getEmbeddingPointFromSpacetime(pts[iPt+1]);
+            const incoming_segment = sub(p, pre);
+            const outgoing_segment = sub(post, p);
+            const norm_vec = normalize(cross(incoming_segment, n));
+            const turning_angle = Math.asin(dot(outgoing_segment, norm_vec) / len(outgoing_segment));
             sum_turns += turning_angle;
             sum_abs_turns += Math.abs(turning_angle);
             console.log(dm, turning_angle);
@@ -135,7 +104,7 @@ function testEmbeddingByPathTurning() {
 }
 
 function getTimeLabel(t) {
-    var label = t.toFixed(2)+"s";
+    let label = t.toFixed(2)+"s";
     if(Math.abs(t) > 24 * 60 * 60 * 2) {
         label = (t/(24 * 60 * 60)).toFixed(0)+"d";
     }
@@ -152,7 +121,7 @@ function getTimeLabel(t) {
 }
 
 function getDistanceLabel(x) {
-    var label = x.toFixed(2)+"m";
+    let label = x.toFixed(2)+"m";
     if(Math.abs(x) >= 1e12) {
         label = (x/1e12).toFixed(0)+"Tm";
     }
@@ -172,51 +141,31 @@ function init() {
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
 
-    var lowest_height = earth_radius;
-    //var highest_allowed_top = moon_distance;
-    var highest_allowed_top = earth_radius + 10000;
-    var lowest_allowed_top = lowest_height + 500;
-
     Jonsson_embedding = new JonssonEmbedding();
-    var height = 20000000;
-    var time_width = freeFallTime(height + earth_radius, earth_radius, earth_mass);
-    spacetime_range = new Rect( new P(-time_width, lowest_height), new P(2 * time_width, height));
+    const height = 20000000;
+    const time_width = freeFallTime(height + earth_radius, earth_radius, earth_mass);
+    spacetime_range = new Rect( new P(-time_width, earth_radius), new P(2 * time_width, height));
 
-    /*var heightRangeSlider = document.getElementById("heightRangeSlider");
-    spacetime_range.size.y = lowest_allowed_top + (highest_allowed_top-lowest_allowed_top) * Math.pow(heightRangeSlider.value / 100.0, 3) - lowest_height;
-    heightRangeSlider.oninput = function() {
-        spacetime_range.size.y = lowest_allowed_top + (highest_allowed_top-lowest_allowed_top) * Math.pow(heightRangeSlider.value / 100.0, 3) - lowest_height;
-        console.log("spacetime_range.size.y: ",spacetime_range.size.y);
-        fitTimeRange(time_range_offset);
-        draw();
-    }*/
-
-    /*var timeTranslationSlider = document.getElementById("timeTranslationSlider");
-    time_range_offset = 1 - 2 * timeTranslationSlider.value / 100.0;
-    timeTranslationSlider.oninput = function() {
-        time_range_offset = 1 - 2 * timeTranslationSlider.value / 100.0;
-        fitTimeRange(time_range_offset);
-        draw();
-    }*/
-    //time_range_offset = 0;
-    //fitTimeRange(time_range_offset);
-
-    var verticalViewAngleSlider = document.getElementById("verticalViewAngleSlider");
+    const verticalViewAngleSlider = document.getElementById("verticalViewAngleSlider");
     vertical_view_angle = 20 - 40 * verticalViewAngleSlider.value / 100.0;
     verticalViewAngleSlider.oninput = function() {
         vertical_view_angle = 20 - 40 * verticalViewAngleSlider.value / 100.0;
         draw();
     }
 
-    var horizontalViewAngleSlider = document.getElementById("horizontalViewAngleSlider");
+    const horizontalViewAngleSlider = document.getElementById("horizontalViewAngleSlider");
     horizontal_view_angle = Math.PI + 2 * Math.PI * horizontalViewAngleSlider.value / 100.0;
     horizontalViewAngleSlider.oninput = function() {
         horizontal_view_angle = Math.PI + 2 * Math.PI * horizontalViewAngleSlider.value / 100.0;
         draw();
     }
 
-    //top_peak = spacetime_range.ymax;
-    //test_geodesic = Jonsson_embedding.getGeodesicPoints(new P(0, top_peak), new P(0.2, top_peak), 50000);
+    // To validate the surface, we compute a geodesic by walking along it, using the surface normals.
+    // We get a good agreement with our free-fall code.
+    if(false) { // (set to true to see the comparison)
+        const top_peak = earth_radius + (spacetime_range.ymax - earth_radius) * 1;
+        test_geodesic = Jonsson_embedding.getGeodesicPoints(new P(0, top_peak), new P(2, top_peak), 5000);
+    }
 
     draw();
 }
@@ -228,80 +177,50 @@ function draw() {
     ctx.rect(0,0,canvas.width, canvas.height);
     ctx.fill();
 
-    var x_axis = getLinePoints(spacetime_range.min, new P(spacetime_range.xmax, spacetime_range.ymin), 200);
-    var y_axis = getLinePoints(new P(0, spacetime_range.ymin), new P(0, spacetime_range.ymax), 200);
-    var minor_axes = [];
-    var y_step = divideNicely(spacetime_range.size.y, 7);
-    for(var y = spacetime_range.ymin; y<=spacetime_range.ymax; y+= y_step) {
+    const x_axis = getLinePoints(spacetime_range.min, new P(spacetime_range.xmax, spacetime_range.ymin), 200);
+    const y_axis = getLinePoints(new P(0, spacetime_range.ymin), new P(0, spacetime_range.ymax), 200);
+    let minor_axes = [];
+    const y_step = divideNicely(spacetime_range.size.y, 7);
+    for(let y = spacetime_range.ymin; y<=spacetime_range.ymax; y+= y_step) {
         minor_axes.push(getLinePoints(new P(spacetime_range.xmin, y), new P(spacetime_range.xmax, y), 200));
     }
 
-    var x_step = divideNicely(spacetime_range.size.x, 7);
-    for(var x = x_step; x<=spacetime_range.xmax; x+= x_step) {
+    const x_step = divideNicely(spacetime_range.size.x, 7);
+    for(let x = x_step; x<=spacetime_range.xmax; x+= x_step) {
         minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax), 200));
     }
-    for(var x = -x_step; x>=spacetime_range.xmin; x-= x_step) {
+    for(let x = -x_step; x>=spacetime_range.xmin; x-= x_step) {
         minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax), 200));
     }
-    var fall_time = freeFallTime(spacetime_range.ymax, spacetime_range.ymin, earth_mass);
-    var geodesics = [new Geodesic(new P(0, spacetime_range.ymax), 'rgb(100,100,200)'),
-                     new Geodesic(new P(0, spacetime_range.ymin + spacetime_range.size.y * 0.05), 'rgb(200,100,100)'),
-                     new Geodesic(new P(0, spacetime_range.ymin + spacetime_range.size.y * 0.25), 'rgb(200,100,200)'),
-                     new Geodesic(new P(0, spacetime_range.ymin + spacetime_range.size.y * 0.125), 'rgb(100,200,100)')];
-    /*for(var i=0;i<=10;i++) {
-        geodesics.push( new Geodesic(new P(0, spacetime_range.ymin+i*spacetime_range.size.y/10.0), 'rgb(150,150,150)') );
-    }*/
+    const fall_time = freeFallTime(spacetime_range.ymax, spacetime_range.ymin, earth_mass);
+    const geodesics = [new Geodesic(new P(0, spacetime_range.ymax), 'rgb(100,100,200)'),
+                       new Geodesic(new P(0, spacetime_range.ymin + spacetime_range.size.y * 0.05), 'rgb(200,100,100)'),
+                       new Geodesic(new P(0, spacetime_range.ymin + spacetime_range.size.y * 0.25), 'rgb(200,100,200)'),
+                       new Geodesic(new P(0, spacetime_range.ymin + spacetime_range.size.y * 0.125), 'rgb(100,200,100)')];
 
-    var n_graphs = 2;
-    var margin = 40;
-    var size = Math.min(canvas.height-margin*2, (canvas.width-margin*(n_graphs+1)) / n_graphs);
-    var rect1 = new Rect( new P(margin+(margin+size)*0,50), new P(size,size));
-    var rect2 = new Rect( new P(margin+(margin+size)*1,50), new P(size,size));
-    var rect3 = new Rect( new P(margin+(margin+size)*2,50), new P(size,size));
-    var rect4 = new Rect( new P(margin+(margin+size)*3,50), new P(size,size));
-    var distanceFallenTransform = new Transform( toDistanceFallenDistortedAxes, fromDistanceFallenDistortedAxes );
-    var flipY = p => new P(p.x, spacetime_range.ymax - p.y + spacetime_range.ymin);
-    var flipYTransform = new Transform( flipY, flipY );
+    const n_graphs = 2;
+    const margin = 40;
+    const size = Math.min(canvas.height-margin*2, (canvas.width-margin*(n_graphs+1)) / n_graphs);
+    const rect1 = new Rect( new P(margin+(margin+size)*0,50), new P(size,size));
+    const rect2 = new Rect( new P(margin+(margin+size)*1,50), new P(size,size));
 
-    // define the Klein pseudosphere transforms
-    /*var circle = new Circle(new P(rect4.center.x, rect4.ymin), rect4.size.x); // TODO: make own space
-    var invert = p => circle.invert(p);
-    var inversionTransform = new Transform( invert, invert );
-    var x_extent = 1;
-    var y_extent = 1;
-    var spacing = 100;
-    var kp_input_rect = new Rect(new P(circle.p.x-circle.r*x_extent,circle.p.y+circle.r), new P(2*circle.r*x_extent,circle.r*y_extent));
-    var circle2 = new Circle(rect4.center, rect4.size.x/2); // the half-plane (~kp_input_rect) transformed into this circle
-    var poincareToKleinTransform = new Transform( p => poincareToKlein(p, circle2), p => kleinToPoincare(p, circle2) ); // TODO: doesn't work as expected
-    var kleinPseudosphereAxes = new Graph( rect4, new ComposedTransform( new LinearTransform2D(spacetime_range, kp_input_rect),
-                        inversionTransform, /poincareToKleinTransform/ ), "Poincare-pseudosphere", "", "" ); // TODO add transform to rect4
-                        */
+    // define the standard spacetime graph
+    const flipY = p => new P(p.x, spacetime_range.ymax - p.y + spacetime_range.ymin);
+    const flipYTransform = new Transform( flipY, flipY );
+    const standardAxes = new Graph( rect1, new ComposedTransform( flipYTransform, new LinearTransform2D(spacetime_range, rect1) ),
+                                    "time "+rightArrow,
+                                    "[Earth surface "+rightArrow+" "+getDistanceLabel(spacetime_range.size.y)+" above Earth surface]", "" );
 
-    // define the 3D transforms
-    /*var toPseudosphereCoords = new LinearTransform2D(spacetime_range, new Rect(new P(-2,0), new P(4,1.5)));
-    var identityTransform = p => new P(p.x, p.y, p.z);
-    var pseudosphereTransform = new Transform(pseudosphere, identityTransform); // TODO: need camera ray intersection for the reverse
-    var camera = new Camera(new P(-10,-0.5,-vertical_view_angle), new P(0,0,-0.5), new P(0,0,-1), 1500, rect3.center);
-    var cameraTransform = new Transform( p => camera.project(p), identityTransform );
-    var pseudosphereAxes = new Graph( rect3, new ComposedTransform( toPseudosphereCoords, pseudosphereTransform, cameraTransform), "Pseudosphere", "", "" );*/
-
-    // define the Jonsson embedding transforms
-    var identityTransform = p => new P(p.x, p.y, p.z);
-    var JonssonEmbeddingTransform = new Transform( p => Jonsson_embedding.getEmbeddingPointFromSpacetime(p), identityTransform );
-    var camera = new Camera(new P(10*Math.cos(-horizontal_view_angle),10*Math.sin(-horizontal_view_angle), -vertical_view_angle),
-                            new P(0,0,1), new P(0,0,1), 1200, rect2.center);
-    var cameraTransform = new Transform( p => camera.project(p), identityTransform );
-    var JonssonEmbeddingAxes = new Graph( rect2, new ComposedTransform( JonssonEmbeddingTransform, cameraTransform),
+    // define the Jonsson embedding graph
+    const identityTransform = p => new P(p.x, p.y, p.z);
+    const JonssonEmbeddingTransform = new Transform( p => Jonsson_embedding.getEmbeddingPointFromSpacetime(p), identityTransform );
+    const camera = new Camera(new P(10*Math.cos(-horizontal_view_angle),10*Math.sin(-horizontal_view_angle), -vertical_view_angle),
+                              new P(0,0,1), new P(0,0,1), 1200, rect2.center);
+    const cameraTransform = new Transform( p => camera.project(p), identityTransform );
+    const JonssonEmbeddingAxes = new Graph( rect2, new ComposedTransform( JonssonEmbeddingTransform, cameraTransform),
                                           "Jonsson embedding", "", "");
 
-    // draw the graphs
-    var standardAxes = new Graph( rect1, new ComposedTransform( flipYTransform, new LinearTransform2D(spacetime_range, rect1) ),
-                                  "time "+rightArrow,
-                                  "[Earth surface "+rightArrow+" "+getDistanceLabel(spacetime_range.size.y)+" above Earth surface]", "" );
-    var distanceFallenAxes = new Graph( rect2, new ComposedTransform( distanceFallenTransform, flipYTransform,
-                                        new LinearTransform2D(spacetime_range, rect2) ),
-                                        "time "+rightArrow, "space & time "+rightArrow, "" );
-    [ standardAxes, /*distanceFallenAxes,*/ /*JonssonEmbeddingAxes,*/ /*pseudosphereAxes, kleinPseudosphereAxes*/ ].forEach(graph => {
+    [ standardAxes ].forEach(graph => {
         ctx.save(); // save the original clip for now
 
         // fill background with white
@@ -312,42 +231,41 @@ function draw() {
         ctx.clip(); // clip to this rect until restored
 
         // draw axes
-        var axes_color = 'rgb(210,210,210)';
-        minor_axes.forEach( axes => { drawLine(axes.map(graph.transform.forwards), axes_color); } );
-        var axes_color = 'rgb(50,50,50)';
-        drawLine(x_axis.map(graph.transform.forwards), axes_color);
-        drawLine(y_axis.map(graph.transform.forwards), axes_color);
+        const minor_axes_color = 'rgb(210,210,210)';
+        minor_axes.forEach( axes => { drawLine(axes.map(graph.transform.forwards), minor_axes_color); } );
+        const major_axes_color = 'rgb(50,50,50)';
+        drawLine(x_axis.map(graph.transform.forwards), major_axes_color);
+        drawLine(y_axis.map(graph.transform.forwards), major_axes_color);
 
         // indicate scale
         ctx.fillStyle = "rgb(0,0,0)";
         ctx.font = "12px Arial";
         ctx.textAlign = "center";
         ctx.textBaseline = "bottom";
-        var drawTimeLabel = x => {
-            var label = getTimeLabel(x);
-            drawText(graph.transform.forwards(new P(x, spacetime_range.ymin)), label);
-        };
-        for(var x = x_step; x<=spacetime_range.xmax; x+= x_step) {
+        const drawTimeLabel = x => drawText(graph.transform.forwards(new P(x, spacetime_range.ymin)), getTimeLabel(x));
+        for(let x = x_step; x<=spacetime_range.xmax; x+= x_step) {
             drawTimeLabel(x);
         }
-        for(var x = -x_step; x>=spacetime_range.xmin; x-= x_step) {
+        for(let x = -x_step; x>=spacetime_range.xmin; x-= x_step) {
             drawTimeLabel(x);
         }
-        for(var h = spacetime_range.ymin + y_step; h < spacetime_range.ymax; h+=y_step) {
+        for(let h = spacetime_range.ymin + y_step; h < spacetime_range.ymax; h+=y_step) {
             drawText(graph.transform.forwards(new P(0, h)), getDistanceLabel(h - earth_radius));
         }
 
         // draw some geodesics
         geodesics.forEach(geodesic => {
-            var pts = getFreeFallPoints(geodesic.peak.x, geodesic.peak.y, spacetime_range.p.y, earth_mass, 500);
-            pts = pts.map(graph.transform.forwards);
-            drawLine(pts, geodesic.color);
-            fillSpacedCircles(pts, 1.5, geodesic.color);
+            const pts = getFreeFallPoints(geodesic.peak.x, geodesic.peak.y, spacetime_range.p.y, earth_mass, 500);
+            const screen_pts = pts.map(graph.transform.forwards);
+            drawLine(screen_pts, geodesic.color);
+            fillSpacedCircles(screen_pts, 1.5, geodesic.color);
         });
 
-        // draw the test geodesic
-        //var test_geodesic_screen_pts = test_geodesic.map(graph.transform.forwards);
-        //drawLine(test_geodesic_screen_pts, 'rgb(0,0,0)');
+        if(typeof test_geodesic != 'undefined') {
+            // draw the test geodesic
+            const test_geodesic_screen_pts = test_geodesic.map(graph.transform.forwards);
+            drawLine(test_geodesic_screen_pts, 'rgb(0,0,0)');
+        }
 
         ctx.restore(); // restore the original clip
 
@@ -367,8 +285,8 @@ function draw() {
     });
 
     // axes that go in the time direction (circles)
-    var time_minor_axes_h = [earth_radius, earth_radius + 0.1, earth_radius + 0.25, earth_radius + 0.5];
-    for(var i = 1; i < 10; i++) {
+    let time_minor_axes_h = [earth_radius, earth_radius + 0.1, earth_radius + 0.25, earth_radius + 0.5];
+    for(let i = 1; i < 10; i++) {
         /*time_minor_axes_h.push(earth_radius + i);
         time_minor_axes_h.push(earth_radius + 10*i);
         time_minor_axes_h.push(earth_radius + 100*i);
@@ -444,7 +362,8 @@ function draw() {
             const label = getTimeLabel(x);
             drawText(graph.transform.forwards(new P(x, spacetime_range.ymin)), label);
         };
-        for(let i = -n_time_steps + 2; i < n_time_steps - 1; i++) {
+        //for(let i = -n_time_steps + 2; i < n_time_steps - 1; i++) {
+        for(let i = 0; i < 3; i++) {
             if(i==0) { continue; }
             const x = i * time_step;
             drawTimeLabel(x);
@@ -457,13 +376,6 @@ function draw() {
             const p = new P(radius, 0, delta_z);
             drawText(camera.project(p), label);
         }
-        /*for(var h = spacetime_range.ymin + y_step; h < spacetime_range.ymax; h+=y_step) {
-            var label = (h-earth_radius).toFixed(2)+"m";
-            if(y_step > 1000) {
-                label = ((h-earth_radius)/1000).toFixed(0)+"km";
-            }
-            drawText(graph.transform.forwards(new P(0, h)), label);
-        }*/
 
         // draw some geodesics
         geodesics.forEach(geodesic => {
@@ -473,9 +385,11 @@ function draw() {
             fillSpacedCircles(screen_pts, 1.5, geodesic.color, 60);
         });
 
-        // draw the test geodesic
-        //var test_geodesic_screen_pts = test_geodesic.map(graph.transform.forwards);
-        //drawLine(test_geodesic_screen_pts, 'rgb(0,0,0)');
+        if(typeof test_geodesic != 'undefined') {
+            // draw the test geodesic
+            const test_geodesic_screen_pts = test_geodesic.map(graph.transform.forwards);
+            drawLine(test_geodesic_screen_pts, 'rgb(0,0,0)');
+        }
 
         ctx.restore(); // restore the original clip
 

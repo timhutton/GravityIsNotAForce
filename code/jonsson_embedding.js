@@ -22,10 +22,10 @@ class JonssonEmbedding {
         this.min_space = earth_radius;
         this.max_space = 1e15;
         // Precompute some values
-        this.x_0 = earth_radius / earth_schwarzschild_radius;
+        this.x_0 = this.getXFromSpace(earth_radius);
         const R = 2; // (Section 1.4 in addendum)
         // Compute beta (Eq. 7 in addendum)
-        const a_00 = Math.pow(3 * Math.sqrt(1 - 1 / this.x_0) - 1, 2) / 4;
+        const a_00 = Math.pow(3 * Math.sqrt(1 - 1 / this.x_0) - 1, 2) / 4; // (here a_0(0) is for the *interior* metric)
         this.beta = a_00 * (Math.pow(R, 2) - 1) / (Math.pow(R, 2) - a_00);
         // Compute k (Eq. 8 in addendum)
         this.k = 2 * Math.pow(this.x_0, 7 / 4) / Math.sqrt(3 * Math.sqrt(this.x_0 - 1) - Math.sqrt(this.x_0));
@@ -41,44 +41,44 @@ class JonssonEmbedding {
     }
 
     getRadiusFromX(x) {
-        // compute the radius at this point (Eg. 21)
-        const a_0 = 1 - 1 / x;
-        return this.k * Math.sqrt(this.alpha * a_0 / (a_0 - this.beta));
+        const a_0 = 1 - 1 / x; // (Eq. 14, for the exterior metric)
+        return this.k * Math.sqrt(this.alpha * a_0 / (a_0 - this.beta)); // (Eq. 21)
     }
 
     getDeltaZFromX(x) {
-        // use linear interpolatation into the lookup table
+        // use linear interpolation into the lookup table
         return this.memoize_getDeltaZFromX.lookup(x);
+    }
+
+    get_dz_dx(x) {
+        // From Eq. 25
+        const a_0 = 1 - 1 / x; // (Eq. 14, because using exterior metric)
+        const d_a_0_dx = 1 / Math.pow(x, 2);
+        const c_0 = - 1 / a_0; // (Eq. 14, because using exterior metric)
+        const term1 = Math.pow(a_0 - this.beta, 2);
+        const term2 = Math.pow(this.k, 2) * this.beta / 4;
+        const term3 = a_0 * Math.pow(a_0 - this.beta, 3);
+        const term4 = - c_0 / term1 - term2 * Math.pow(d_a_0_dx, 2) / term3;
+        const term5 = Math.sqrt(term4);
+        return this.sqrt_alpha * this.sqrt_beta * term5;
     }
 
     computeDeltaZFromX(x, x_lower, delta_z_0) {
         // integrate over x between x_lower and x to find delta_z (Eg. 25)
-        return delta_z_0 + this.sqrt_alpha * this.sqrt_beta * simpsons_integrate( x_lower, x, 1000,
-            x => {
-                // if x is 0 then we have a problem
-                const a_0 = 1 - 1 / x; // (Eq. 14, because using exterior metric)
-                const d_a_0_dx = 1 / Math.pow(x, 2);
-                const c_0 = - 1 / a_0; // (Eq. 14, because using exterior metric)
-                const term1 = Math.pow(a_0 - this.beta, 2); // if 0 then we have a problem
-                const term2 = Math.pow(this.k, 2) * this.beta / 4;
-                const term3 = a_0 * Math.pow(a_0 - this.beta, 3) // if 0 then we have a problem
-                const term4 = - c_0 / term1 - term2 * Math.pow(d_a_0_dx, 2) / term3; // if negative then we have a problem
-                const term5 = Math.sqrt(term4);
-                return term5;
-            });
+        return delta_z_0 + simpsons_integrate( x_lower, x, 1000, x => this.get_dz_dx(x));
     }
 
     getXFromDeltaZ(delta_z) {
-        // use linear interpolatation into the lookup table
+        // use linear interpolation into the lookup table
         return this.memoize_getDeltaZFromX.reverse_lookup(delta_z);
     }
 
     getXFromSpace(x) {
-        return x / earth_schwarzschild_radius;
+        return x / earth_schwarzschild_radius;  // (Section 2.3 says that all x are dimensionless in this way)
     }
 
     getSpaceFromX(x) {
-        return x * earth_schwarzschild_radius;
+        return x * earth_schwarzschild_radius; // convert back to meters
     }
 
     getAngleFromTime(t) {
@@ -104,7 +104,15 @@ class JonssonEmbedding {
     }
 
     getSurfaceNormalFromXAndTheta(x, theta) {
-        // TODO
+        // Find dr/dx by taking the derivative of Eq. 21 wrt x
+        const term1 = (this.beta - 1) * x + 1;
+        const dr_dx = - this.alpha * this.beta * this.k / (2 * Math.pow(term1, 2) * Math.sqrt(this.alpha * (1 - x) / term1));
+
+        const dz_dx = this.get_dz_dx(x);
+
+        const dz_dr = dz_dx / dr_dx;
+        const normal = normalize(new P(-dz_dr, 0, 1)); // in the XZ plane
+        return rotateXY(normal, theta);
     }
 
     getSurfaceNormalFromSpacetime(p) {
@@ -162,8 +170,8 @@ class JonssonEmbedding {
         this.min_x = this.getXFromSpace(this.min_space);
         this.max_x = this.getXFromSpace(this.max_space);
         this.memoize_getDeltaZFromX = new LogMemoization(this.min_x, this.max_x, 1000);
-        var last_x = this.min_x;
-        var last_delta_z = 0;
+        let last_x = this.min_x;
+        let last_delta_z = 0;
         this.min_delta_z = last_delta_z;
         this.memoize_getDeltaZFromX.values[0] = last_delta_z;
         for(let i = 1; i < this.memoize_getDeltaZFromX.values.length; i++) {
