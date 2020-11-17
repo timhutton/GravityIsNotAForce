@@ -104,7 +104,7 @@ class JonssonEmbedding {
     }
 
     getSurfaceNormalFromXAndTheta(x, theta) {
-        // Find dr/dx by taking the derivative of Eq. 21 wrt x
+        // Find dr/dx by taking the derivative of Eq. 21 (with Eq. 14, because using exterior metric) wrt x
         const term1 = (this.beta - 1) * x + 1;
         const dr_dx = - this.alpha * this.beta * this.k / (2 * Math.pow(term1, 2) * Math.sqrt(this.alpha * (1 - x) / term1));
 
