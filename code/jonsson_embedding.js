@@ -15,91 +15,74 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-// Following http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf
+// Following http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf, addendum
 
 class JonssonEmbedding {
-    constructor(sin_theta_zero = 0.8, delta_tau_real = 1) {
+    constructor() {
         this.min_space = earth_radius;
         this.max_space = 1e15;
-        // Pick the shape of funnel we want: (Eq. 46)
-        this.sin_theta_zero = sin_theta_zero; // angle of slope at the bottom
-        this.r_0 = 1; // radius at the bottom
-        this.delta_tau_real = delta_tau_real; // proper time per circumference, in seconds
         // Precompute some values
         this.x_0 = earth_radius / earth_schwarzschild_radius;
-        this.sqr_x_0 = Math.pow(this.x_0, 2);
-        this.a_e0 = 1 - 1 / this.x_0; // (Eq. 14, because using exterior metric)
-        // Precompute other values that depend on the funnel shape
-        this.precomputeShapeDependentValues();
-    }
+        const R = 2; // (Section 1.4 in addendum)
+        // Compute beta (Eq. 7 in addendum)
+        const a_00 = Math.pow(3 * Math.sqrt(1 - 1 / this.x_0) - 1, 2) / 4;
+        this.beta = a_00 * (Math.pow(R, 2) - 1) / (Math.pow(R, 2) - a_00);
+        // Compute k (Eq. 8 in addendum)
+        this.k = 2 * Math.pow(this.x_0, 7 / 4) / Math.sqrt(3 * Math.sqrt(this.x_0 - 1) - Math.sqrt(this.x_0));
+        // Compute alpha (from section 1.3 in addendum)
+        this.alpha = (1 - this.beta) / Math.pow(this.k, 2);
+        // Compute delta_t_real (using Eq. 12 from addendum)
+        this.delta_t_real = 2 * Math.PI * Math.sqrt(Math.pow(earth_radius, 3) / (earth_mass * universal_gravitational_constant));
 
-    setSlopeAngle(val) {
-        val = Math.min(0.999, Math.max(0.001, val)); // clamp to valid range
-        this.sin_theta_zero = val;
-        this.precomputeShapeDependentValues();
-    }
-
-    setTimeWrapping(val) {
-        val = Math.max(1e-6, val); // clamp to valid range
-        this.delta_tau_real = val;
-        this.precomputeShapeDependentValues();
-    }
-
-    precomputeShapeDependentValues() {
-        // Compute k, delta and alpha (Eq. 47)
-        this.k = this.delta_tau_real * light_speed / ( 2 * Math.PI * Math.sqrt(this.a_e0) * earth_schwarzschild_radius );
-        this.delta = Math.pow(this.k / ( 2 * this.sin_theta_zero * this.sqr_x_0 ), 2);
-        this.alpha = Math.pow(this.r_0, 2) / ( 4 * Math.pow(this.x_0, 4) * Math.pow(this.sin_theta_zero, 2) + Math.pow(this.k, 2) );
         // Precompute other values
         this.sqrt_alpha = Math.sqrt(this.alpha);
-        this.k2_over_4x04 = Math.pow(this.k, 2) / ( 4 * Math.pow(this.x_0, 4) );
+        this.sqrt_beta = Math.sqrt(this.beta);
         this.precomputeMemoization();
     }
 
-    getRadiusFromDeltaX(delta_x) {
-        // compute the radius at this point (Eg. 48)
-        if(delta_x < 0) { throw new Error("getRadiusFromDeltaX: delta_x must be positive"); }
-        return this.k * this.sqrt_alpha / Math.sqrt( delta_x / this.sqr_x_0 + this.delta );
+    getRadiusFromX(x) {
+        // compute the radius at this point (Eg. 21)
+        const a_0 = 1 - 1 / x;
+        return this.k * Math.sqrt(this.alpha * a_0 / (a_0 - this.beta));
     }
 
-    getDeltaZFromDeltaX(delta_x) {
+    getDeltaZFromX(x) {
         // use linear interpolatation into the lookup table
-        return this.memoize_getDeltaZFromDeltaX.lookup(delta_x);
-        // compute:
-        //return this.computeDeltaZFromDeltaX(delta_x);
+        return this.memoize_getDeltaZFromX.lookup(x);
     }
 
-    computeDeltaZFromDeltaX(delta_x, delta_x_0 = 0, delta_z_0 = 0) {
-        // integrate over x between delta_x_0 and delta_x to find delta_z (Eg. 49)
-        return delta_z_0 + this.sqrt_alpha * simpsons_integrate( delta_x_0, delta_x, 1000,
+    computeDeltaZFromX(x, x_lower, delta_z_0) {
+        // integrate over x between x_lower and x to find delta_z (Eg. 25)
+        return delta_z_0 + this.sqrt_alpha * this.sqrt_beta * simpsons_integrate( x_lower, x, 1000,
             x => {
-                var term1 = 1 / ( x / this.sqr_x_0 + this.delta );
-                return term1 * Math.sqrt( 1 - this.k2_over_4x04 * term1 );
+                // if x is 0 then we have a problem
+                const a_0 = 1 - 1 / x; // (Eq. 14, because using exterior metric)
+                const d_a_0_dx = 1 / Math.pow(x, 2);
+                const c_0 = - 1 / a_0; // (Eq. 14, because using exterior metric)
+                const term1 = Math.pow(a_0 - this.beta, 2); // if 0 then we have a problem
+                const term2 = Math.pow(this.k, 2) * this.beta / 4;
+                const term3 = a_0 * Math.pow(a_0 - this.beta, 3) // if 0 then we have a problem
+                const term4 = - c_0 / term1 - term2 * Math.pow(d_a_0_dx, 2) / term3; // if negative then we have a problem
+                const term5 = Math.sqrt(term4);
+                return term5;
             });
     }
 
-    getDeltaXFromDeltaZ(delta_z) {
+    getXFromDeltaZ(delta_z) {
         // use linear interpolatation into the lookup table
-        return this.memoize_getDeltaZFromDeltaX.reverse_lookup(delta_z);
-        // compute:
-        //return this.computeDeltaXFromDeltaZ(delta_z);
+        return this.memoize_getDeltaZFromX.reverse_lookup(delta_z);
     }
 
-    computeDeltaXFromDeltaZ(delta_z) {
-        // inverse of above getDeltaZFromDeltaX, using bisection search
-        return bisection_search(delta_z, this.min_delta_x, this.max_delta_x, 1e-6, 100, delta_x => this.getDeltaZFromDeltaX(delta_x));
+    getXFromSpace(x) {
+        return x / earth_schwarzschild_radius;
     }
 
-    getDeltaXFromSpace(x) {
-        return x / earth_schwarzschild_radius - this.x_0;
-    }
-
-    getSpaceFromDeltaX(delta_x) {
-        return (delta_x + this.x_0) * earth_schwarzschild_radius;
+    getSpaceFromX(x) {
+        return x * earth_schwarzschild_radius;
     }
 
     getAngleFromTime(t) {
-        return 2 * Math.PI * t / this.delta_tau_real; // convert time in seconds to angle in radians
+        return 2 * Math.PI * t / this.delta_t_real; // convert time in seconds to angle in radians
     }
 
     getAngleFromEmbeddingPoint(p) {
@@ -107,70 +90,65 @@ class JonssonEmbedding {
     }
 
     getTimeDeltaFromAngleDelta(angle_delta) {
-        return angle_delta * this.delta_tau_real / (2 * Math.PI);
+        return angle_delta * this.delta_t_real / (2 * Math.PI);
     }
 
     getEmbeddingPointFromSpacetime(p) {
-        var theta = this.getAngleFromTime(p.x);
-        var delta_x = this.getDeltaXFromSpace(p.y);
+        const theta = this.getAngleFromTime(p.x);
+        const x = this.getXFromSpace(p.y);
 
-        var radius = this.getRadiusFromDeltaX(delta_x);
-        var delta_z = this.getDeltaZFromDeltaX(delta_x);
+        const radius = this.getRadiusFromX(x);
+        const delta_z = this.getDeltaZFromX(x);
 
         return new P(radius * Math.cos(theta), radius * Math.sin(theta), delta_z);
     }
 
-    getSurfaceNormalFromDeltaXAndTheta(delta_x, theta) {
-        var term1 = delta_x / this.sqr_x_0 + this.delta;
-        var dr_dx = - this.k * this.sqrt_alpha / (2 * this.sqr_x_0 * Math.pow(term1, 3 / 2)); // derivative of Eq. 48 wrt. delta_x
-        var dz_dx = this.sqrt_alpha * Math.sqrt(1 - this.k2_over_4x04 / term1) / term1; // from Eq. 49
-        var dz_dr = dz_dx / dr_dx;
-        var normal = normalize(new P(-dz_dr, 0, 1)); // in the XZ plane
-        return rotateXY(normal, theta);
+    getSurfaceNormalFromXAndTheta(x, theta) {
+        // TODO
     }
 
     getSurfaceNormalFromSpacetime(p) {
-        var theta = this.getAngleFromTime(p.x);
-        var delta_x = this.getDeltaXFromSpace(p.y);
-        return this.getSurfaceNormalFromDeltaXAndTheta(delta_x, theta);
+        const theta = this.getAngleFromTime(p.x);
+        const x = this.getXFromSpace(p.y);
+        return this.getSurfaceNormalFromXAndTheta(x, theta);
     }
 
     getSurfaceNormalFromEmbeddingPoint(p) {
-        var delta_x = getDeltaXFromDeltaZ(p.z);
-        var theta = getAngleFromEmbeddingPoint(p);
-        return this.getSurfaceNormalFromDeltaXAndTheta(delta_x, theta);
+        const x = getXFromDeltaZ(p.z);
+        const theta = getAngleFromEmbeddingPoint(p);
+        return this.getSurfaceNormalFromXAndTheta(x, theta);
     }
 
     getGeodesicPoints(a, b, max_points) {
         // Walk along the embedding following the geodesic until we hit delta_x = 0 or have enough points
-        var ja = this.getEmbeddingPointFromSpacetime(a);
-        var jb = this.getEmbeddingPointFromSpacetime(b);
-        var pts = [a, b];
-        for(var iPt = 0; iPt < max_points; iPt++) {
-            var n = this.getSurfaceNormalFromSpacetime(b);
-            var incoming_segment = sub(jb, ja);
-            var norm_vec = normalize(cross(incoming_segment, n));
+        let ja = this.getEmbeddingPointFromSpacetime(a);
+        let jb = this.getEmbeddingPointFromSpacetime(b);
+        let pts = [a, b];
+        for(let iPt = 0; iPt < max_points; iPt++) {
+            const n = this.getSurfaceNormalFromSpacetime(b);
+            const incoming_segment = sub(jb, ja);
+            const norm_vec = normalize(cross(incoming_segment, n));
             // we rotate ja around norm_vec through jb, at an angle theta somewhere between 90 degrees and 270 degrees
             // such that the new point lies on the funnel
-            var theta = bisection_search(0, Math.PI / 2, 3 * Math.PI / 2, 1e-6, 200, theta => {
-                var jc = rotateAroundPointAndVector(ja, jb, norm_vec, theta);
+            const theta = bisection_search(0, Math.PI / 2, 3 * Math.PI / 2, 1e-6, 200, theta => {
+                const jc = rotateAroundPointAndVector(ja, jb, norm_vec, theta);
                 // decide if this point is inside or outside the funnel
-                var actual_radius = len(new P(jc.x, jc.y));
-                var delta_z = Math.max(0, jc.z); // not sure what to do if jc.z < 0 here
-                var delta_x = this.getDeltaXFromDeltaZ(delta_z);
-                var expected_radius = this.getRadiusFromDeltaX(delta_x);
+                const actual_radius = len(new P(jc.x, jc.y));
+                const delta_z = Math.max(0, jc.z); // not sure what to do if jc.z < 0 here
+                const x = this.getXFromDeltaZ(delta_z);
+                const expected_radius = this.getRadiusFromX(x);
                 return expected_radius - actual_radius; // signed distance to the funnel surface
             });
-            var jc = rotateAroundPointAndVector(ja, jb, norm_vec, theta);
+            const jc = rotateAroundPointAndVector(ja, jb, norm_vec, theta);
             if( jc.z < 0 ) {
                 // have hit the edge of the embedding
                 break;
             }
             // convert to spacetime coordinates
-            var delta_x = this.getDeltaXFromDeltaZ(jc.z);
-            var delta_theta = signedAngleBetweenTwoPointsXY(jb, jc);
-            var delta_time = this.getTimeDeltaFromAngleDelta(delta_theta);
-            var c = new P(b.x + delta_time, this.getSpaceFromDeltaX(delta_x));
+            const x = this.getXFromDeltaZ(jc.z);
+            const delta_theta = signedAngleBetweenTwoPointsXY(jb, jc);
+            const delta_time = this.getTimeDeltaFromAngleDelta(delta_theta);
+            const c = new P(b.x + delta_time, this.getSpaceFromX(x));
             pts.push(c);
             ja = jb;
             jb = jc;
@@ -180,22 +158,22 @@ class JonssonEmbedding {
     }
 
     precomputeMemoization() {
-        // Memoize getDeltaZFromDeltaX
-        this.min_delta_x = this.getDeltaXFromSpace(this.min_space);
-        this.max_delta_x = this.getDeltaXFromSpace(this.max_space);
-        this.memoize_getDeltaZFromDeltaX = new LogMemoization(this.min_delta_x, this.max_delta_x, 1000);
-        var last_delta_x = this.min_delta_x;
-        var last_delta_z = this.computeDeltaZFromDeltaX(last_delta_x);
+        // Memoize getDeltaZFromX
+        this.min_x = this.getXFromSpace(this.min_space);
+        this.max_x = this.getXFromSpace(this.max_space);
+        this.memoize_getDeltaZFromX = new LogMemoization(this.min_x, this.max_x, 1000);
+        var last_x = this.min_x;
+        var last_delta_z = 0;
         this.min_delta_z = last_delta_z;
-        this.memoize_getDeltaZFromDeltaX.values[0] = last_delta_z;
-        for(var i = 1; i < this.memoize_getDeltaZFromDeltaX.values.length; i++) {
-            var delta_x = this.memoize_getDeltaZFromDeltaX.getIntervalMin(i);
-            var delta_z = this.computeDeltaZFromDeltaX(delta_x, last_delta_x, last_delta_z);
-            this.memoize_getDeltaZFromDeltaX.values[i] = delta_z;
-            last_delta_x = delta_x;
+        this.memoize_getDeltaZFromX.values[0] = last_delta_z;
+        for(let i = 1; i < this.memoize_getDeltaZFromX.values.length; i++) {
+            const x = this.memoize_getDeltaZFromX.getIntervalMin(i);
+            const delta_z = this.computeDeltaZFromX(x, last_x, last_delta_z);
+            this.memoize_getDeltaZFromX.values[i] = delta_z;
+            last_x = x;
             last_delta_z = delta_z;
         }
-        this.max_delta_x = last_delta_x;
+        this.max_x = last_x;
         this.max_delta_z = last_delta_z;
     }
 }
