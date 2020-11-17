@@ -193,29 +193,6 @@ function invert_y(a) {
     return new P(a.x, -a.y, a.z, a.w);
 }
 
-function sech(x) { return 1 / Math.cosh(x); }
-
-function pseudosphere(p) {
-    // Transform point p ( x in [0, 2pi], y in [-inf, inf], ) onto the pseudosphere, following https://mathworld.wolfram.com/Pseudosphere.html
-    var u = p.y;
-    var v = p.x;
-    return new P(sech(u) * Math.cos(v), sech(u) * Math.sin(v), Math.tanh(u)-u);
-}
-
-function poincareToKlein(p, circle) {
-    // untested
-    var u = dist(p, circle.p) / circle.r;
-    var s = 2 * u / (1 + u * u);
-    return add(circle.p, scalar_mul(sub(p, circle.p), circle.r * s / u));
-}
-
-function kleinToPoincare(p, circle) {
-    // untested
-    var s = dist(p, circle.p) / circle.r;
-    var u = s / (1 + Math.sqrt(1 - s * s));
-    return add(circle.p, scalar_mul(sub(p, circle.p), circle.r * u / s));
-}
-
 function getLinePoints(a, b, n_pts=100) {
     var pts = [];
     for(var i=0;i<=n_pts;i++) {
