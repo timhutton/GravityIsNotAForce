@@ -128,7 +128,7 @@ class JonssonEmbedding {
     }
 
     getGeodesicPoints(a, b, max_points) {
-        // Walk along the embedding following the geodesic until we hit delta_x = 0 or have enough points
+        // Walk along the embedding following the geodesic until we hit delta_z = 0 or have enough points
         let ja = this.getEmbeddingPointFromSpacetime(a);
         let jb = this.getEmbeddingPointFromSpacetime(b);
         let pts = [a, b];
