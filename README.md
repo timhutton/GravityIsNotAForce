@@ -20,5 +20,4 @@ History of the ideas: (please help fill in the gaps!)
 - 2019: A [paper](https://iopscience.iop.org/article/10.1088/1361-6552/ab08f5/pdf) by Magdalena Kersting references that youtube video and commends the approach to educators. A [follow-up paper](https://iopscience.iop.org/article/10.1088/1361-6552/ab56d7/pdf) discusses the limitations of the model.
 
 TO-DO list:
-- Can the 1+1 varying gravity model be modified to produce straight lines on a 2D plot, as with the constant gravity model? If not, why not?
 - Can we extend to 2+1 with a point mass? Perhaps by considering a single geodesic (e.g. an elliptic orbit) as a straight line and drawing the rest of the universe as a (possibly very strange) distorted grid around that geodesic?
