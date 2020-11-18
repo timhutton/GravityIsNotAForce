@@ -163,8 +163,18 @@ function init() {
     // To validate the surface, we compute a geodesic by walking along it, using the surface normals.
     // We get a good agreement with our free-fall code.
     if(false) { // (set to true to see the comparison)
-        const top_peak = earth_radius + 20e6;
-        test_geodesic = Jonsson_embedding.getGeodesicPoints(new P(0, top_peak), new P(2, top_peak), 5000);
+        const start = new P(0, earth_radius + 20e6);
+        const spacetime_velocity = new P(1, 0); // first entry must always be 1 (one second per second). second entry is height change in m/s
+        const step_size = 2; // (too big and the geodesic integration will cause errors)
+        const p2 = add(start, scalar_mul(spacetime_velocity, step_size));
+        test_geodesic = Jonsson_embedding.getGeodesicPoints(start, p2, 5000);
+
+        // something else to try: escape velocity
+        /*const start = new P(0, earth_radius);
+        const spacetime_velocity = new P(1, 11186); // first entry must always be 1 (one second per second). second entry is height change in m/s
+        const step_size = 2; // (too big and the geodesic integration will cause errors)
+        const p2 = add(start, scalar_mul(spacetime_velocity, step_size));
+        test_geodesic = Jonsson_embedding.getGeodesicPoints(start, p2, 5000);*/
     }
 
     draw();
