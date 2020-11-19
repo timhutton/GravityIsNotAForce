@@ -4,8 +4,10 @@
 <head>
     <meta charset="utf-8">
     <script src="code/math.js"></script>
+    <script src="code/canvas_functions.js"></script>
     <script src="code/drawing.js"></script>
     <script src="code/physics.js"></script>
+    <script src="code/utils.js"></script>
     <script src="code/log_memoization.js"></script>
     <script src="code/jonsson_embedding.js"></script>
     <script src="code/variable_gravity.js"></script>
@@ -34,6 +36,7 @@
     </p>
 
     <h4>Description:</h4>
+
     <p class="text">
     In this system there is only one space dimension, shown on the vertical axis and labeled in millions of meters (Mm). The time dimension is the horizontal axis and labeled in minutes. The curving lines show four cannonballs, shot straight upwards at various speeds and then falling back to Earth, ignoring air resistance. At such heights (around 5% of the distance to the moon), the force of gravity drops considerably, down to just 0.57 ms<sup>-2</sup> from 9.8 ms<sup>-2</sup> at the surface. As a result, the trajectories are no longer parabolas.
     </p>
@@ -43,11 +46,25 @@
     </p>
 
     <p class="text">
+    You can drag the trajectories around using the circle at the peak.
+    </p>
+
+    <p class="text">
     This graph illustrates a key property of general relativity, that inertial objects (objects like cannonballs that are free to fall) move in straight lines through spacetime. Gravity works because the mass of the Earth distorts spacetime, causing the bulge we can see at the bottom. The curvature of the surface steers the geodesics back down to Earth, so to an Earth-based observer it seems like the cannonballs are being pulled towards us by some invisible force.
     </p>
 
     <p class="text">
+    As the height increases, and the force of gravity decreases, the curvature of the 3D embedding decreases. In the limit it becomes a cylinder, where there is zero gravity. Inertial objects will move along helices if they are moving towards or away from Earth, or will move in circles around the cylinder if they are at rest relative to the Earth.
+    </p>
+
+    <p class="text">
     This 3D embedding was created by <a href="http://relativitet.se/">Rickard Jonsson</a> in a <a href="http://www.relativitet.se/Webarticles/2001GRG-Jonsson33p1207.pdf">2001 paper</a>. Many thanks to Rickard for helping me implement it.
+    </p>
+
+    <h4>Implementation details:</h4>
+
+    <p class="text">
+    See <a href="https://github.com/timhutton/GravityIsNotAForce/blob/gh-pages/code/jonsson_embedding.js">code/jonsson_embedding.js</a> for the implementation details of mapping space and time onto the 3D surface. We compute the free-fall trajectories using a formula for the free-fall time from <a href="https://en.wikipedia.org/wiki/Free_fall#Inverse-square_law_gravitational_field">here</a>. The formula is only valid for non-relativistic speeds but that's appropriate in this case. To validate our implementation we compute geodesics for the 3D surface and compare the two. Code for this is <a href="https://github.com/timhutton/GravityIsNotAForce/blob/gh-pages/code/variable_gravity.js">available</a> if you are interested.
     </p>
 
     <p class="text">

@@ -15,78 +15,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-var graphs;
-var trajectories;
 var spacetime_range;
-var isDragging;
-var dragTrajectory;
-var dragEnd;
-
-function resetMarkers() {
-    trajectories.forEach( trajectory => {
-        for(var iEnd = 0; iEnd < 2; iEnd++) {
-            trajectory.end_sizes[iEnd] = trajectory.default_end_sizes[iEnd];
-            trajectory.end_colors[iEnd] = trajectory.color;
-        }
-    });
-}
-
-function findClosestEnd(mousePos, graph, radius) {
-    var withinRadius = false;
-    var whichTrajectory;
-    var whichEnd;
-    var d_min = Number.MAX_VALUE;
-    trajectories.forEach( trajectory => {
-        for(var iEnd = 0; iEnd < 2; iEnd++) {
-            var d = dist(mousePos, graph.transform.forwards(trajectory.ends[iEnd]));
-            if( d < radius && d < d_min) {
-                d_min = d;
-                withinRadius = true;
-                whichTrajectory = trajectory;
-                whichEnd = iEnd;
-            }
-        }
-    });
-    return [withinRadius, whichTrajectory, whichEnd];
-}
-
-function onMouseMove( evt ) {
-    var mousePos = getMousePos(evt);
-    var targetGraph = graphs.find( graph => graph.rect.pointInRect(mousePos) );
-    if(targetGraph) {
-        if(isDragging) {
-            // move the handle being dragged
-            dragTrajectory.ends[dragEnd] = targetGraph.transform.backwards(mousePos);
-        }
-        else {
-            // indicate which marker is being hovered over
-            resetMarkers();
-            const [isHovering, hoveredTrajectory, hoveredEnd] = findClosestEnd(mousePos, targetGraph, 20);
-            if(isHovering) {
-                hoveredTrajectory.end_sizes[hoveredEnd] = hoveredTrajectory.hover_size;
-                hoveredTrajectory.end_colors[hoveredEnd] = hoveredTrajectory.hover_color;
-            }
-        }
-        draw();
-    }
-}
-
-function onMouseDown( evt ) {
-    var mousePos = getMousePos(evt);
-    var targetGraph = graphs.find( graph => graph.rect.pointInRect(mousePos) );
-    if(targetGraph) {
-        [isDragging, dragTrajectory, dragEnd] = findClosestEnd(mousePos, targetGraph, 20);
-        if(isDragging) {
-            dragTrajectory.end_sizes[dragEnd] = dragTrajectory.hover_size;
-            dragTrajectory.end_colors[dragEnd] = dragTrajectory.hover_color;
-        }
-    }
-}
-
-function onMouseUp( evt ) {
-    isDragging = false;
-    draw();
-}
 
 function init() {
     canvas = document.getElementById('canvas');
@@ -110,9 +39,9 @@ function init() {
     trajectories.push(new Trajectory(new P(-3.0, 0.0), new P(1.0, 0.0), 'rgb(100,100,255)', 'rgb(100,100,200)'));
 
     graphs = [];
-    graphs.push(new GraphT1S1(new Rect(new P(40,440), new P(400,-400)), earth_surface_gravity, "time "+rightArrow, "space "+rightArrow));
-    graphs.push(new GraphT1S1(new Rect(new P(480,440), new P(400,-400)), earth_surface_gravity/2, "", ""));
-    graphs.push(new GraphT1S1(new Rect(new P(920,440), new P(400,-400)), 0.0, "", ""));
+    graphs.push(new GraphT1S1(new Rect(new P(40,440), new P(400,-400)), earth_surface_gravity, undefined, "time "+rightArrow, "space "+rightArrow));
+    graphs.push(new GraphT1S1(new Rect(new P(480,440), new P(400,-400)), earth_surface_gravity/2, undefined, "", ""));
+    graphs.push(new GraphT1S1(new Rect(new P(920,440), new P(400,-400)), 0.0, undefined, "", ""));
 
     var frameAccelerationSlider = document.getElementById("frameAccelerationSlider");
     graphs[1].frame_acceleration = earth_surface_gravity - earth_surface_gravity * frameAccelerationSlider.value / 100.0;

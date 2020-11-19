@@ -23,9 +23,9 @@ const light_speed = 299792458; // m/s
 const earth_schwarzschild_radius = 8.87e-3; // m
 const universal_gravitational_constant = 6.67430e-11; // m^3 kg^-1 s^-2
 
-function findInitialHeight(time, final_height, planet_mass) {
+function findInitialHeight(time, final_height, planet_mass, max_possible_height = 1e15) {
     // Return the height you started from given that you reached final_height in the given time.
-    return bisection_search(time, final_height, final_height + 1e10, 1e-6, 200,
+    return bisection_search(time, final_height, max_possible_height, 1e-6, 200,
         initial_height => freeFallTime(initial_height, final_height, planet_mass));
 }
 
