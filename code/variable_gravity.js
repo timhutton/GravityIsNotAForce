@@ -226,19 +226,19 @@ function drawStandardAxes(graph) {
     ctx.clip(); // clip to this rect until restored
 
     // draw axes
-    const x_axis = getLinePoints(spacetime_range.min, new P(spacetime_range.xmax, spacetime_range.ymin), 200);
-    const y_axis = getLinePoints(new P(0, spacetime_range.ymin), new P(0, spacetime_range.ymax), 200);
+    const x_axis = getLinePoints(spacetime_range.min, new P(spacetime_range.xmax, spacetime_range.ymin), 2);
+    const y_axis = getLinePoints(new P(0, spacetime_range.ymin), new P(0, spacetime_range.ymax), 2);
     let minor_axes = [];
     const y_step = divideNicely(spacetime_range.size.y, 7);
     for(let y = spacetime_range.ymin; y<=spacetime_range.ymax; y+= y_step) {
-        minor_axes.push(getLinePoints(new P(spacetime_range.xmin, y), new P(spacetime_range.xmax, y), 200));
+        minor_axes.push(getLinePoints(new P(spacetime_range.xmin, y), new P(spacetime_range.xmax, y), 2));
     }
     const x_step = 60 * divideNicely(spacetime_range.size.x / 60, 7); // divide into a nice number of minutes
     for(let x = x_step; x<=spacetime_range.xmax; x+= x_step) {
-        minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax), 200));
+        minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax), 2));
     }
     for(let x = -x_step; x>=spacetime_range.xmin; x-= x_step) {
-        minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax), 200));
+        minor_axes.push(getLinePoints(new P(x, spacetime_range.ymin), new P(x, spacetime_range.ymax), 2));
     }
     const minor_axes_color = 'rgb(210,210,210)';
     minor_axes.forEach( axes => { drawLine(axes.map(graph.transform.forwards), minor_axes_color); } );
