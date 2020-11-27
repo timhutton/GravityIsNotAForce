@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Test</title>
+        <style>
+            body { margin: 0; }
+        </style>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body>
+        <p align="center">
+        <canvas class="canvas" id="my_canvas" width="960" height="500">(Canvas drawing not supported by your browser.)</canvas>
+        </p>
+        <div class="mainSlider">
+          Change the horizontal view angle: <input type="range" min="0" max="100" value="50" class="slider" id="horizontalViewAngleSlider">
+        </div>
+        <div class="mainSlider">
+          Change the vertical view angle: <input type="range" min="0" max="100" value="50" class="slider" id="verticalViewAngleSlider">
+        </div>
+        <script src="code/three.js"></script>
+        <script src="code/test.js"></script>
+    </body>
+</html>
