@@ -137,7 +137,7 @@ function addFunnel(scene) {
         labels.push([label, p]);
     }
     const loader = new THREE.FontLoader();
-    loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
+    loader.load( helvetiker_regular_typeface_json, function ( font ) {
         const material = new THREE.MeshBasicMaterial({color: 'rgb(0,0,0)'});
         labels.forEach(label => {
             const [message, p] = label;
@@ -179,14 +179,24 @@ function init() {
     
     addFunnel(scene);
     
-    // add a trajectory
     {
-        const pts = getFreeFallPoints(new P(0, earth_radius + 5e6), earth_mass).map(p => Jonsson_embedding.getEmbeddingPointFromSpacetime(p));
+        const trajectory_color = 'rgb(200,100,100)';
+        const trajectory_material = new THREE.MeshStandardMaterial({ color: trajectory_color });
+        
+        // add a trajectory
+        const peak = new P(0, earth_radius + 5e6);
+        const pts = getFreeFallPoints(peak, earth_mass).map(p => Jonsson_embedding.getEmbeddingPointFromSpacetime(p));
         const curvePath = lineCurveFromPoints(pts);
-        const line_geometry = new THREE.TubeBufferGeometry( curvePath, 500, 0.01, 8, false );
-        const line_material = new THREE.MeshStandardMaterial({ color: 'rgb(200,100,100)' });
-        const line = new THREE.Mesh( line_geometry, line_material );
-        scene.add( line );
+        const tube_geometry = new THREE.TubeBufferGeometry( curvePath, 500, 0.01, 8, false );
+        const tube = new THREE.Mesh( tube_geometry, trajectory_material );
+        scene.add( tube );
+        
+        // add a sphere at the peak
+        const peak3D = Jonsson_embedding.getEmbeddingPointFromSpacetime(peak);
+        const sphere_geometry = new THREE.SphereGeometry(0.05, 32, 32);
+        sphere_geometry.translate(peak3D.x, peak3D.y, peak3D.z);
+        const sphere = new THREE.Mesh( sphere_geometry, trajectory_material );
+        scene.add( sphere );
     }
 }
 
