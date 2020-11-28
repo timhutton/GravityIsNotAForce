@@ -58,3 +58,37 @@ function drawArrowHead( a, b, size ) {
 function drawText(p, text) {
     ctx.fillText(text, p.x, p.y);
 }
+
+function getTimeLabel(t) {
+    let label = t.toFixed(2)+" s";
+    if(Math.abs(t) > 24 * 60 * 60 * 2) {
+        label = (t/(24 * 60 * 60)).toFixed(0)+" d";
+    }
+    else if(Math.abs(t) > 60 * 60 * 2) {
+        label = (t/(60 * 60)).toFixed(0)+" h";
+    }
+    else if(Math.abs(t) > 60 * 2) {
+        label = (t/60).toFixed(0)+" min";
+    }
+    else if(Math.abs(t) > 1 * 2) {
+        label = t.toFixed(1)+" s";
+    }
+    return label;
+}
+
+function getDistanceLabel(x) {
+    let label = x.toFixed(2)+" m";
+    if(Math.abs(x) >= 1e12) {
+        label = (x/1e12).toFixed(0)+" Tm";
+    }
+    else if(Math.abs(x) >= 1e9) {
+        label = (x/1e9).toFixed(0)+" Gm";
+    }
+    else if(Math.abs(x) >= 1e6) {
+        label = (x/1e6).toFixed(0)+" Mm";
+    }
+    else if(Math.abs(x) >= 1e3) {
+        label = (x/1e3).toFixed(0)+" km";
+    }
+    return label;
+}
