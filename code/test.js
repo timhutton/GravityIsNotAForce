@@ -157,6 +157,25 @@ function addFunnel(scene) {
     } ); //end load function
 }
 
+function addTrajectoryFromPeak(peak, material) {
+    // add a trajectory
+    const pts = getFreeFallPoints(peak, earth_mass).map(p => Jonsson_embedding.getEmbeddingPointFromSpacetime(p));
+    const curvePath = lineCurveFromPoints(pts);
+    const tube_geometry = new THREE.TubeBufferGeometry( curvePath, 500, 0.01, 8, false );
+    const tube = new THREE.Mesh( tube_geometry, material );
+    scene.add( tube );
+
+    // add a sphere at the peak
+    const peak3D = Jonsson_embedding.getEmbeddingPointFromSpacetime(peak);
+    const sphere_geometry = new THREE.SphereGeometry(0.05, 32, 32);
+    sphere_geometry.translate(peak3D.x, peak3D.y, peak3D.z);
+    const sphere = new THREE.Mesh( sphere_geometry, material );
+    scene.add( sphere );
+
+    // return pointers so that we can dispose of the objects to change the trajectory
+    return { tube_geometry: tube_geometry, tube: tube, sphere_geometry: sphere_geometry, sphere: sphere};
+}
+
 function init() {
     const canvas = document.getElementById('my_canvas');
 
@@ -180,25 +199,11 @@ function init() {
 
     addFunnel(scene);
 
-    {
-        const trajectory_color = 'rgb(200,100,100)';
-        const trajectory_material = new THREE.MeshStandardMaterial({ color: trajectory_color });
+    const trajectory_material1 = new THREE.MeshStandardMaterial({ color: 'rgb(200,100,100)' });
+    const trajectory_material2 = new THREE.MeshStandardMaterial({ color: 'rgb(100,200,100)' });
 
-        // add a trajectory
-        const peak = new P(0, earth_radius + 5e6);
-        const pts = getFreeFallPoints(peak, earth_mass).map(p => Jonsson_embedding.getEmbeddingPointFromSpacetime(p));
-        const curvePath = lineCurveFromPoints(pts);
-        const tube_geometry = new THREE.TubeBufferGeometry( curvePath, 500, 0.01, 8, false );
-        const tube = new THREE.Mesh( tube_geometry, trajectory_material );
-        scene.add( tube );
-
-        // add a sphere at the peak
-        const peak3D = Jonsson_embedding.getEmbeddingPointFromSpacetime(peak);
-        const sphere_geometry = new THREE.SphereGeometry(0.05, 32, 32);
-        sphere_geometry.translate(peak3D.x, peak3D.y, peak3D.z);
-        const sphere = new THREE.Mesh( sphere_geometry, trajectory_material );
-        scene.add( sphere );
-    }
+    addTrajectoryFromPeak(new P(0, earth_radius + 5e6), trajectory_material1);
+    addTrajectoryFromPeak(new P(0, earth_radius + 25e6), trajectory_material2);
 }
 
 function animate() {
