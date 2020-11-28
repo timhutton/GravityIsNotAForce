@@ -65,7 +65,7 @@ function findClosestEnd(mousePos, graph, radius) {
 }
 
 function onMouseMove( evt ) {
-    const mousePos = getMousePos(canvas, evt);
+    const mousePos = getMousePos(canvas1, evt);
     const targetGraph = graphs.find( graph => graph.rect.pointInRect(mousePos) );
     if(targetGraph) {
         if(isDragging) {
@@ -89,7 +89,7 @@ function onMouseMove( evt ) {
 }
 
 function onMouseDown( evt ) {
-    const mousePos = getMousePos(canvas, evt);
+    const mousePos = getMousePos(canvas1, evt);
     const targetGraph = graphs.find( graph => graph.rect.pointInRect(mousePos) );
     if(targetGraph) {
         [isDragging, dragTrajectory, dragEnd] = findClosestEnd(mousePos, targetGraph, 20);
@@ -172,7 +172,7 @@ function testEmbeddingByPathTurning() {
 }
 
 function init() {
-    canvas1 = document.getElementById('canvas');
+    canvas1 = document.getElementById('canvas1');
     ctx = canvas1.getContext('2d');
 
     Jonsson_embedding = new JonssonEmbedding();
@@ -205,11 +205,11 @@ function init() {
     //trajectories.push(make_trajectory(new P(0, earth_radius + 2.5e6), 'rgb(200,100,200)'));
     //trajectories.push(make_trajectory(new P(0, earth_radius + 1.25e6), 'rgb(100,200,100)'));
 
-    const n_graphs = 2;
+    const n_graphs = 1;
     const margin = 40;
     const size = Math.min(canvas1.height-margin*2, (canvas1.width-margin*(n_graphs+1)) / n_graphs);
     rect1 = new Rect( new P(margin+(margin+size)*0,50), new P(size,size));
-    rect2 = new Rect( new P(margin+(margin+size)*1,50), new P(size,size));
+    //rect2 = new Rect( new P(margin+(margin+size)*1,50), new P(size,size));
 
     // define the standard spacetime graph
     const flipY = p => new P(p.x, spacetime_range.ymax - p.y + spacetime_range.ymin);
@@ -237,21 +237,13 @@ function init() {
         test_geodesic = Jonsson_embedding.getGeodesicPoints(start, p2, 5000);*/
     }
 
-    init3js(rect2);
+    init3js();
 
     draw();
 
     canvas1.addEventListener( 'mousemove', onMouseMove, false );
     canvas1.addEventListener( 'mousedown', onMouseDown, false );
     canvas1.addEventListener( 'mouseup',   onMouseUp, false );
-    window.addEventListener( 'resize', onWindowResize, false );
-}
-
-function onWindowResize() {
-    var main_canvas_rect = canvas1.getBoundingClientRect();
-    canvas2.style.position = 'absolute';
-    canvas2.style.left = (main_canvas_rect.left + rect2.xmin).toFixed(0)+"px";
-    canvas2.style.top = (main_canvas_rect.top + rect2.ymin).toFixed(0)+"px";
 }
 
 function draw() {
@@ -511,29 +503,23 @@ function add3dTrajectory(trajectory) {
     return { tube_geometry: tube_geometry, tube: tube, sphere_geometry: sphere_geometry, sphere: sphere, material: material};
 }
 
-function init3js(rect) {
+function init3js() {
+    canvas2 = document.getElementById('canvas2');
+
     scene = new THREE.Scene();
     scene.background = new THREE.Color( 'rgb(255,255,255)' );
 
     const ambientLight = new THREE.AmbientLight( 0xcccccc, 0.4 );
     scene.add( ambientLight );
 
-    camera1 = new THREE.PerspectiveCamera( 26, rect.size.x / rect.size.y, 0.1, 1000 );
+    camera1 = new THREE.PerspectiveCamera( 22, canvas2.width / canvas2.height, 0.1, 1000 );
 
     const pointLight = new THREE.PointLight( 0xffffff, 0.8 );
     camera1.add(pointLight);
 
     scene.add(camera1);
 
-    renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize( rect.size.x, rect.size.y );
-    const container = document.createElement( 'div' );
-    document.body.appendChild( container );
-    canvas2 = container.appendChild( renderer.domElement );
-    var main_canvas_rect = canvas1.getBoundingClientRect();
-    canvas2.style.position = 'absolute';
-    canvas2.style.left = (main_canvas_rect.left + rect.xmin).toFixed(0)+"px";
-    canvas2.style.top = (main_canvas_rect.top + rect.ymin).toFixed(0)+"px";
+    renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas2 });
 
     addFunnel(scene);
 
@@ -544,7 +530,7 @@ function init3js(rect) {
 
 function draw3d() {
     const d = 10;
-    const z = 1.7;
+    const z = 1;
     const theta = - Math.PI / 2 + 2 * Math.PI * horizontalViewAngleSlider.value / 100.0;
     const phi = - Math.PI / 2 + Math.PI * verticalViewAngleSlider.value / 100.0;
     camera1.position.set(d * Math.sin(theta) * Math.cos(phi), d * Math.cos(theta) * Math.cos(phi), z + d * Math.sin(phi));
