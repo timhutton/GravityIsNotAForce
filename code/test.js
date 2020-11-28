@@ -41,7 +41,7 @@ function addFunnel(scene) {
     const dx = (max_x - min_x) / n_x;
     const n_t = 200;
     const dtheta = 2 * Math.PI / n_t;
-    
+
     let spaceline_vertices = [];
     let strip_vertices = [];
     let strip_normals = [];
@@ -63,26 +63,12 @@ function addFunnel(scene) {
             strip_faces.push(j+1, j+3, j+2);
         }
     }
-    
-    const x_step = 5e6;
-    let timelines_vertices = [];
-    for(let x = min_x; x < max_x; x+= x_step) {
-        let pts = []
-        const spacetime = new P(0, x);
-        let p = Jonsson_embedding.getEmbeddingPointFromSpacetime(spacetime);
-        pts.push(p.x, p.y, p.z);
-        for(let i = 0; i < n_t; i++) {
-            p = rotateXY(p, dtheta);
-            pts.push(p.x, p.y, p.z);
-        }
-        timelines_vertices.push(pts);
-    }
-    
+
     const funnel_geometry = new THREE.BufferGeometry();
     funnel_geometry.setIndex( strip_faces );
     funnel_geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( strip_vertices, 3 ) );
     funnel_geometry.setAttribute( 'normal', new THREE.Float32BufferAttribute( strip_normals, 3 ) );
-            
+
     const funnel_material = new THREE.MeshBasicMaterial({
         color: 'rgb(250,250,250)',
         opacity: 0.85,
@@ -114,6 +100,19 @@ function addFunnel(scene) {
         minor_spaceline.rotation.z = i * 2 * Math.PI / n_minor_time;
         scene.add( minor_spaceline );
     }
+    const x_step = 5e6;
+    let timelines_vertices = [];
+    for(let x = min_x; x < max_x; x+= x_step) {
+        let pts = []
+        const spacetime = new P(0, x);
+        let p = Jonsson_embedding.getEmbeddingPointFromSpacetime(spacetime);
+        pts.push(p.x, p.y, p.z);
+        for(let i = 0; i < n_t; i++) {
+            p = rotateXY(p, dtheta);
+            pts.push(p.x, p.y, p.z);
+        }
+        timelines_vertices.push(pts);
+    }
     const timeline_geometry = new THREE.BufferGeometry();
     timeline_geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( timelines_vertices[0], 3 ) );
     const major_timeline = new THREE.Line( timeline_geometry, major_axes_material );
@@ -124,7 +123,7 @@ function addFunnel(scene) {
         const minor_timeline = new THREE.Line( timeline_geometry, minor_axes_material );
         scene.add( minor_timeline );
     });
-    
+
     // add text labels
     const labels = [];
     const theta_div = 2 * Math.PI / n_minor_time;
@@ -163,7 +162,7 @@ function init() {
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color( 'rgb(255,255,250)' );
-    
+
     const ambientLight = new THREE.AmbientLight( 0xcccccc, 0.4 );
     scene.add( ambientLight );
 
@@ -171,20 +170,20 @@ function init() {
 
     const pointLight = new THREE.PointLight( 0xffffff, 0.8 );
     camera.add(pointLight);
-    
+
     scene.add(camera);
-    
+
     renderer = new THREE.WebGLRenderer({ antialias: true, canvas: my_canvas });
     renderer.setSize( canvas.width, canvas.height );
 
     Jonsson_embedding = new JonssonEmbedding();
-    
+
     addFunnel(scene);
-    
+
     {
         const trajectory_color = 'rgb(200,100,100)';
         const trajectory_material = new THREE.MeshStandardMaterial({ color: trajectory_color });
-        
+
         // add a trajectory
         const peak = new P(0, earth_radius + 5e6);
         const pts = getFreeFallPoints(peak, earth_mass).map(p => Jonsson_embedding.getEmbeddingPointFromSpacetime(p));
@@ -192,7 +191,7 @@ function init() {
         const tube_geometry = new THREE.TubeBufferGeometry( curvePath, 500, 0.01, 8, false );
         const tube = new THREE.Mesh( tube_geometry, trajectory_material );
         scene.add( tube );
-        
+
         // add a sphere at the peak
         const peak3D = Jonsson_embedding.getEmbeddingPointFromSpacetime(peak);
         const sphere_geometry = new THREE.SphereGeometry(0.05, 32, 32);
