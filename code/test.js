@@ -133,16 +133,14 @@ function init() {
     
     // add a trajectory
     {
-        const pts = getFreeFallPoints(new P(0, earth_radius + 3.1e6), earth_mass);
-        let pts3D = [];
-        pts.forEach(p => {
-            const p3D = Jonsson_embedding.getEmbeddingPointFromSpacetime(p);
-            pts3D.push(p3D.x, p3D.y, p3D.z);
-        });
-        const line_material = new THREE.LineBasicMaterial({ color: 'rgb(200,100,100)' });
-        const line_geometry = new THREE.BufferGeometry();
-        line_geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( pts3D, 3 ) );
-        const line = new THREE.Line( line_geometry, line_material );
+        const pts = getFreeFallPoints(new P(0, earth_radius + 4.6e6), earth_mass).map(p => Jonsson_embedding.getEmbeddingPointFromSpacetime(p));
+        const curvePath = new THREE.CurvePath();
+        for(let i = 1; i < pts.length; i++) {
+            curvePath.add(new THREE.LineCurve3(new THREE.Vector3(pts[i-1].x, pts[i-1].y, pts[i-1].z), new THREE.Vector3(pts[i].x, pts[i].y, pts[i].z)));
+        }
+        const line_material = new THREE.MeshStandardMaterial({ color: 'rgb(200,100,100)' });
+        const line_geometry = new THREE.TubeBufferGeometry( curvePath, 500, 0.02, 8, false );
+        const line = new THREE.Mesh( line_geometry, line_material );
         scene.add( line );
     }
 }
