@@ -94,12 +94,14 @@ class JonssonEmbedding {
     }
 
     getEmbeddingPointFromSpacetime(p) {
-        const theta = this.getAngleFromTime(p.x);
         const x = this.getXFromSpace(p.y);
+        const theta = this.getAngleFromTime(p.x);
+        return this.getEmbeddingPointFromXAndTheta(x, theta);
+    }
 
+    getEmbeddingPointFromXAndTheta(x, theta) {
         const radius = this.getRadiusFromX(x);
         const delta_z = this.getDeltaZFromX(x);
-
         return new P(radius * Math.cos(theta), radius * Math.sin(theta), delta_z);
     }
 

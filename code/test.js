@@ -4,6 +4,26 @@ let renderer;
 const verticalViewAngleSlider = document.getElementById("verticalViewAngleSlider");
 const horizontalViewAngleSlider = document.getElementById("horizontalViewAngleSlider");
 
+function getFreeFallPoints(peak, planet_mass, n_pts = 100) {
+    let pts = [];
+    const fallTime = freeFallTime(peak.y, earth_radius, planet_mass);
+    // from the left up
+    for(let i=0;i<n_pts;i++) {
+        const t = peak.x - fallTime + i*fallTime/n_pts;
+        let h = peak.y - freeFallDistance(peak.x-t, peak.y, planet_mass);
+        h = Math.max(earth_radius, h);
+        pts.push(new P(t,h));
+    }
+    // from the top down
+    for(let i=0;i<=n_pts;i++) {
+        const t = peak.x + i*fallTime/n_pts;
+        let h = peak.y - freeFallDistance(t - peak.x, peak.y, planet_mass);
+        h = Math.max(earth_radius, h);
+        pts.push(new P(t,h));
+    }
+    return pts;
+}
+
 function init() {
     const canvas = document.getElementById('my_canvas');
 
@@ -23,9 +43,11 @@ function init() {
     renderer = new THREE.WebGLRenderer({ antialias: true, canvas: my_canvas });
     renderer.setSize( canvas.width, canvas.height );
 
+    const Jonsson_embedding = new JonssonEmbedding();
+    
+    // add the funnel to the scene
     {
         // add a narrow strip up the funnel, and make instanced copies of it rotating round
-        const Jonsson_embedding = new JonssonEmbedding();
         const min_x = earth_radius;
         const max_x = earth_radius + 100e6;
         const n_x = 200;
@@ -38,10 +60,9 @@ function init() {
         let strip_normals = [];
         let strip_faces = [];
         for(let i = 0; i < n_x; i ++) {
-            const x = min_x + i * dx;
-            const spacetime = new P(0, x);
-            let p = Jonsson_embedding.getEmbeddingPointFromSpacetime(spacetime);
-            let n = Jonsson_embedding.getSurfaceNormalFromSpacetime(spacetime);
+            const x = Jonsson_embedding.getXFromSpace(min_x + i * dx);
+            let p = Jonsson_embedding.getEmbeddingPointFromXAndTheta(x, 0);
+            let n = Jonsson_embedding.getSurfaceNormalFromXAndTheta(x, 0);
             strip_vertices.push(p.x, p.y, p.z);
             strip_normals.push(n.x, n.y, n.z);
             spaceline_vertices.push(p.x, p.y, p.z);
@@ -109,13 +130,28 @@ function init() {
             scene.add( line );
         });
     }
+    
+    // add a trajectory
+    {
+        const pts = getFreeFallPoints(new P(0, earth_radius + 3.1e6), earth_mass);
+        let pts3D = [];
+        pts.forEach(p => {
+            const p3D = Jonsson_embedding.getEmbeddingPointFromSpacetime(p);
+            pts3D.push(p3D.x, p3D.y, p3D.z);
+        });
+        const line_material = new THREE.LineBasicMaterial({ color: 'rgb(200,100,100)' });
+        const line_geometry = new THREE.BufferGeometry();
+        line_geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( pts3D, 3 ) );
+        const line = new THREE.Line( line_geometry, line_material );
+        scene.add( line );
+    }
 }
 
 function animate() {
     requestAnimationFrame( animate );
     const d = 3;
     const theta = Math.PI - 2 * Math.PI * horizontalViewAngleSlider.value / 100.0;
-    const phi = 0.9 * (- Math.PI / 2 + Math.PI * verticalViewAngleSlider.value / 100.0);
+    const phi = - Math.PI / 2 + Math.PI * verticalViewAngleSlider.value / 100.0;
     camera.position.set(d * Math.sin(theta) * Math.cos(phi), d * Math.cos(theta) * Math.cos(phi), 1 + d * Math.sin(phi));
     camera.up.set(0, 0, 1);
     camera.lookAt(0, 0, 1);
