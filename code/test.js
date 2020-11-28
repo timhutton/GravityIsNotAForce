@@ -129,6 +129,8 @@ function addFunnel(scene) {
     const labels = [];
     const theta_div = 2 * Math.PI / n_minor_time;
     const origin = Jonsson_embedding.getEmbeddingPointFromSpacetime(new P(0, min_x));
+    origin.y -= 0.1;
+    origin.z -= 0.1;
     labels.push([getTimeLabel(Jonsson_embedding.getTimeDeltaFromAngleDelta(theta_div)), rotateXY(origin, theta_div)]);
     labels.push([getTimeLabel(Jonsson_embedding.getTimeDeltaFromAngleDelta(2 * theta_div)), rotateXY(origin, 2 * theta_div)]);
     for(let x = min_x + x_step; x < min_x + 30e6; x+= x_step) {
@@ -160,12 +162,12 @@ function init() {
     const canvas = document.getElementById('my_canvas');
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color( 'rgb(255,255,255)' );
+    scene.background = new THREE.Color( 'rgb(255,255,250)' );
     
     const ambientLight = new THREE.AmbientLight( 0xcccccc, 0.4 );
     scene.add( ambientLight );
 
-    camera = new THREE.PerspectiveCamera( 75, canvas.width / canvas.height, 0.1, 1000 );
+    camera = new THREE.PerspectiveCamera( 26, canvas.width / canvas.height, 0.1, 1000 );
 
     const pointLight = new THREE.PointLight( 0xffffff, 0.8 );
     camera.add(pointLight);
@@ -202,7 +204,7 @@ function init() {
 
 function animate() {
     requestAnimationFrame( animate );
-    const d = 4;
+    const d = 10;
     const z = 1.7;
     const theta = - Math.PI / 2 + 2 * Math.PI * horizontalViewAngleSlider.value / 100.0;
     const phi = - Math.PI / 2 + Math.PI * verticalViewAngleSlider.value / 100.0;
