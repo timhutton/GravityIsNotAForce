@@ -52,7 +52,7 @@ function findClosestEnd(mousePos, graph, radius) {
 }
 
 function onMouseMove( evt ) {
-    const mousePos = getMousePos(evt);
+    const mousePos = getMousePos(canvas, evt);
     const targetGraph = graphs.find( graph => graph.rect.pointInRect(mousePos) );
     if(targetGraph) {
         if(isDragging) {
@@ -73,7 +73,7 @@ function onMouseMove( evt ) {
 }
 
 function onMouseDown( evt ) {
-    const mousePos = getMousePos(evt);
+    const mousePos = getMousePos(canvas, evt);
     const targetGraph = graphs.find( graph => graph.rect.pointInRect(mousePos) );
     if(targetGraph) {
         [isDragging, dragTrajectory, dragEnd] = findClosestEnd(mousePos, targetGraph, 20);

@@ -15,11 +15,11 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-function clientToCanvas( clientPos ) {
+function clientToCanvas( canvas, clientPos ) {
     var rect = canvas.getBoundingClientRect();
     return new P( clientPos.x - rect.left, clientPos.y - rect.top );
 }
 
-function getMousePos(evt) {
-    return clientToCanvas(new P(evt.clientX, evt.clientY));
+function getMousePos(canvas, evt) {
+    return clientToCanvas(canvas, new P(evt.clientX, evt.clientY));
 }

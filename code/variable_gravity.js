@@ -15,13 +15,18 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-let canvas;
+let canvas1;
 let ctx;
 let spacetime_range;
 let vertical_vertical_view_angle;
 let horizontal_vertical_view_angle;
 let Jonsson_embedding;
-let camera_3js;
+
+let rect1;
+let rect2;
+
+let canvas2;
+let camera1;
 let renderer;
 let scene;
 
@@ -60,7 +65,7 @@ function findClosestEnd(mousePos, graph, radius) {
 }
 
 function onMouseMove( evt ) {
-    const mousePos = getMousePos(evt);
+    const mousePos = getMousePos(canvas, evt);
     const targetGraph = graphs.find( graph => graph.rect.pointInRect(mousePos) );
     if(targetGraph) {
         if(isDragging) {
@@ -84,7 +89,7 @@ function onMouseMove( evt ) {
 }
 
 function onMouseDown( evt ) {
-    const mousePos = getMousePos(evt);
+    const mousePos = getMousePos(canvas, evt);
     const targetGraph = graphs.find( graph => graph.rect.pointInRect(mousePos) );
     if(targetGraph) {
         [isDragging, dragTrajectory, dragEnd] = findClosestEnd(mousePos, targetGraph, 20);
@@ -167,8 +172,8 @@ function testEmbeddingByPathTurning() {
 }
 
 function init() {
-    canvas = document.getElementById('canvas');
-    ctx = canvas.getContext('2d');
+    canvas1 = document.getElementById('canvas');
+    ctx = canvas1.getContext('2d');
 
     Jonsson_embedding = new JonssonEmbedding();
     const height = 21e6;
@@ -202,9 +207,9 @@ function init() {
 
     const n_graphs = 2;
     const margin = 40;
-    const size = Math.min(canvas.height-margin*2, (canvas.width-margin*(n_graphs+1)) / n_graphs);
-    const rect1 = new Rect( new P(margin+(margin+size)*0,50), new P(size,size));
-    const rect2 = new Rect( new P(margin+(margin+size)*1,50), new P(size,size));
+    const size = Math.min(canvas1.height-margin*2, (canvas1.width-margin*(n_graphs+1)) / n_graphs);
+    rect1 = new Rect( new P(margin+(margin+size)*0,50), new P(size,size));
+    rect2 = new Rect( new P(margin+(margin+size)*1,50), new P(size,size));
 
     // define the standard spacetime graph
     const flipY = p => new P(p.x, spacetime_range.ymax - p.y + spacetime_range.ymin);
@@ -236,16 +241,24 @@ function init() {
 
     draw();
 
-    canvas.addEventListener( 'mousemove', onMouseMove, false );
-    canvas.addEventListener( 'mousedown', onMouseDown, false );
-    canvas.addEventListener( 'mouseup',   onMouseUp, false );
+    canvas1.addEventListener( 'mousemove', onMouseMove, false );
+    canvas1.addEventListener( 'mousedown', onMouseDown, false );
+    canvas1.addEventListener( 'mouseup',   onMouseUp, false );
+    window.addEventListener( 'resize', onWindowResize, false );
+}
+
+function onWindowResize() {
+    var main_canvas_rect = canvas1.getBoundingClientRect();
+    canvas2.style.position = 'absolute';
+    canvas2.style.left = (main_canvas_rect.left + rect2.xmin).toFixed(0)+"px";
+    canvas2.style.top = (main_canvas_rect.top + rect2.ymin).toFixed(0)+"px";
 }
 
 function draw() {
-    // fill canvas with light gray
+    // fill canvas1 with light gray
     ctx.fillStyle = 'rgb(240,240,240)';
     ctx.beginPath();
-    ctx.rect(0,0,canvas.width, canvas.height);
+    ctx.rect(0,0,canvas1.width, canvas1.height);
     ctx.fill();
 
     drawStandardAxes(graphs[0]);
@@ -505,25 +518,22 @@ function init3js(rect) {
     const ambientLight = new THREE.AmbientLight( 0xcccccc, 0.4 );
     scene.add( ambientLight );
 
-    camera_3js = new THREE.PerspectiveCamera( 26, rect.size.x / rect.size.y, 0.1, 1000 );
+    camera1 = new THREE.PerspectiveCamera( 26, rect.size.x / rect.size.y, 0.1, 1000 );
 
     const pointLight = new THREE.PointLight( 0xffffff, 0.8 );
-    camera_3js.add(pointLight);
+    camera1.add(pointLight);
 
-    scene.add(camera_3js);
-
-    const container = document.createElement( 'div' );
-    document.body.appendChild( container );
+    scene.add(camera1);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize( rect.size.x, rect.size.y );
-    const can = container.appendChild( renderer.domElement );
-    var main_canvas_rect = canvas.getBoundingClientRect();
-    can.style.position = 'absolute';
-    can.style.left = (main_canvas_rect.left + rect.xmin).toFixed(0)+"px";
-    can.style.top = (main_canvas_rect.top + rect.ymin).toFixed(0)+"px";
-
-    Jonsson_embedding = new JonssonEmbedding();
+    const container = document.createElement( 'div' );
+    document.body.appendChild( container );
+    canvas2 = container.appendChild( renderer.domElement );
+    var main_canvas_rect = canvas1.getBoundingClientRect();
+    canvas2.style.position = 'absolute';
+    canvas2.style.left = (main_canvas_rect.left + rect.xmin).toFixed(0)+"px";
+    canvas2.style.top = (main_canvas_rect.top + rect.ymin).toFixed(0)+"px";
 
     addFunnel(scene);
 
@@ -537,10 +547,10 @@ function draw3d() {
     const z = 1.7;
     const theta = - Math.PI / 2 + 2 * Math.PI * horizontalViewAngleSlider.value / 100.0;
     const phi = - Math.PI / 2 + Math.PI * verticalViewAngleSlider.value / 100.0;
-    camera_3js.position.set(d * Math.sin(theta) * Math.cos(phi), d * Math.cos(theta) * Math.cos(phi), z + d * Math.sin(phi));
-    camera_3js.up.set(0, 0, 1);
-    camera_3js.lookAt(0, 0, z);
-    renderer.render( scene, camera_3js );
+    camera1.position.set(d * Math.sin(theta) * Math.cos(phi), d * Math.cos(theta) * Math.cos(phi), z + d * Math.sin(phi));
+    camera1.up.set(0, 0, 1);
+    camera1.lookAt(0, 0, z);
+    renderer.render( scene, camera1 );
 }
 
 window.onload = init;
