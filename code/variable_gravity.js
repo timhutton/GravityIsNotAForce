@@ -21,7 +21,86 @@ let spacetime_range;
 let vertical_vertical_view_angle;
 let horizontal_vertical_view_angle;
 let Jonsson_embedding;
-let camera;
+let camera_3js;
+let renderer;
+let scene;
+
+let graphs;
+let trajectories;
+let isDragging;
+let dragTrajectory;
+let dragEnd;
+
+function resetMarkers() {
+    trajectories.forEach( trajectory => {
+        for(let iEnd = 0; iEnd < 2; iEnd++) {
+            trajectory.end_sizes[iEnd] = trajectory.default_end_sizes[iEnd];
+            trajectory.end_colors[iEnd] = trajectory.color;
+        }
+    });
+}
+
+function findClosestEnd(mousePos, graph, radius) {
+    let withinRadius = false;
+    let whichTrajectory;
+    let whichEnd;
+    let d_min = Number.MAX_VALUE;
+    trajectories.forEach( trajectory => {
+        for(let iEnd = 0; iEnd < 2; iEnd++) {
+            const d = dist(mousePos, graph.transform.forwards(trajectory.ends[iEnd]));
+            if( d < radius && d < d_min) {
+                d_min = d;
+                withinRadius = true;
+                whichTrajectory = trajectory;
+                whichEnd = iEnd;
+            }
+        }
+    });
+    return [withinRadius, whichTrajectory, whichEnd];
+}
+
+function onMouseMove( evt ) {
+    const mousePos = getMousePos(evt);
+    const targetGraph = graphs.find( graph => graph.rect.pointInRect(mousePos) );
+    if(targetGraph) {
+        if(isDragging) {
+            // move the handle being dragged
+            dragTrajectory.ends[dragEnd] = targetGraph.transform.backwards(mousePos);
+            // recompute the trajectory
+            dragTrajectory.points = getFreeFallPoints(dragTrajectory.ends[0], earth_mass, 500);
+            updateTrajectory(dragTrajectory);
+        }
+        else {
+            // indicate which marker is being hovered over
+            resetMarkers();
+            const [isHovering, hoveredTrajectory, hoveredEnd] = findClosestEnd(mousePos, targetGraph, 20);
+            if(isHovering) {
+                hoveredTrajectory.end_sizes[hoveredEnd] = hoveredTrajectory.hover_size;
+                hoveredTrajectory.end_colors[hoveredEnd] = hoveredTrajectory.hover_color;
+            }
+        }
+        draw();
+    }
+}
+
+function onMouseDown( evt ) {
+    const mousePos = getMousePos(evt);
+    const targetGraph = graphs.find( graph => graph.rect.pointInRect(mousePos) );
+    if(targetGraph) {
+        [isDragging, dragTrajectory, dragEnd] = findClosestEnd(mousePos, targetGraph, 20);
+        if(isDragging) {
+            dragTrajectory.end_sizes[dragEnd] = dragTrajectory.hover_size;
+            dragTrajectory.end_colors[dragEnd] = dragTrajectory.hover_color;
+        }
+    }
+}
+
+function onMouseUp( evt ) {
+    if(isDragging) {
+        isDragging = false;
+        draw();
+    }
+}
 
 function getFreeFallPoints(peak, planet_mass, n_pts = 100) {
     let pts = [];
@@ -100,7 +179,6 @@ function init() {
     vertical_view_angle = 20 - 40 * verticalViewAngleSlider.value / 100.0;
     verticalViewAngleSlider.oninput = function() {
         vertical_view_angle = 20 - 40 * verticalViewAngleSlider.value / 100.0;
-        camera.p.z = -vertical_view_angle;
         draw();
     }
 
@@ -108,26 +186,26 @@ function init() {
     horizontal_view_angle = Math.PI + 2 * Math.PI * horizontalViewAngleSlider.value / 100.0;
     horizontalViewAngleSlider.oninput = function() {
         horizontal_view_angle = Math.PI + 2 * Math.PI * horizontalViewAngleSlider.value / 100.0;
-        camera.p.x = 10*Math.cos(-horizontal_view_angle);
-        camera.p.y = 10*Math.sin(-horizontal_view_angle);
         draw();
     }
 
     const make_trajectory = (peak, color) => {
-        return new Trajectory(peak, peak, color, color); // TODO: darken hover color
+        const trajectory = new Trajectory(peak, peak, color, color); // TODO: darken hover color
+        trajectory.points = getFreeFallPoints(trajectory.ends[0], earth_mass, 500);
+        return trajectory;
     };
     trajectories = [];
-    trajectories.push(make_trajectory(new P(0, earth_radius + 20e6), 'rgb(100,100,200)'));
-    trajectories.push(make_trajectory(new P(0, earth_radius + 5e6), 'rgb(200,100,100)'));
-    trajectories.push(make_trajectory(new P(0, earth_radius + 2.5e6), 'rgb(200,100,200)'));
-    trajectories.push(make_trajectory(new P(0, earth_radius + 1.25e6), 'rgb(100,200,100)'));
+    //trajectories.push(make_trajectory(new P(0, earth_radius + 20e6), 'rgb(100,100,200)'));
+    trajectories.push(make_trajectory(new P(0, earth_radius + 4.3e6), 'rgb(200,100,100)'));
+    //trajectories.push(make_trajectory(new P(0, earth_radius + 2.5e6), 'rgb(200,100,200)'));
+    //trajectories.push(make_trajectory(new P(0, earth_radius + 1.25e6), 'rgb(100,200,100)'));
 
     const n_graphs = 2;
     const margin = 40;
     const size = Math.min(canvas.height-margin*2, (canvas.width-margin*(n_graphs+1)) / n_graphs);
     const rect1 = new Rect( new P(margin+(margin+size)*0,50), new P(size,size));
     const rect2 = new Rect( new P(margin+(margin+size)*1,50), new P(size,size));
-    
+
     // define the standard spacetime graph
     const flipY = p => new P(p.x, spacetime_range.ymax - p.y + spacetime_range.ymin);
     const flipYTransform = new Transform( flipY, flipY );
@@ -135,16 +213,7 @@ function init() {
                                     "time "+rightArrow,
                                     "[Earth surface "+rightArrow+" "+getDistanceLabel(spacetime_range.size.y)+" above Earth surface]", "" );
 
-    // define the Jonsson embedding graph
-    const identityTransform = p => new P(p.x, p.y, p.z);
-    const JonssonEmbeddingTransform = new Transform( p => Jonsson_embedding.getEmbeddingPointFromSpacetime(p), identityTransform );
-    camera = new Camera(new P(10*Math.cos(-horizontal_view_angle),10*Math.sin(-horizontal_view_angle), -vertical_view_angle),
-                        new P(0,0,1), new P(0,0,1), 1200, rect2.center);
-    const cameraTransform = new Transform( p => camera.project(p), identityTransform );
-    const JonssonEmbeddingAxes = new Graph( rect2, undefined, new ComposedTransform( JonssonEmbeddingTransform, cameraTransform),
-                                          "Jonsson embedding", "", "");
-                                          
-    graphs = [ standardAxes, JonssonEmbeddingAxes ];
+    graphs = [ standardAxes ];
 
     // To validate the surface, we compute a geodesic by walking along it, using the surface normals.
     // We get a good agreement with our free-fall code.
@@ -163,6 +232,8 @@ function init() {
         test_geodesic = Jonsson_embedding.getGeodesicPoints(start, p2, 5000);*/
     }
 
+    init3js(rect2);
+
     draw();
 
     canvas.addEventListener( 'mousemove', onMouseMove, false );
@@ -178,7 +249,7 @@ function draw() {
     ctx.fill();
 
     drawStandardAxes(graphs[0]);
-    drawJonssonEmbedding(graphs[1]);
+    draw3d()
 }
 
 function drawStandardAxes(graph) {
@@ -256,119 +327,220 @@ function drawStandardAxes(graph) {
     ctx.restore();
 }
 
-function drawJonssonEmbedding(graph) {
-    // axes that go in the time direction (circles)
-    let time_minor_axes_h = [earth_radius, earth_radius + 0.1, earth_radius + 0.25, earth_radius + 0.5];
-    for(let i = 5; i < 1000; i += 5) {
-        time_minor_axes_h.push(earth_radius + 1e6 * i);
-    }
-    const time_minor_axes_zrh = time_minor_axes_h.map(h => {
-        const x = Jonsson_embedding.getXFromSpace(h);
-        const delta_z = Jonsson_embedding.getDeltaZFromX(x);
-        const radius = Jonsson_embedding.getRadiusFromX(x);
-        return [delta_z, radius, h];
-    });
-    const time_minor_axes = time_minor_axes_zrh.map(zrh => getEllipsePoints(new P(0,0,zrh[0]), new P(zrh[1],0), new P(0,zrh[1]), 60));
-
-    // axes that go in the space directions (curved lines to infinity, repeated by rotation)
-    const space_axis_delta_z = [];
-    let h = 0;
-    let h_step = 0.01;
-    const max_height = 1e9;
-    let next_change = 1;
-    while(h < max_height) {
-        space_axis_delta_z.push(Jonsson_embedding.getEmbeddingPointFromSpacetime(new P(0, h + earth_radius)));
-        h += h_step;
-        if(h >= next_change) {
-            next_change *= 10;
-            h_step *= 10;
-        }
-    }
-    const base = 10;
-    const time_step = 60 * divideNicely(Jonsson_embedding.delta_t_real / 60, 11); // pick a division in minutes that looks sensible
-    const time_step_angle = 2 * Math.PI * time_step / Jonsson_embedding.delta_t_real;
-    const n_time_steps = Math.floor(0.5 * Jonsson_embedding.delta_t_real / time_step) + 1;
-    const time_step_angles = [0];
-    for(let it = 1; it < n_time_steps; it++) {
-        time_step_angles.push(time_step_angle * it);
-        time_step_angles.push(-time_step_angle * it);
-    }
-
-    ctx.save(); // save the original clip for now
-
-    // fill background with white
-    ctx.fillStyle = 'rgb(255,255,255)';
-    ctx.beginPath();
-    ctx.rect(graph.rect.xmin, graph.rect.ymin, graph.rect.size.x, graph.rect.size.y);
-    ctx.fill();
-    ctx.clip(); // clip to this rect until restored
-
-    // draw minor axes
-    const minor_axes_color = 'rgb(210,210,210)';
-    time_minor_axes.slice(1).forEach( axes => { drawLine(axes.map(p => camera.project(p)), minor_axes_color); } );
-    time_step_angles.slice(1).forEach( theta => drawLine(space_axis_delta_z.map(p => rotateXY(p, theta)).map(p => camera.project(p)), minor_axes_color) );
-    // draw major axes
-    const major_axes_color = 'rgb(50,50,50)';
-    drawLine(time_minor_axes[0].map(p => camera.project(p)), major_axes_color);
-    drawLine(space_axis_delta_z.map(p => camera.project(p)), major_axes_color);
-
-    // indicate scale
-    ctx.fillStyle = "rgb(0,0,0)";
-    ctx.font = "12px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "bottom";
-    const drawTimeLabel = x => {
-        const label = getTimeLabel(x);
-        drawText(graph.transform.forwards(new P(x, spacetime_range.ymin)), label);
-    };
-    //for(let i = -n_time_steps + 2; i < n_time_steps - 1; i++) {
-    for(let i = 0; i < 3; i++) {
-        if(i==0) { continue; }
-        const x = i * time_step;
-        drawTimeLabel(x);
-    }
-    for(let h = 5e6; h < 50e6; h += 5e6) {
-        const x = Jonsson_embedding.getXFromSpace(h + earth_radius);
-        const delta_z = Jonsson_embedding.getDeltaZFromX(x);
-        const radius = Jonsson_embedding.getRadiusFromX(x);
-        const label = getDistanceLabel(h);
-        const p = new P(radius, 0, delta_z);
-        drawText(camera.project(p), label);
-    }
-
-    // draw some geodesics
-    trajectories.forEach(trajectory => {
-        drawTrajectory(trajectory, graph.transform.forwards, trajectory.color);
-    });
-
-    if(typeof test_geodesic != 'undefined') {
-        // draw the test geodesic
-        const test_geodesic_screen_pts = test_geodesic.map(graph.transform.forwards);
-        drawLine(test_geodesic_screen_pts, 'rgb(0,0,0)');
-    }
-
-    ctx.restore(); // restore the original clip
-
-    // show the graph labels
-    ctx.fillStyle = 'rgb(0,0,0)';
-    ctx.font = "20px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(graph.bottom_text, graph.rect.center.x, graph.rect.ymax + 15);
-    ctx.fillText(graph.top_text,    graph.rect.center.x, graph.rect.ymin - 15);
-    ctx.save();
-    ctx.translate(graph.rect.xmin - 15, graph.rect.center.y);
-    ctx.rotate(-Math.PI/2);
-    ctx.textAlign = "center";
-    ctx.fillText(graph.left_text, 0, 0);
-    ctx.restore();
-}
-
 function drawTrajectory(trajectory, transform, color) {
-    const pts = getFreeFallPoints(trajectory.ends[0], earth_mass, 1500).map(transform);
+    const pts = trajectory.points.map(transform);
     ctx.lineWidth = 1.5;
     drawLine(pts, color);
     fillCircle(transform(trajectory.ends[0]), trajectory.end_sizes[0], trajectory.end_colors[0]);
+}
+
+function curvePathFromPoints(pts) {
+    const curvePath = new THREE.CurvePath();
+    for(let i = 1; i < pts.length; i++) {
+        curvePath.add(new THREE.LineCurve3(new THREE.Vector3(pts[i-1].x, pts[i-1].y, pts[i-1].z), new THREE.Vector3(pts[i].x, pts[i].y, pts[i].z)));
+    }
+    return curvePath;
+}
+
+function addFunnel(scene) {
+    // add a narrow strip up the funnel, and make instanced copies of it rotating round
+    const min_x = earth_radius;
+    const max_x = earth_radius + 1000e6;
+    const n_x = 2000;
+    const dx = (max_x - min_x) / n_x;
+    const n_t = 200;
+    const dtheta = 2 * Math.PI / n_t;
+
+    let spaceline_vertices = [];
+    let strip_vertices = [];
+    let strip_normals = [];
+    let strip_faces = [];
+    for(let i = 0; i < n_x; i ++) {
+        const x = Jonsson_embedding.getXFromSpace(min_x + i * dx);
+        let p = Jonsson_embedding.getEmbeddingPointFromXAndTheta(x, 0);
+        let n = Jonsson_embedding.getSurfaceNormalFromXAndTheta(x, 0);
+        strip_vertices.push(p.x, p.y, p.z);
+        strip_normals.push(n.x, n.y, n.z);
+        spaceline_vertices.push(p.x, p.y, p.z);
+        p = rotateXY(p, dtheta);
+        n = rotateXY(n, dtheta);
+        strip_vertices.push(p.x, p.y, p.z);
+        strip_normals.push(n.x, n.y, n.z);
+        if(i < n_x - 1) {
+            const j = 2 * i;
+            strip_faces.push(j, j+1, j+2);
+            strip_faces.push(j+1, j+3, j+2);
+        }
+    }
+
+    const funnel_geometry = new THREE.BufferGeometry();
+    funnel_geometry.setIndex( strip_faces );
+    funnel_geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( strip_vertices, 3 ) );
+    funnel_geometry.setAttribute( 'normal', new THREE.Float32BufferAttribute( strip_normals, 3 ) );
+
+    const funnel_material = new THREE.MeshBasicMaterial({
+        color: 'rgb(250,250,250)',
+        opacity: 0.9,
+        transparent: true,
+        side: THREE.DoubleSide,
+        polygonOffset: true,
+        polygonOffsetFactor: 1, // positive value pushes polygon further away
+        polygonOffsetUnits: 1
+    });
+
+    const funnel = new THREE.InstancedMesh(funnel_geometry, funnel_material, n_t);
+    const matrix = new THREE.Matrix4();
+    for(let i = 0; i < n_t; i++) {
+        matrix.makeRotationZ(dtheta * i);
+        funnel.setMatrixAt(i, matrix);
+    }
+    scene.add(funnel);
+
+    // add major and minor axes
+    const minor_axes_material = new THREE.LineBasicMaterial({ color: 'rgb(200,200,200)' });
+    const major_axes_material = new THREE.LineBasicMaterial({ color: 'rgb(100,100,100)' });
+    const spaceline_geometry = new THREE.BufferGeometry();
+    spaceline_geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( spaceline_vertices, 3 ) );
+    const major_spaceline = new THREE.Line( spaceline_geometry, major_axes_material );
+    scene.add( major_spaceline );
+    const n_minor_time = n_t / 10;
+    for(let i = 1; i < n_minor_time; i++) {
+        const minor_spaceline = new THREE.Line( spaceline_geometry, minor_axes_material );
+        minor_spaceline.rotation.z = i * 2 * Math.PI / n_minor_time;
+        scene.add( minor_spaceline );
+    }
+    const x_step = 5e6;
+    let timelines_vertices = [];
+    for(let x = min_x; x < max_x; x+= x_step) {
+        let pts = []
+        const spacetime = new P(0, x);
+        let p = Jonsson_embedding.getEmbeddingPointFromSpacetime(spacetime);
+        pts.push(p.x, p.y, p.z);
+        for(let i = 0; i < n_t; i++) {
+            p = rotateXY(p, dtheta);
+            pts.push(p.x, p.y, p.z);
+        }
+        timelines_vertices.push(pts);
+    }
+    const timeline_geometry = new THREE.BufferGeometry();
+    timeline_geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( timelines_vertices[0], 3 ) );
+    const major_timeline = new THREE.Line( timeline_geometry, major_axes_material );
+    scene.add( major_timeline );
+    timelines_vertices.slice(1).forEach(timeline_vertices => {
+        const timeline_geometry = new THREE.BufferGeometry();
+        timeline_geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( timeline_vertices, 3 ) );
+        const minor_timeline = new THREE.Line( timeline_geometry, minor_axes_material );
+        scene.add( minor_timeline );
+    });
+
+    // add text labels
+    const labels = [];
+    const theta_div = 2 * Math.PI / n_minor_time;
+    const origin = Jonsson_embedding.getEmbeddingPointFromSpacetime(new P(0, min_x));
+    origin.y -= 0.1;
+    origin.z -= 0.1;
+    labels.push([getTimeLabel(Jonsson_embedding.getTimeDeltaFromAngleDelta(theta_div)), rotateXY(origin, theta_div)]);
+    labels.push([getTimeLabel(Jonsson_embedding.getTimeDeltaFromAngleDelta(2 * theta_div)), rotateXY(origin, 2 * theta_div)]);
+    for(let x = min_x + x_step; x < min_x + 30e6; x+= x_step) {
+        const label = getDistanceLabel(x - min_x);
+        const p = Jonsson_embedding.getEmbeddingPointFromSpacetime(new P(0, x));
+        labels.push([label, p]);
+    }
+    const loader = new THREE.FontLoader();
+    loader.load( helvetiker_regular_typeface_json, function ( font ) {
+        const material = new THREE.MeshBasicMaterial({color: 'rgb(0,0,0)'});
+        labels.forEach(label => {
+            const [message, p] = label;
+            const shapes = font.generateShapes( message, 0.08 );
+            const geometry = new THREE.ShapeBufferGeometry( shapes );
+            geometry.computeBoundingBox();
+            const text = new THREE.Mesh( geometry, material );
+            text.rotation.y = Math.PI / 2;
+            text.rotation.z = Math.PI / 2;
+            text.position.x = p.x;
+            text.position.y = p.y;
+            text.position.z = p.z;
+            scene.add( text );
+            draw3d();
+        });
+
+    } ); //end load function
+}
+
+function updateTrajectory(trajectory) {
+    scene.remove(trajectory.objects.tube);
+    scene.remove(trajectory.objects.sphere);
+    trajectory.objects.tube_geometry.dispose();
+    trajectory.objects.sphere_geometry.dispose();
+    trajectory.objects.material.dispose();
+    trajectory.objects = add3dTrajectory(trajectory);
+}
+
+function add3dTrajectory(trajectory) {
+    const material = new THREE.MeshStandardMaterial({ color: trajectory.color });
+    const peak = trajectory.ends[0];
+
+    // add a trajectory
+    const pts = trajectory.points.map(p => Jonsson_embedding.getEmbeddingPointFromSpacetime(p));
+    const curvePath = curvePathFromPoints(pts);
+    const tube_geometry = new THREE.TubeBufferGeometry( curvePath, 500, 0.01, 8, false );
+    const tube = new THREE.Mesh( tube_geometry, material );
+    scene.add( tube );
+
+    // add a sphere at the peak
+    const peak3D = Jonsson_embedding.getEmbeddingPointFromSpacetime(peak);
+    const sphere_geometry = new THREE.SphereGeometry(0.05, 32, 32);
+    sphere_geometry.translate(peak3D.x, peak3D.y, peak3D.z);
+    const sphere = new THREE.Mesh( sphere_geometry, material );
+    scene.add( sphere );
+
+    // return pointers so that we can dispose of the objects to change the trajectory
+    return { tube_geometry: tube_geometry, tube: tube, sphere_geometry: sphere_geometry, sphere: sphere, material: material};
+}
+
+function init3js(rect) {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color( 'rgb(255,255,255)' );
+
+    const ambientLight = new THREE.AmbientLight( 0xcccccc, 0.4 );
+    scene.add( ambientLight );
+
+    camera_3js = new THREE.PerspectiveCamera( 26, rect.size.x / rect.size.y, 0.1, 1000 );
+
+    const pointLight = new THREE.PointLight( 0xffffff, 0.8 );
+    camera_3js.add(pointLight);
+
+    scene.add(camera_3js);
+
+    const container = document.createElement( 'div' );
+    document.body.appendChild( container );
+
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize( rect.size.x, rect.size.y );
+    const can = container.appendChild( renderer.domElement );
+    var main_canvas_rect = canvas.getBoundingClientRect();
+    can.style.position = 'absolute';
+    can.style.left = (main_canvas_rect.left + rect.xmin).toFixed(0)+"px";
+    can.style.top = (main_canvas_rect.top + rect.ymin).toFixed(0)+"px";
+
+    Jonsson_embedding = new JonssonEmbedding();
+
+    addFunnel(scene);
+
+    trajectories.forEach(trajectory => {
+        trajectory.objects = add3dTrajectory(trajectory);
+    });
+}
+
+function draw3d() {
+    const d = 10;
+    const z = 1.7;
+    const theta = - Math.PI / 2 + 2 * Math.PI * horizontalViewAngleSlider.value / 100.0;
+    const phi = - Math.PI / 2 + Math.PI * verticalViewAngleSlider.value / 100.0;
+    camera_3js.position.set(d * Math.sin(theta) * Math.cos(phi), d * Math.cos(theta) * Math.cos(phi), z + d * Math.sin(phi));
+    camera_3js.up.set(0, 0, 1);
+    camera_3js.lookAt(0, 0, z);
+    renderer.render( scene, camera_3js );
 }
 
 window.onload = init;
