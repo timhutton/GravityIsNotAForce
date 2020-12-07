@@ -72,7 +72,7 @@ function onMouseMove( evt ) {
             // move the handle being dragged
             dragTrajectory.ends[dragEnd] = targetGraph.transform.backwards(mousePos);
             // recompute the trajectory
-            dragTrajectory.points = getFreeFallPoints(dragTrajectory.ends[0], earth_mass, 500);
+            dragTrajectory.points = getFreeFallPoints2(dragTrajectory.ends, earth_mass, 500);
             updateTrajectory(dragTrajectory);
         }
         else {
@@ -123,6 +123,95 @@ function getFreeFallPoints(peak, planet_mass, n_pts = 100) {
         let h = peak.y - freeFallDistance(t - peak.x, peak.y, planet_mass);
         h = Math.max(earth_radius, h);
         pts.push(new P(t,h));
+    }
+    return pts;
+}
+
+function last(arr) {
+    return arr[arr.length-1];
+}
+
+function findLaunchSpeed(h0, t0, h1, t1, planet_mass) {
+    const vmin = findMinimumSpeed(h0, h1, earth_mass) + 1e-1; // ignore speeds that don't even reach h1
+    let solutions = [];
+    let vmax = 11e6; // include hyperbolic trajectories as well as elliptic ones
+    if(h1 > h0) {
+        // find solutions that hit t1,h1 before peaking (or that don't peak)
+        try {
+            var v = bisection_search(t1, vmin, vmax, 1e-6, 200, v => {
+                const h1_times = findCollisionTimes(h0, v, t0, h1, earth_mass);
+                return h1_times.t[0]; // only take the first solution
+            });
+            const t = findCollisionTimes(h0, v, t0, h1, earth_mass).t[0];
+            if(Math.abs(t - t1) > 1e-4) {
+                throw new Error("Bad solution before peak: "+t.toFixed(4)+" (t1 ="+t1.toFixed(4)+")");
+            }
+            solutions.push(v);
+        }
+        catch(err) {
+            //console.log('before-peak search: ', err);
+        }
+    }
+    // find solutions that hit t1,h1 after peaking
+    vmax = getEscapeVelocity(h0, earth_mass) - 1e-1;
+    if(vmax < vmin) {
+        console.log("only just reaches this height");
+    }
+    try {
+        var v = bisection_search(t1, vmin, vmax, 1e-6, 200, v => {
+            const h1_times = findCollisionTimes(h0, v, t0, h1, earth_mass);
+            //console.log(h1_times);
+            //console.log(vmin, vmax);
+            if(h1_times.t.length != 2) {
+                throw new Error("Expecting 2 solutions for elliptic orbits.");
+            }
+            return last(h1_times.t); // only take the last solution
+        });
+        const t = last(findCollisionTimes(h0, v, t0, h1, earth_mass).t);
+        if(Math.abs(t - t1) > 1e-2) {
+            throw new Error("Bad solution after peak: "+t.toFixed(4)+" (t1 ="+t1.toFixed(4)+")");
+        }
+        solutions.push(v);
+    }
+    catch(err) {
+        //console.log('after-peak search: ', err);
+    }
+    if(solutions.length == 0) {
+        console.log(h0,t0,h1,t1);
+        throw new Error("No launch speed found");
+    }
+    return solutions[0]; // if there are multiple they should all match
+}
+
+function getFreeFallPoints2(markers, planet_mass, n_pts = 100) {
+    /*markers[0].x = 0;
+    markers[0].y = 6371000;
+    markers[1].x = 2819.860515303656;
+    markers[1].y = 14456000;*/
+    markers[1].y = Math.max(markers[1].y, markers[0].y); // can't (yet) let marker1 get below marker0
+    const h0 = markers[0].y;
+    const t0 = markers[0].x;
+    const h1 = markers[1].y;
+    const t1 = markers[1].x;
+    //[h0,t0,h1,t1] = [6948500, 137.27763842618737, 10671000, 3600]; // DEBUG
+    //[h0,t0,h1,t1] = [7893500, -2847.568097817757, 11201000, 4180.043382452795]; // DEBUG
+    //[h0,t0,h1,t1] = [6371000, 0, 14456000, 2819.860515303656]; // DEBUG
+    const v = findLaunchSpeed(h0, t0, h1, t1, planet_mass);
+    let pts = [];
+
+    const v_h0_times = findCollisionTimes(h0, v, t0, h0, earth_mass);
+    if(v_h0_times.orbit=='elliptic') { var h_max = v_h0_times.peak.y; }
+    else { var h_max = earth_radius + 1e9; }
+    const h_step = (h_max - h0) / 100;
+    for(let h = h0; h < h_max; h += h_step) {
+        const v_h_times = findCollisionTimes(h0, v, t0, h, earth_mass);
+        pts.push(new P(v_h_times.t[0], h));
+    }
+    if(v_h0_times.orbit=='elliptic') {
+        for(let h = h_max; h > earth_radius; h -= h_step) {
+            const v_h_times = findCollisionTimes(h0, v, t0, h, earth_mass);
+            pts.push(new P(last(v_h_times.t), h));
+        }
     }
     return pts;
 }
@@ -194,16 +283,13 @@ function init() {
         draw();
     }
 
-    const make_trajectory = (peak, color) => {
-        const trajectory = new Trajectory(peak, peak, color, color); // TODO: darken hover color
-        trajectory.points = getFreeFallPoints(trajectory.ends[0], earth_mass, 500);
+    const make_trajectory = (a, b, color) => {
+        const trajectory = new Trajectory(a, b, color, color); // TODO: darken hover color
+        trajectory.points = getFreeFallPoints2(trajectory.ends, earth_mass, 500);
         return trajectory;
     };
     trajectories = [];
-    //trajectories.push(make_trajectory(new P(0, earth_radius + 20e6), 'rgb(100,100,200)'));
-    trajectories.push(make_trajectory(new P(0, earth_radius + 4.3e6), 'rgb(200,100,100)'));
-    //trajectories.push(make_trajectory(new P(0, earth_radius + 2.5e6), 'rgb(200,100,200)'));
-    //trajectories.push(make_trajectory(new P(0, earth_radius + 1.25e6), 'rgb(100,200,100)'));
+    trajectories.push(make_trajectory(new P(0, earth_radius), new P(60*60, earth_radius + 4.3e6), 'rgb(200,100,100)'));
 
     const n_graphs = 1;
     const margin = 40;
@@ -315,6 +401,27 @@ function drawStandardAxes(graph) {
         drawLine(test_geodesic_screen_pts, 'rgb(0,0,0)');
     }
 
+    // DEBUG: raw some tests
+    const t0 = trajectories[0].ends[0].x;
+    const h0 = trajectories[0].ends[0].y;
+    ctx.lineWidth=0.5;
+    for(let v = 2000; v<30000; v *= 1.04) {
+        const v_h0_times = findCollisionTimes(h0, v, t0, h0, earth_mass);
+        if(v_h0_times.orbit=='elliptic') { var h_max = v_h0_times.peak.y; }
+        else { var h_max = earth_radius + 25e6; }
+        let pts_first = [];
+        let pts_last = [];
+        for(let h = h0; h < h_max; h+=(h_max-h0)/1000) {
+            const v_h_times = findCollisionTimes(h0, v, t0, h, earth_mass);
+            pts_first.push(new P(v_h_times.t[0], h));
+            pts_last.push(new P(last(v_h_times.t), h));
+        }
+        if(v_h0_times.orbit!='elliptic') { var color = 'rgb(255,100,0)'; }
+        else { var color = 'rgb(0,0,255)'; }
+        drawLine(pts_first.map(graph.transform.forwards), color);
+        if(v_h0_times.orbit=='elliptic') { drawLine(pts_last.map(graph.transform.forwards), 'rgb(0,100,255)'); }
+    }
+
     ctx.restore(); // restore the original clip
 
     // show the graph labels
@@ -336,7 +443,9 @@ function drawTrajectory(trajectory, transform, color) {
     const pts = trajectory.points.map(transform);
     ctx.lineWidth = 1.5;
     drawLine(pts, color);
-    fillCircle(transform(trajectory.ends[0]), trajectory.end_sizes[0], trajectory.end_colors[0]);
+    for(let i =0; i < 2; i++) {
+        fillCircle(transform(trajectory.ends[i]), trajectory.end_sizes[i], trajectory.end_colors[i]);
+    }
 }
 
 function curvePathFromPoints(pts) {
