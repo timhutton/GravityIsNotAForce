@@ -142,3 +142,12 @@ function findCollisionTimes(x_0, v_0, t_0, x, planet_mass) {
         return { t:[t], orbit:'hyperbolic' };
     }
 }
+
+function getPeakTime(x_0, t_0, x, planet_mass) {
+    const mu = universal_gravitational_constant * planet_mass; // standard gravitational parameter
+    const v_peak = Math.sqrt(2 * mu * (1 / x_0 - 1 / x));
+    const w_peak = 1 / x_0  - v_peak * v_peak / (2 * mu);
+    const peak_t_abs = ellipticOrbitCollisionTimeFromMuXW(mu, x, w_peak);
+    const peak_t_0 = ellipticOrbitCollisionTimeFromMuXW(mu, x_0, w_peak);
+    return peak_t_abs - peak_t_0 + t_0;
+}
