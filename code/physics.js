@@ -48,10 +48,12 @@ function distanceTravelledWithConstantAcceleration(time, acceleration) {
     return 0.5 * acceleration * time * time;
 }
 
-function findMinimumSpeed(x_0, x, planet_mass) {
-    if(x < x_0) throw new Error("x must be greater than or equal to x_0");
+function minimumSpeed(x_0, x, planet_mass) {
     // returns the minimum speed at x_0 for the trajectory to be able to reach x at any time
     const mu = universal_gravitational_constant * planet_mass; // standard gravitational parameter
+    if(2 * mu * (1 / x_0 - 1 / x) < 0) {
+        throw new Error("2 * mu * (1 / x_0 - 1 / x) < 0 in minimumSpeed");
+    }
     return Math.sqrt(2 * mu * (1 / x_0 - 1 / x));
 }
 
@@ -61,7 +63,7 @@ function hasPeak(x_0, v_0, planet_mass) {
     return w > 0;
 }
 
-function findPeak(x_0, v_0, planet_mass) {
+function peakHeight(x_0, v_0, planet_mass) {
     const mu = universal_gravitational_constant * planet_mass; // standard gravitational parameter
     const w = 1 / x_0 - v_0 * v_0 / (2 * mu);
     if(w > 0) {
@@ -69,32 +71,59 @@ function findPeak(x_0, v_0, planet_mass) {
         const peak = 1 / w;
         return peak;
     }
-    throw new Error("Trajectory has no peak");
+    throw new Error("Trajectory has no peak in peakHeight");
 }
 
 function parabolicOrbitCollisionTimeFromMuX(mu, x) {
     // Following https://en.wikipedia.org/wiki/Radial_trajectory#Parabolic_trajectory
+    if(2 * Math.pow(x, 3) / (9 * mu) < 0) {
+        throw new Error("2 * Math.pow(x, 3) / (9 * mu) < 0 in parabolicOrbitCollisionTimeFromMuX");
+    }
     return Math.sqrt(2 * Math.pow(x, 3) / (9 * mu));
 }
 
 function ellipticOrbitCollisionTimeFromMuXW(mu, x, w) {
     // Following https://en.wikipedia.org/wiki/Radial_trajectory#Elliptic_trajectory
+    if(2 * mu * Math.pow(w, 3) <= 0) {
+        throw new Error("2 * mu * Math.pow(w, 3) <= 0 in ellipticOrbitCollisionTimeFromMuXW");
+    }
+    if(w * x * (1 - w * x) < 0) {
+        throw new Error("w * x * (1 - w * x) < 0 in ellipticOrbitCollisionTimeFromMuXW");
+    }
+    if(w * x < 0) {
+        throw new Error("w * x < 0 in ellipticOrbitCollisionTimeFromMuXW");
+    }
     return (Math.asin(Math.sqrt(w * x)) - Math.sqrt(w * x * (1 - w * x))) / Math.sqrt(2 * mu * Math.pow(w, 3));
 }
 
 function hyperbolicOrbitCollisionTimeFromMuXAbsW(mu, x, absw) {
     // Following https://en.wikipedia.org/wiki/Radial_trajectory#Hyperbolic_trajectory
+    if(2 * mu * Math.pow(absw, 3) <= 0) {
+        throw new Error("2 * mu * Math.pow(absw, 3) <= 0 in hyperbolicOrbitCollisionTimeFromMuXAbsW");
+    }
+    if(Math.pow(absw * x, 2) + absw * x < 0) {
+        throw new Error("Math.pow(absw * x, 2) + absw * x < 0 in hyperbolicOrbitCollisionTimeFromMuXAbsW");
+    }
+    if(1 + absw * x < 0) {
+        throw new Error("1 + absw * x < 0 in hyperbolicOrbitCollisionTimeFromMuXAbsW");
+    }
+    if(Math.sqrt(absw * x) + Math.sqrt(1 + absw * x) <= 0) {
+        throw new Error("Math.sqrt(absw * x) + Math.sqrt(1 + absw * x <= 0 in hyperbolicOrbitCollisionTimeFromMuXAbsW");
+    }
     return (Math.sqrt(Math.pow(absw * x, 2) + absw * x) - Math.log(Math.sqrt(absw * x) + Math.sqrt(1 + absw * x)))
            / Math.sqrt(2 * mu * Math.pow(absw, 3));
 }
 
-function getEscapeVelocity(x_0, planet_mass) {
+function escapeVelocity(x_0, planet_mass) {
     // Following https://en.wikipedia.org/wiki/Radial_trajectory#Time_as_a_function_of_distance
     const mu = universal_gravitational_constant * planet_mass; // standard gravitational parameter
+    if(x_0 === 0) {
+        throw new Error("x_0 === 0 in escapeVelocity");
+    }
     return Math.sqrt((2 * mu) / x_0);
 }
 
-function findCollisionTimes(x_0, v_0, t_0, x, planet_mass) {
+function collisionTimes(x_0, v_0, t_0, x, planet_mass) {
     if(x < 0) throw new Error("x must be positive: "+x.toFixed(4));
     // x_0, v_0 define a radial trajectory in terms of a height and speed at some point in time
     // the function returns the time for two point masses at separation x to collide
@@ -143,11 +172,13 @@ function findCollisionTimes(x_0, v_0, t_0, x, planet_mass) {
     }
 }
 
-function getPeakTime(x_0, t_0, x, planet_mass) {
+function peakTimes(x_0, t_0, x, planet_mass) {
+    // For trajectories passing through height x_0 at time t_0, return the possible times
+    // that they could have reached a peak at height x
     const mu = universal_gravitational_constant * planet_mass; // standard gravitational parameter
-    const v_peak = Math.sqrt(2 * mu * (1 / x_0 - 1 / x));
-    const w_peak = 1 / x_0  - v_peak * v_peak / (2 * mu);
+    const w_peak = 1 / x;
     const peak_t_abs = ellipticOrbitCollisionTimeFromMuXW(mu, x, w_peak);
     const peak_t_0 = ellipticOrbitCollisionTimeFromMuXW(mu, x_0, w_peak);
-    return peak_t_abs - peak_t_0 + t_0;
+    const t_diff = peak_t_abs - peak_t_0;
+    return [t_0 - t_diff, t_0 + t_diff];
 }
