@@ -58,15 +58,13 @@ function findMinimumSpeed(x_0, x, planet_mass) {
 function hasPeak(x_0, v_0, planet_mass) {
     const mu = universal_gravitational_constant * planet_mass; // standard gravitational parameter
     const w = 1 / x_0 - v_0 * v_0 / (2 * mu);
-    const absw = Math.abs(w);
-    return absw > 1e-14;
+    return w > 0;
 }
 
 function findPeak(x_0, v_0, planet_mass) {
     const mu = universal_gravitational_constant * planet_mass; // standard gravitational parameter
     const w = 1 / x_0 - v_0 * v_0 / (2 * mu);
-    const absw = Math.abs(w);
-    if(absw > 1e-14) {
+    if(w > 0) {
         // w is positive => elliptic (below escape velocity)
         const peak = 1 / w;
         return peak;
