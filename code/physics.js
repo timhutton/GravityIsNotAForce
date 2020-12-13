@@ -48,13 +48,18 @@ function distanceTravelledWithConstantAcceleration(time, acceleration) {
     return 0.5 * acceleration * time * time;
 }
 
-function minimumSpeed(x_0, x, planet_mass) {
+function minimumSpeedElliptic(x_0, x, planet_mass) {
     // returns the minimum speed at x_0 for the trajectory to be able to reach x at any time
-    const mu = universal_gravitational_constant * planet_mass; // standard gravitational parameter
-    if(2 * mu * (1 / x_0 - 1 / x) < 0) {
-        throw new Error("2 * mu * (1 / x_0 - 1 / x) < 0 in minimumSpeed");
+    if(x > x_0) {
+        const mu = universal_gravitational_constant * planet_mass; // standard gravitational parameter
+        if(2 * mu * (1 / x_0 - 1 / x) < 0) {
+            throw new Error("2 * mu * (1 / x_0 - 1 / x) < 0 in minimumSpeedElliptic");
+        }
+        return Math.sqrt(2 * mu * (1 / x_0 - 1 / x));
     }
-    return Math.sqrt(2 * mu * (1 / x_0 - 1 / x));
+    else {
+        return -escapeVelocity(x_0, planet_mass);
+    }
 }
 
 function hasPeak(x_0, v_0, planet_mass) {
@@ -142,31 +147,43 @@ function collisionTimes(x_0, v_0, t_0, x, planet_mass) {
     else if(w > 0) {
         const peak = 1 / w;
         if(w * x > 1) {
-            throw new Error("insufficient speed to reach target altitude, w * x > 1, w * x =", w * x);
+            console.log("mu =", mu);
+            console.log("v_0 =", v_0);
+            console.log("x_0 =", x_0);
+            console.log("x =", x);
+            console.log("w =", w);
+            console.log("w * x * (1 - w * x) =", w * x * (1 - w * x));
+            throw new Error("insufficient speed to reach target altitude, w * x > 1, w * x =" + (w * x).toFixed(6));
             //return { t:[], orbit:'elliptic, failed to reach '+x.toFixed(4)+', peak = '+peak.toFixed(4) }
         }
         // w is positive => elliptic (below escape velocity)
-        var abs_t = ellipticOrbitCollisionTimeFromMuXW(mu, x, w);
+        const abs_t = ellipticOrbitCollisionTimeFromMuXW(mu, x, w);
         const abs_t_0 = ellipticOrbitCollisionTimeFromMuXW(mu, x_0, w);
         const abs_peak_time = ellipticOrbitCollisionTimeFromMuXW(mu, peak, w);
-        const t1 = abs_t - abs_t_0 + t_0;
+        let t1 = abs_t - abs_t_0 + t_0;
         const peak_time = abs_peak_time - abs_t_0 + t_0;
-        var t2 = 2 * peak_time - t1;
+        let t2 = 2 * peak_time - t1;
         if(isNaN(t1) || isNaN(t2)) {
             console.log("NaN");
             console.log("v_0 =", v_0);
             console.log("x_0 =", x_0);
             console.log("x =", x);
             console.log("w =", w);
-            console.log("k =", k);
             console.log("w * x * (1 - w * x) =", w * x * (1 - w * x));
+        }
+        if(v_0 < 0) {
+            // equations don't allow for negative velocities at x_0
+            const t2_mirrored = t_0 + t_0 - t2;
+            const t1_mirrored = t_0 + t_0 - t1;
+            t1 = t2_mirrored;
+            t2 = t1_mirrored;
         }
         return { t:[t1, t2], peak:new P(peak_time, peak), orbit:'elliptic' };
     }
     else {
         // w is negative => hyperbolic (above escape velocity)
-        var abs_t = hyperbolicOrbitCollisionTimeFromMuXAbsW(mu, x, absw);
-        var abs_t_0 = hyperbolicOrbitCollisionTimeFromMuXAbsW(mu, x_0, absw);
+        const abs_t = hyperbolicOrbitCollisionTimeFromMuXAbsW(mu, x, absw);
+        const abs_t_0 = hyperbolicOrbitCollisionTimeFromMuXAbsW(mu, x_0, absw);
         const t = abs_t - abs_t_0 + t_0;
         return { t:[t], orbit:'hyperbolic' };
     }

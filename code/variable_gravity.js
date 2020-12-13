@@ -268,7 +268,7 @@ function getFreeFallPoints2(markers, planet_mass, n_pts = 100) {
     let vmax = 0;
     let first = true;
     if(orbit_type === 'elliptic' && v0 === 'positive') {
-        vmin = minimumSpeed(h0, h1, planet_mass) + 1e-3;
+        vmin = minimumSpeedElliptic(h0, h1, planet_mass) + 1e-3;
         vmax = escapeVelocity(h0, planet_mass) - 1e-3;
         first = (peakness === 'before peak');
     }
