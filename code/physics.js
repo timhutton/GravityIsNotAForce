@@ -184,7 +184,11 @@ function collisionTimes(x_0, v_0, t_0, x, planet_mass) {
         // w is negative => hyperbolic (above escape velocity)
         const abs_t = hyperbolicOrbitCollisionTimeFromMuXAbsW(mu, x, absw);
         const abs_t_0 = hyperbolicOrbitCollisionTimeFromMuXAbsW(mu, x_0, absw);
-        const t = abs_t - abs_t_0 + t_0;
+        let t = abs_t - abs_t_0 + t_0;
+        if(v_0 < 0) {
+            // equations don't allow for negative velocities at x_0
+            t = t_0 + t_0 - t;
+        }
         return { t:[t], orbit:'hyperbolic' };
     }
 }
