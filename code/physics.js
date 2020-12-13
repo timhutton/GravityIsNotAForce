@@ -142,8 +142,8 @@ function collisionTimes(x_0, v_0, t_0, x, planet_mass) {
     else if(w > 0) {
         const peak = 1 / w;
         if(w * x > 1) {
-            //throw new Error("insufficient speed to reach target altitude");
-            return { t:[], orbit:'elliptic, failed to reach '+x.toFixed(4)+', peak = '+peak.toFixed(4) }
+            throw new Error("insufficient speed to reach target altitude, w * x > 1, w * x =", w * x);
+            //return { t:[], orbit:'elliptic, failed to reach '+x.toFixed(4)+', peak = '+peak.toFixed(4) }
         }
         // w is positive => elliptic (below escape velocity)
         var abs_t = ellipticOrbitCollisionTimeFromMuXW(mu, x, w);
@@ -176,9 +176,28 @@ function peakTimes(x_0, t_0, x, planet_mass) {
     // For trajectories passing through height x_0 at time t_0, return the possible times
     // that they could have reached a peak at height x
     const mu = universal_gravitational_constant * planet_mass; // standard gravitational parameter
+    if(x < x_0) {
+        throw new Error("x < x_0 in peakTimes");
+    }
     const w_peak = 1 / x;
+    if(w_peak * x > 1) {
+        throw new Error("w_peak * x > 1 in peakTimes");
+    }
+    if(w_peak * x_0 > 1) {
+        console.log("x_0 =", x_0);
+        console.log("w_peak * x_0 =", w_peak * x_0);
+        throw new Error("w_peak * x_0 > 1 in peakTimes");
+    }
     const peak_t_abs = ellipticOrbitCollisionTimeFromMuXW(mu, x, w_peak);
     const peak_t_0 = ellipticOrbitCollisionTimeFromMuXW(mu, x_0, w_peak);
     const t_diff = peak_t_abs - peak_t_0;
     return [t_0 - t_diff, t_0 + t_diff];
+}
+
+function escapeVelocityTimes(x_0, t_0, x, planet_mass) {
+    // for the trajectory from x_0, t_0 at escape velocity, at what time does it reach height x?
+    // returns [negative velocity, positive velocity]
+    const escape_velocity = escapeVelocity(x_0, planet_mass);
+    const t = collisionTimes(x_0, escape_velocity, t_0, x, planet_mass).t[0];
+    return [t_0 + t_0 - t, t];
 }
