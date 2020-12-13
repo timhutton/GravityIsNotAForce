@@ -72,7 +72,7 @@ function onMouseMove( evt ) {
             // move the handle being dragged
             dragTrajectory.ends[dragEnd] = targetGraph.transform.backwards(mousePos);
             // recompute the trajectory
-            dragTrajectory.points = getFreeFallPoints2(dragTrajectory.ends, earth_mass, 500);
+            dragTrajectory.points = getFreeFallPoints(dragTrajectory.ends, earth_mass);
             updateTrajectory(dragTrajectory);
         }
         else {
@@ -107,7 +107,7 @@ function onMouseUp( evt ) {
     }
 }
 
-function getFreeFallPoints(peak, planet_mass, n_pts = 100) {
+function getFreeFallPointsFromPeak(peak, planet_mass, n_pts = 100) {
     let pts = [];
     const fallTime = freeFallTime(peak.y, earth_radius, planet_mass);
     // from the left up
@@ -257,7 +257,7 @@ function getOrbitalType(h0, t0, h1, t1, planet_mass) {
     return [orbit_type, v0, peakness];
 }
 
-function getFreeFallPoints2(markers, planet_mass, n_pts = 100) {
+function getFreeFallPoints(markers, planet_mass) {
     const h0 = markers[0].y;
     const t0 = markers[0].x;
     const h1 = markers[1].y;
@@ -342,9 +342,9 @@ function getFreeFallPoints2(markers, planet_mass, n_pts = 100) {
     let pts = [];
 
     const v_h0_times = collisionTimes(h0, v, t0, h0, earth_mass);
-    if(v_h0_times.orbit=='elliptic') { var h_max = v_h0_times.peak.y; }
-    else { var h_max = earth_radius + 1e8; }
-    const h_step = (h_max - earth_radius) / 500;
+    if(v_h0_times.orbit=='elliptic') { var h_max = v_h0_times.peak.y; var n_pts = 500; }
+    else { var h_max = earth_radius + 1e8; var n_pts = 500; }
+    const h_step = (h_max - earth_radius) / n_pts;
     for(let h = earth_radius; h < h_max; h += h_step) {
         const v_h_times = collisionTimes(h0, v, t0, h, earth_mass);
         pts.push(new P(v_h_times.t[0], h));
@@ -368,7 +368,7 @@ function testEmbeddingByPathLengths() {
     for(let dm = -earth_mass *0.7; dm < earth_mass / 2; dm += earth_mass / 20) {
         const planet_mass = earth_mass + dm;
         const h = findInitialHeight(time_to_fall, earth_radius, planet_mass);
-        const pts = getFreeFallPoints(0, h, earth_radius, planet_mass, 100).map(p => Jonsson_embedding.getEmbeddingPointFromSpacetime(p));
+        const pts = getFreeFallPointsFromPeak(0, h, earth_radius, planet_mass, 100).map(p => Jonsson_embedding.getEmbeddingPointFromSpacetime(p));
         let length = 0;
         for(let iPt = 1; iPt < pts.length; iPt++) {
             length += dist(pts[iPt], pts[iPt-1]);
@@ -385,7 +385,7 @@ function testEmbeddingByPathTurning() {
     [-earth_mass * 0.1, 0, earth_mass * 0.1].forEach( dm => {
         const planet_mass = earth_mass + dm;
         const h = findInitialHeight(time_to_fall, earth_radius, planet_mass);
-        const pts = getFreeFallPoints(0, h, earth_radius, planet_mass, 200);
+        const pts = getFreeFallPointsFromPeak(0, h, earth_radius, planet_mass, 200);
         let sum_turns = 0;
         let sum_abs_turns = 0;
         for(let iPt = 1; iPt < pts.length-1; iPt++) {
@@ -430,7 +430,7 @@ function init() {
 
     const make_trajectory = (a, b, color) => {
         const trajectory = new Trajectory(a, b, color, color); // TODO: darken hover color
-        trajectory.points = getFreeFallPoints2(trajectory.ends, earth_mass, 500);
+        trajectory.points = getFreeFallPoints(trajectory.ends, earth_mass);
         return trajectory;
     };
     trajectories = [];
