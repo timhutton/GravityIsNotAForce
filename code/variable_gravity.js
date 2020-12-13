@@ -377,9 +377,9 @@ function getFreeFallPoints2(markers, planet_mass, n_pts = 100) {
 
     const v_h0_times = collisionTimes(h0, v, t0, h0, earth_mass);
     if(v_h0_times.orbit=='elliptic') { var h_max = v_h0_times.peak.y; }
-    else { var h_max = earth_radius + 1e9; }
-    const h_step = (h_max - h0) / 100;
-    for(let h = h0; h < h_max; h += h_step) {
+    else { var h_max = earth_radius + 1e8; }
+    const h_step = (h_max - earth_radius) / 500;
+    for(let h = earth_radius; h < h_max; h += h_step) {
         const v_h_times = collisionTimes(h0, v, t0, h, earth_mass);
         pts.push(new P(v_h_times.t[0], h));
     }
