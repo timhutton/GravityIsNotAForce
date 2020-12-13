@@ -257,72 +257,11 @@ function getOrbitalType(h0, t0, h1, t1, planet_mass) {
     return [orbit_type, v0, peakness];
 }
 
-/*
-function findLaunchSpeed(h0, t0, h1, t1, planet_mass) { // TODO: remove
-    const vmin = minimumSpeed(h0, h1, earth_mass) + 1e-1; // ignore speeds that don't even reach h1
-    let solutions = [];
-    let vmax = 11e6; // include hyperbolic trajectories as well as elliptic ones
-    if(h1 > h0) {
-        // find solutions that hit t1,h1 before peaking (or that don't peak)
-        try {
-            var v = bisection_search(t1, vmin, vmax, 1e-6, 200, v => {
-                const h1_times = collisionTimes(h0, v, t0, h1, earth_mass);
-                return h1_times.t[0]; // only take the first solution
-            });
-            const t = collisionTimes(h0, v, t0, h1, earth_mass).t[0];
-            if(Math.abs(t - t1) > 1e-4) {
-                throw new Error("Bad solution before peak: "+t.toFixed(4)+" (t1 ="+t1.toFixed(4)+")");
-            }
-            solutions.push(v);
-        }
-        catch(err) {
-            //console.log('before-peak search: ', err);
-        }
-    }
-    // find solutions that hit t1,h1 after peaking
-    vmax = escapeVelocity(h0, earth_mass) - 1e-1;
-    if(vmax < vmin) {
-        console.log("only just reaches this height");
-    }
-    try {
-        var v = bisection_search(t1, vmin, vmax, 1e-6, 200, v => {
-            const h1_times = collisionTimes(h0, v, t0, h1, earth_mass);
-            //console.log(h1_times);
-            //console.log(vmin, vmax);
-            if(h1_times.t.length != 2) {
-                throw new Error("Expecting 2 solutions for elliptic orbits.");
-            }
-            return last(h1_times.t); // only take the last solution
-        });
-        const t = last(collisionTimes(h0, v, t0, h1, earth_mass).t);
-        if(Math.abs(t - t1) > 1e-2) {
-            throw new Error("Bad solution after peak: "+t.toFixed(4)+" (t1 ="+t1.toFixed(4)+")");
-        }
-        solutions.push(v);
-    }
-    catch(err) {
-        //console.log('after-peak search: ', err);
-    }
-    if(solutions.length == 0) {
-        console.log(h0,t0,h1,t1);
-        throw new Error("No launch speed found");
-    }
-    return solutions[0]; // if there are multiple they should all match
-}*/
-
 function getFreeFallPoints2(markers, planet_mass, n_pts = 100) {
-    /*markers[0].x = 0;
-    markers[0].y = 6371000;
-    markers[1].x = 2819.860515303656;
-    markers[1].y = 14456000;*/
-    //markers[1].y = Math.max(markers[1].y, markers[0].y); // can't (yet) let marker1 get below marker0
     const h0 = markers[0].y;
     const t0 = markers[0].x;
     const h1 = markers[1].y;
     const t1 = markers[1].x;
-    //[h0,t0,h1,t1] = [6948500, 137.27763842618737, 10671000, 3600]; // DEBUG
-    //[h0,t0,h1,t1] = [7893500, -2847.568097817757, 11201000, 4180.043382452795]; // DEBUG
-    //[h0,t0,h1,t1] = [6371000, 0, 14456000, 2819.860515303656]; // DEBUG
     [orbit_type, v0, peakness] = getOrbitalType(h0, t0, h1, t1, planet_mass);
     console.log(orbit_type, v0, peakness);
     let vmin = 0;
@@ -371,8 +310,6 @@ function getFreeFallPoints2(markers, planet_mass, n_pts = 100) {
             throw new Error("Bad solution before peak: "+t.toFixed(4)+" (t1 ="+t1.toFixed(4)+")");
         }
     }
-    //return [markers[0], markers[1]];
-    //const v = findLaunchSpeed(h0, t0, h1, t1, planet_mass);
     let pts = [];
 
     const v_h0_times = collisionTimes(h0, v, t0, h0, earth_mass);
@@ -390,8 +327,7 @@ function getFreeFallPoints2(markers, planet_mass, n_pts = 100) {
         }
     }
     if(pts.length === 0) {
-        // DEBUG failsafe
-        return [markers[0], markers[1]];
+        pts = [markers[0], markers[1]];
     }
     return pts;
 }
