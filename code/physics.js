@@ -50,16 +50,11 @@ function distanceTravelledWithConstantAcceleration(time, acceleration) {
 
 function minimumSpeedElliptic(x_0, x, planet_mass) {
     // returns the minimum speed at x_0 for the trajectory to be able to reach x at any time
-    if(x > x_0) {
-        const mu = universal_gravitational_constant * planet_mass; // standard gravitational parameter
-        if(2 * mu * (1 / x_0 - 1 / x) < 0) {
-            throw new Error("2 * mu * (1 / x_0 - 1 / x) < 0 in minimumSpeedElliptic");
-        }
-        return Math.sqrt(2 * mu * (1 / x_0 - 1 / x));
+    const mu = universal_gravitational_constant * planet_mass; // standard gravitational parameter
+    if(2 * mu * (1 / x_0 - 1 / x) < 0) {
+        throw new Error("2 * mu * (1 / x_0 - 1 / x) < 0 in minimumSpeedElliptic");
     }
-    else {
-        return -escapeVelocity(x_0, planet_mass);
-    }
+    return Math.sqrt(2 * mu * (1 / x_0 - 1 / x));
 }
 
 function hasPeak(x_0, v_0, planet_mass) {

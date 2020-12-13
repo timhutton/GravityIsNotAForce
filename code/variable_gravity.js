@@ -261,44 +261,69 @@ function getFreeFallPoints2(markers, planet_mass, n_pts = 100) {
     const h0 = markers[0].y;
     const t0 = markers[0].x;
     const h1 = markers[1].y;
-    const t1 = markers[1].x;
+    let t1 = markers[1].x;
+    if(t1 === t0) {
+        // avoid need for infinite speed
+        t1 += 1e-3;
+    }
     [orbit_type, v0, peakness] = getOrbitalType(h0, t0, h1, t1, planet_mass);
-    console.log(orbit_type, v0, peakness);
     let vmin = 0;
     let vmax = 0;
     let first = true;
     if(orbit_type === 'elliptic') {
-        vmin = minimumSpeedElliptic(h0, h1, planet_mass) + 1e-3;
-        vmax = escapeVelocity(h0, planet_mass) - 1e-3;
-        first = (peakness === 'before peak');
+        if(t1 < t0 && h1 > h0) {
+            vmin = -escapeVelocity(h0, planet_mass) + 1e-3;
+            vmax = -minimumSpeedElliptic(h0, h1, planet_mass) - 1e-3;
+            first = (peakness === 'before peak');
+        }
+        else {
+            if(h1 > h0) {
+                vmin = minimumSpeedElliptic(h0, h1, planet_mass) + 1e-3;
+            }
+            else {
+                vmin = -escapeVelocity(h0, planet_mass) + 1e-3;
+            }
+            vmax = escapeVelocity(h0, planet_mass) - 1e-3;
+            first = (peakness === 'before peak');
+        }
     }
     else if(orbit_type === 'hyperbolic' && v0 === 'positive') {
         vmin = escapeVelocity(h0, planet_mass) + 1e-3;
-        vmax = light_speed;
+        vmax = 1e12;
         first = true;
     }
     else if(orbit_type === 'hyperbolic' && v0 === 'negative') {
         vmin = -escapeVelocity(h0, planet_mass) - 1e-3;
-        vmax = -light_speed;
+        vmax = -1e12;
         first = true;
     }
-    console.log(vmin, vmax, first);
     // check vmin and vmax
     try {
-        const vmin_orbit = collisionTimes(h0, vmin, t0, h1, earth_mass);
-        console.log('vmin_orbit =', vmin_orbit);
-        if(vmin_orbit.orbit !== orbit_type) {
-            throw new Error("orbit type mismatch for vmin");
+        try {
+            var vmin_orbit = collisionTimes(h0, vmin, t0, h1, earth_mass);
+            if(vmin_orbit.orbit !== orbit_type) {
+                throw new Error("orbit type mismatch for vmin");
+            }
+        } catch(err) {
+            throw new Error("vmin error: "+err);
         }
-        const vmax_orbit = collisionTimes(h0, vmax, t0, h1, earth_mass);
-        console.log('vmax_orbit =', vmax_orbit);
-        if(vmax_orbit.orbit !== orbit_type) {
-            throw new Error("orbit type mismatch for vmax");
+        try {
+            var vmax_orbit = collisionTimes(h0, vmax, t0, h1, earth_mass);
+            if(vmax_orbit.orbit !== orbit_type) {
+                throw new Error("orbit type mismatch for vmax");
+            }
+        } catch(err) {
+            throw new Error("vmax error: "+err);
         }
         const vmin_t = first_or_last(vmin_orbit.t, first);
         const vmax_t = first_or_last(vmax_orbit.t, first);
-        console.log('t1 (', t1, ') should lie between:', vmin_t, vmax_t);
+        if(Math.sign(t1 - vmin_t) === Math.sign(t1 - vmax_t)) {
+            throw new Error('t1 ('+t1.toFixed(4)+') should lie between: '+vmin_t.toFixed(4)+" and "+vmax_t.toFixed(4));
+        }
     } catch(err) {
+        console.log(vmin, vmax, first);
+        console.log('vmin_orbit =', vmin_orbit);
+        console.log('vmax_orbit =', vmax_orbit);
         throw new Error("Internal error: failed to validate vmin and vmax: "+err);
     }
     // find v
@@ -306,7 +331,6 @@ function getFreeFallPoints2(markers, planet_mass, n_pts = 100) {
         const h1_times = collisionTimes(h0, v, t0, h1, earth_mass);
         return first_or_last(h1_times.t, first);
     });
-    console.log('v =', v);
     {
         // validate the velocity
         const t = first_or_last(collisionTimes(h0, v, t0, h1, earth_mass).t, first);
@@ -523,7 +547,7 @@ function drawStandardAxes(graph) {
     }
 
     // DEBUG: draw some test trajectories
-    const t0 = trajectories[0].ends[0].x;
+    /*const t0 = trajectories[0].ends[0].x;
     const h0 = trajectories[0].ends[0].y;
     ctx.lineWidth=0.5;
     for(let v = 2000; v<30000; v += 1001) {
@@ -576,7 +600,7 @@ function drawStandardAxes(graph) {
     if(zero_pts.length > 0) {
         ctx.lineWidth=0.5;
         drawLine(zero_pts.map(graph.transform.forwards), 'rgb(50,150,255)');
-    }
+    }*/
 
     ctx.restore(); // restore the original clip
 
