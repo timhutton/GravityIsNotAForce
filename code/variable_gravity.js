@@ -72,7 +72,10 @@ function onMouseMove( evt ) {
             // move the handle being dragged
             dragTrajectory.ends[dragEnd] = targetGraph.transform.backwards(mousePos);
             // recompute the trajectory
-            dragTrajectory.points = getFreeFallPoints(dragTrajectory.ends, earth_mass);
+            [dragTrajectory.points, dragTrajectory.color] = getFreeFallPoints(dragTrajectory.ends, earth_mass);
+            dragTrajectory.hover_color = dragTrajectory.color;
+            dragTrajectory.end_colors[0] = dragTrajectory.color;
+            dragTrajectory.end_colors[1] = dragTrajectory.color;
             updateTrajectory(dragTrajectory);
         }
         else {
@@ -358,7 +361,7 @@ function getFreeFallPoints(markers, planet_mass) {
     if(pts.length === 0) {
         pts = [markers[0], markers[1]];
     }
-    return pts;
+    return [pts, (v_h0_times.orbit==='elliptic'?'rgb(100,100,200)':'rgb(200,100,100)')];
 }
 
 function testEmbeddingByPathLengths() {
@@ -430,7 +433,10 @@ function init() {
 
     const make_trajectory = (a, b, color) => {
         const trajectory = new Trajectory(a, b, color, color); // TODO: darken hover color
-        trajectory.points = getFreeFallPoints(trajectory.ends, earth_mass);
+        [trajectory.points, trajectory.color] = getFreeFallPoints(trajectory.ends, earth_mass);
+        trajectory.hover_color = trajectory.color;
+        trajectory.end_colors[0] = trajectory.color;
+        trajectory.end_colors[1] = trajectory.color;
         return trajectory;
     };
     trajectories = [];
