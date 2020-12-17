@@ -37,12 +37,19 @@ let dragTrajectory;
 let dragEnd;
 
 function resetMarkers() {
+    let was_hovering = false;
+    let which_was_hovering = undefined;
     trajectories.forEach( trajectory => {
         for(let iEnd = 0; iEnd < 2; iEnd++) {
+            if(trajectory.end_sizes[iEnd] !== trajectory.default_end_sizes[iEnd]) {
+                was_hovering = true;
+                which_was_hovering = trajectory;
+            }
             trajectory.end_sizes[iEnd] = trajectory.default_end_sizes[iEnd];
             trajectory.end_colors[iEnd] = trajectory.color;
         }
     });
+    return [was_hovering, which_was_hovering];
 }
 
 function findClosestEnd(mousePos, graph, radius) {
@@ -80,11 +87,18 @@ function onMouseMove( evt ) {
         }
         else {
             // indicate which marker is being hovered over
-            resetMarkers();
+            const [wasHovering, whichTrajectoryWasHovering] = resetMarkers();
             const [isHovering, hoveredTrajectory, hoveredEnd] = findClosestEnd(mousePos, targetGraph, 20);
             if(isHovering) {
                 hoveredTrajectory.end_sizes[hoveredEnd] = hoveredTrajectory.hover_size;
                 hoveredTrajectory.end_colors[hoveredEnd] = hoveredTrajectory.hover_color;
+            }
+            // update the 3d scene only if the state has changed
+            if(wasHovering && !isHovering) {
+                updateTrajectory(whichTrajectoryWasHovering);
+            }
+            else if(isHovering && !wasHovering) {
+                updateTrajectory(hoveredTrajectory);
             }
         }
         draw();
@@ -769,9 +783,9 @@ function addFunnel(scene) {
 
 function updateTrajectory(trajectory) {
     scene.remove(trajectory.objects.tube);
-    scene.remove(trajectory.objects.sphere);
+    trajectory.objects.handles.forEach(handle => { scene.remove(handle); });
+    trajectory.objects.handle_geometries.forEach(handle_geometry => { handle_geometry.dispose(); });
     trajectory.objects.tube_geometry.dispose();
-    trajectory.objects.sphere_geometry.dispose();
     trajectory.objects.material.dispose();
     trajectory.objects = add3dTrajectory(trajectory);
 }
@@ -787,15 +801,22 @@ function add3dTrajectory(trajectory) {
     const tube = new THREE.Mesh( tube_geometry, material );
     scene.add( tube );
 
-    // add a sphere at the peak
-    const peak3D = Jonsson_embedding.getEmbeddingPointFromSpacetime(peak);
-    const sphere_geometry = new THREE.SphereGeometry(0.05, 32, 32);
-    sphere_geometry.translate(peak3D.x, peak3D.y, peak3D.z);
-    const sphere = new THREE.Mesh( sphere_geometry, material );
-    scene.add( sphere );
+    // add spheres at the handles
+    let handles = [];
+    let handle_geometries = [];
+    for(let i = 0; i < trajectory.ends.length; i++) {
+        const handle3D = Jonsson_embedding.getEmbeddingPointFromSpacetime(trajectory.ends[i]);
+        const handle_geometry = new THREE.SphereGeometry(trajectory.end_sizes[i] * 0.01, 32, 32);
+        handle_geometry.translate(handle3D.x, handle3D.y, handle3D.z);
+        const handle = new THREE.Mesh(handle_geometry, material);
+        scene.add(handle);
+        handles.push(handle);
+        handle_geometries.push(handle_geometry);
+    }
 
     // return pointers so that we can dispose of the objects to change the trajectory
-    return { tube_geometry: tube_geometry, tube: tube, sphere_geometry: sphere_geometry, sphere: sphere, material: material};
+    return { tube_geometry: tube_geometry, tube: tube, handle_geometries: handle_geometries, handles: handles,
+             material: material};
 }
 
 function init3js() {
