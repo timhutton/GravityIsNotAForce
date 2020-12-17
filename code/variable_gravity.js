@@ -152,128 +152,6 @@ function first_or_last(arr, first) {
     return first ? arr[0] : arr[arr.length - 1];
 }
 
-function getOrbitalType(h0, t0, h1, t1, planet_mass) {
-    // decide which part of the parameter space we need to search
-    const t_epsilon = 1e-6;
-    let orbit_type = '';
-    let v0 = '';
-    let peakness = '';
-    if(t1 === t0) {
-        if(h1 === h0) {
-            throw new Error("ambiguous solution in findLaunchSpeed - start and end are the same");
-        }
-        throw new Error("infinite speed needed in findLaunchSpeed");
-    }
-    const escape_times = escapeVelocityTimes(h0, t0, h1, earth_mass);
-    if(h1 >= h0) {
-        const peak_times = peakTimes(h0, t0, h1, planet_mass);
-        if(t1 > t0) {
-            if(Math.abs(t1 - peak_times[1]) < t_epsilon) {
-                orbit_type = 'elliptic';
-                v0 = 'positive';
-                peakness = 'at peak';
-            }
-            else if(t1 > peak_times[1]) {
-                orbit_type = 'elliptic';
-                v0 = 'positive';
-                peakness = 'after peak';
-            }
-            else if(Math.abs(t1 - escape_times[1]) < t_epsilon) {
-                orbit_type = 'parabolic';
-                v0 = 'positive';
-            }
-            else if(t1 > escape_times[1]) {
-                orbit_type = 'elliptic';
-                v0 = 'positive';
-                peakness = 'before peak';
-            }
-            else {
-                orbit_type = 'hyperbolic';
-                v0 = 'positive';
-            }
-        }
-        else {
-            if(Math.abs(t1 - peak_times[0]) < t_epsilon) {
-                orbit_type = 'elliptic';
-                v0 = 'negative';
-                peakness = 'at peak';
-            }
-            else if(t1 < peak_times[0]) {
-                orbit_type = 'elliptic';
-                v0 = 'negative';
-                peakness = 'before peak';
-            }
-            else if(Math.abs(t1 - escape_times[0]) < t_epsilon) {
-                orbit_type = 'parabolic';
-                v0 = 'negative';
-            }
-            else if(t1 < escape_times[0]) {
-                orbit_type = 'elliptic';
-                v0 = 'negative';
-                peakness = 'after peak';
-            }
-            else {
-                orbit_type = 'hyperbolic';
-                v0 = 'negative';
-            }
-        }
-    }
-    else {
-        const zero_vel_times = collisionTimes(h0, 0, t0, h1, earth_mass).t;
-        if(t1 > t0) {
-            if(Math.abs(t1 - zero_vel_times[1]) < t_epsilon) {
-                orbit_type = 'elliptic';
-                v0 = 'zero';
-                peakness = 'after peak';
-            }
-            else if(t1 > zero_vel_times[1]) {
-                orbit_type = 'elliptic';
-                v0 = 'positive';
-                peakness = 'after peak';
-            }
-            else if(Math.abs(t1 - escape_times[0]) < t_epsilon) {
-                orbit_type = 'parabolic';
-                v0 = 'negative';
-            }
-            else if(t1 > escape_times[0]) {
-                orbit_type = 'elliptic';
-                v0 = 'negative';
-                peakness = 'after peak';
-            }
-            else {
-                orbit_type = 'hyperbolic';
-                v0 = 'negative';
-            }
-        }
-        else {
-            if(Math.abs(t1 - zero_vel_times[0]) < t_epsilon) {
-                orbit_type = 'elliptic';
-                v0 = 'zero';
-                peakness = 'before peak';
-            }
-            else if(t1 < zero_vel_times[0]) {
-                orbit_type = 'elliptic';
-                v0 = 'negative';
-                peakness = 'before peak';
-            }
-            else if(Math.abs(t1 - escape_times[1]) < t_epsilon) {
-                orbit_type = 'parabolic';
-                v0 = 'positive';
-            }
-            else if(t1 < escape_times[1]) {
-                orbit_type = 'elliptic';
-                v0 = 'positive';
-                peakness = 'before peak';
-            }
-            else {
-                orbit_type = 'hyperbolic';
-                v0 = 'positive';
-            }
-        }
-    }
-    return [orbit_type, v0, peakness];
-}
-
 function getFreeFallPoints(markers, planet_mass) {
     const h0 = markers[0].y;
     const t0 = markers[0].x;
@@ -287,30 +165,31 @@ function getFreeFallPoints(markers, planet_mass) {
     let vmin = 0;
     let vmax = 0;
     let first = true;
+    const fudge = 1e-3;
     if(orbit_type === 'elliptic') {
         if(t1 < t0 && h1 > h0) {
-            vmin = -escapeVelocity(h0, planet_mass) + 1e-3;
-            vmax = -minimumSpeedElliptic(h0, h1, planet_mass) - 1e-3;
+            vmin = -escapeVelocity(h0, planet_mass) + fudge;
+            vmax = -minimumSpeedElliptic(h0, h1, planet_mass) - fudge;
             first = (peakness === 'before peak');
         }
         else {
             if(h1 > h0) {
-                vmin = minimumSpeedElliptic(h0, h1, planet_mass) + 1e-3;
+                vmin = minimumSpeedElliptic(h0, h1, planet_mass) + fudge;
             }
             else {
-                vmin = -escapeVelocity(h0, planet_mass) + 1e-3;
+                vmin = -escapeVelocity(h0, planet_mass) + fudge;
             }
-            vmax = escapeVelocity(h0, planet_mass) - 1e-3;
+            vmax = escapeVelocity(h0, planet_mass) - fudge;
             first = (peakness === 'before peak');
         }
     }
     else if(orbit_type === 'hyperbolic' && v0 === 'positive') {
-        vmin = escapeVelocity(h0, planet_mass) + 1e-3;
+        vmin = escapeVelocity(h0, planet_mass) + fudge;
         vmax = 1e12;
         first = true;
     }
     else if(orbit_type === 'hyperbolic' && v0 === 'negative') {
-        vmin = -escapeVelocity(h0, planet_mass) - 1e-3;
+        vmin = -escapeVelocity(h0, planet_mass) - fudge;
         vmax = -1e12;
         first = true;
     }
@@ -319,7 +198,7 @@ function getFreeFallPoints(markers, planet_mass) {
         try {
             var vmin_orbit = collisionTimes(h0, vmin, t0, h1, earth_mass);
             if(vmin_orbit.orbit !== orbit_type) {
-                throw new Error("orbit type mismatch for vmin");
+                //throw new Error("orbit type mismatch for vmin");
             }
         } catch(err) {
             throw new Error("vmin error: "+err);
@@ -327,7 +206,7 @@ function getFreeFallPoints(markers, planet_mass) {
         try {
             var vmax_orbit = collisionTimes(h0, vmax, t0, h1, earth_mass);
             if(vmax_orbit.orbit !== orbit_type) {
-                throw new Error("orbit type mismatch for vmax");
+                //throw new Error("orbit type mismatch for vmax");
             }
         } catch(err) {
             throw new Error("vmax error: "+err);
@@ -344,14 +223,14 @@ function getFreeFallPoints(markers, planet_mass) {
         throw new Error("Internal error: failed to validate vmin and vmax: "+err);
     }
     // find v
-    const v = bisection_search(t1, vmin, vmax, 1e-6, 200, v => {
+    const v = bisection_search(t1, vmin, vmax, 200, v => {
         const h1_times = collisionTimes(h0, v, t0, h1, earth_mass);
         return first_or_last(h1_times.t, first);
     });
     {
         // validate the velocity
         const t = first_or_last(collisionTimes(h0, v, t0, h1, earth_mass).t, first);
-        if(Math.abs(t - t1) > 1e-2) {
+        if(!isClose(t, t1, 1e-1, 1e-1)) {
             console.log(collisionTimes(h0, v, t0, h1, earth_mass));
             throw new Error("Bad solution before peak: "+t.toFixed(4)+" (t1 ="+t1.toFixed(4)+")");
         }
@@ -360,7 +239,7 @@ function getFreeFallPoints(markers, planet_mass) {
 
     const v_h0_times = collisionTimes(h0, v, t0, h0, earth_mass);
     if(v_h0_times.orbit=='elliptic') { var h_max = v_h0_times.peak.y; var n_pts = 500; }
-    else { var h_max = earth_radius + 1e8; var n_pts = 500; }
+    else { var h_max = Math.max(earth_radius + 1e8, spacetime_range.ymax); var n_pts = 500; }
     const h_step = (h_max - earth_radius) / n_pts;
     for(let h = earth_radius; h < h_max; h += h_step) {
         const v_h_times = collisionTimes(h0, v, t0, h, earth_mass);

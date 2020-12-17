@@ -25,13 +25,13 @@ const universal_gravitational_constant = 6.67430e-11; // m^3 kg^-1 s^-2
 
 function findInitialHeight(time, final_height, planet_mass, max_possible_height = 1e15) {
     // Return the height you started from given that you reached final_height in the given time.
-    return bisection_search(time, final_height, max_possible_height, 1e-6, 200,
+    return bisection_search(time, final_height, max_possible_height, 200,
         initial_height => freeFallTime(initial_height, final_height, planet_mass));
 }
 
 function freeFallDistance(time, initial_height, planet_mass) {
     // Return the distance you will fall from initial_height in the given time.
-    return initial_height - bisection_search(time, initial_height, 0, 1e-6, 200,
+    return initial_height - bisection_search(time, initial_height, 0, 200,
         final_height => freeFallTime(initial_height, final_height, planet_mass));
 }
 
@@ -216,4 +216,126 @@ function escapeVelocityTimes(x_0, t_0, x, planet_mass) {
     const escape_velocity = escapeVelocity(x_0, planet_mass);
     const t = collisionTimes(x_0, escape_velocity, t_0, x, planet_mass).t[0];
     return [t_0 + t_0 - t, t];
+}
+
+function getOrbitalType(h0, t0, h1, t1, planet_mass) {
+    // decide which part of the parameter space we need to search
+    const t_epsilon = 1e-6;
+    let orbit_type = '';
+    let v0 = '';
+    let peakness = '';
+    if(t1 === t0) {
+        if(h1 === h0) {
+            throw new Error("ambiguous solution in findLaunchSpeed - start and end are the same");
+        }
+        throw new Error("infinite speed needed in findLaunchSpeed");
+    }
+    const escape_times = escapeVelocityTimes(h0, t0, h1, earth_mass);
+    if(h1 >= h0) {
+        const peak_times = peakTimes(h0, t0, h1, planet_mass);
+        if(t1 > t0) {
+            if(Math.abs(t1 - peak_times[1]) < t_epsilon) {
+                orbit_type = 'elliptic';
+                v0 = 'positive';
+                peakness = 'at peak';
+            }
+            else if(t1 > peak_times[1]) {
+                orbit_type = 'elliptic';
+                v0 = 'positive';
+                peakness = 'after peak';
+            }
+            else if(Math.abs(t1 - escape_times[1]) < t_epsilon) {
+                orbit_type = 'parabolic';
+                v0 = 'positive';
+            }
+            else if(t1 > escape_times[1]) {
+                orbit_type = 'elliptic';
+                v0 = 'positive';
+                peakness = 'before peak';
+            }
+            else {
+                orbit_type = 'hyperbolic';
+                v0 = 'positive';
+            }
+        }
+        else {
+            if(Math.abs(t1 - peak_times[0]) < t_epsilon) {
+                orbit_type = 'elliptic';
+                v0 = 'negative';
+                peakness = 'at peak';
+            }
+            else if(t1 < peak_times[0]) {
+                orbit_type = 'elliptic';
+                v0 = 'negative';
+                peakness = 'before peak';
+            }
+            else if(Math.abs(t1 - escape_times[0]) < t_epsilon) {
+                orbit_type = 'parabolic';
+                v0 = 'negative';
+            }
+            else if(t1 < escape_times[0]) {
+                orbit_type = 'elliptic';
+                v0 = 'negative';
+                peakness = 'after peak';
+            }
+            else {
+                orbit_type = 'hyperbolic';
+                v0 = 'negative';
+            }
+        }
+    }
+    else {
+        const zero_vel_times = collisionTimes(h0, 0, t0, h1, earth_mass).t;
+        if(t1 > t0) {
+            if(Math.abs(t1 - zero_vel_times[1]) < t_epsilon) {
+                orbit_type = 'elliptic';
+                v0 = 'zero';
+                peakness = 'after peak';
+            }
+            else if(t1 > zero_vel_times[1]) {
+                orbit_type = 'elliptic';
+                v0 = 'positive';
+                peakness = 'after peak';
+            }
+            else if(Math.abs(t1 - escape_times[0]) < t_epsilon) {
+                orbit_type = 'parabolic';
+                v0 = 'negative';
+            }
+            else if(t1 > escape_times[0]) {
+                orbit_type = 'elliptic';
+                v0 = 'negative';
+                peakness = 'after peak';
+            }
+            else {
+                orbit_type = 'hyperbolic';
+                v0 = 'negative';
+            }
+        }
+        else {
+            if(Math.abs(t1 - zero_vel_times[0]) < t_epsilon) {
+                orbit_type = 'elliptic';
+                v0 = 'zero';
+                peakness = 'before peak';
+            }
+            else if(t1 < zero_vel_times[0]) {
+                orbit_type = 'elliptic';
+                v0 = 'negative';
+                peakness = 'before peak';
+            }
+            else if(Math.abs(t1 - escape_times[1]) < t_epsilon) {
+                orbit_type = 'parabolic';
+                v0 = 'positive';
+            }
+            else if(t1 < escape_times[1]) {
+                orbit_type = 'elliptic';
+                v0 = 'positive';
+                peakness = 'before peak';
+            }
+            else {
+                orbit_type = 'hyperbolic';
+                v0 = 'positive';
+            }
+        }
+    }
+    return [orbit_type, v0, peakness];
 }

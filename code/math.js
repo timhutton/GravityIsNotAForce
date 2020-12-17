@@ -236,7 +236,7 @@ function simpsons_integrate(lower, upper, n_evaluations, func) {
     return dx * result / 3;
 }
 
-function bisection_search(target, a, b, tolerance, max_iterations, func) {
+function bisection_search(target, a, b, max_iterations, func) {
     // Return the value x such that func(x +/- tolerance) == target. Function must be monotonic between a and b.
     var value_a = func(a);
     var value_b = func(b);
@@ -254,7 +254,7 @@ function bisection_search(target, a, b, tolerance, max_iterations, func) {
             b = mid;
             value_b = value_mid;
         }
-        if(Math.abs((b - a) / 2) < tolerance) {
+        if(isClose(a, b)) {
             return mid;
         }
     }
@@ -273,4 +273,8 @@ function divideNicely(x, n_divisions) {
     if( value1_closeness < value2_closeness ) { return value1; }
     else if( value2_closeness < value5_closeness ) { return value2; }
     else { return value5; }
+}
+
+function isClose(a, b, rtol = 1e-5, atol = 1e-8) {
+    return Math.abs(a - b) <= (atol + rtol * Math.abs(b))
 }

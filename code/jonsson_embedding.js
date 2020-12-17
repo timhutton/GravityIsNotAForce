@@ -140,7 +140,7 @@ class JonssonEmbedding {
             const norm_vec = normalize(cross(incoming_segment, n));
             // we rotate ja around norm_vec through jb, at an angle theta somewhere between 90 degrees and 270 degrees
             // such that the new point lies on the funnel
-            const theta = bisection_search(0, Math.PI / 2, 3 * Math.PI / 2, 1e-6, 200, theta => {
+            const theta = bisection_search(0, Math.PI / 2, 3 * Math.PI / 2, 200, theta => {
                 const jc = rotateAroundPointAndVector(ja, jb, norm_vec, theta);
                 // decide if this point is inside or outside the funnel
                 const actual_radius = len(new P(jc.x, jc.y));
