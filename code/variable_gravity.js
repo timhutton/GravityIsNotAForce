@@ -362,6 +362,7 @@ function init() {
 
     const moveAlongTrajectoryCheckbox = document.getElementById('moveAlongTrajectoryCheckbox');
     const trajectorySlider = document.getElementById('trajectorySlider');
+    trajectory_position = trajectorySlider.value / 100;
     moveAlongTrajectoryCheckbox.onclick = function() {
         verticalViewAngleSlider.disabled = moveAlongTrajectoryCheckbox.checked;
         horizontalViewAngleSlider.disabled = moveAlongTrajectoryCheckbox.checked;
