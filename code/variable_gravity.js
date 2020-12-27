@@ -363,10 +363,8 @@ function init() {
     const moveAlongTrajectoryCheckbox = document.getElementById('moveAlongTrajectoryCheckbox');
     const trajectorySlider = document.getElementById('trajectorySlider');
     moveAlongTrajectoryCheckbox.onclick = function() {
-        trajectory_position = moveAlongTrajectoryCheckbox.checked ? (trajectorySlider.value / 100) : -1;
         verticalViewAngleSlider.disabled = moveAlongTrajectoryCheckbox.checked;
         horizontalViewAngleSlider.disabled = moveAlongTrajectoryCheckbox.checked;
-        trajectorySlider.disabled = !moveAlongTrajectoryCheckbox.checked;
         draw();
     }
     trajectorySlider.oninput = function() {
@@ -487,14 +485,13 @@ function drawStandardAxes(graph) {
     // draw some geodesics
     trajectories.forEach(trajectory => {
         drawTrajectory(trajectory, graph.transform.forwards, trajectory.color);
-        if(trajectory_position >= 0) {
-            const p = trajectory.points.interpolate_x(trajectory_position);
-            const p1 = add(graph.transform.forwards(p), new P(0, 5));
-            const p2 = add(graph.transform.forwards(p), new P(0, -5));
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-        }
+        // show the trajectory position
+        const p = trajectory.points.interpolate_x(trajectory_position);
+        const p1 = add(graph.transform.forwards(p), new P(0, 5));
+        const p2 = add(graph.transform.forwards(p), new P(0, -5));
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
     });
 
     if(typeof test_geodesic != 'undefined') {
@@ -782,11 +779,7 @@ function init3js() {
 }
 
 function draw3d() {
-    const d = 10;
-    const z = 1;
-    const theta = - Math.PI / 2 + 2 * Math.PI * horizontalViewAngleSlider.value / 100.0;
-    const phi = - Math.PI / 2 + Math.PI * verticalViewAngleSlider.value / 100.0;
-    if(trajectory_position >= 0) {
+    if(document.getElementById('moveAlongTrajectoryCheckbox').checked) {
         // lock the camera to the ant
         const trajectory = trajectories[0];
         const du = 0.001;
@@ -808,6 +801,10 @@ function draw3d() {
         camera1.lookAt(cam_look_at.x, cam_look_at.y, cam_look_at.z);
     }
     else {
+        const d = 10;
+        const z = 1;
+        const theta = - Math.PI / 2 + 2 * Math.PI * horizontalViewAngleSlider.value / 100.0;
+        const phi = - Math.PI / 2 + Math.PI * verticalViewAngleSlider.value / 100.0;
         camera1.position.set(d * Math.sin(theta) * Math.cos(phi), d * Math.cos(theta) * Math.cos(phi), z + d * Math.sin(phi));
         camera1.up.set(0, 0, 1);
         camera1.lookAt(0, 0, z);
