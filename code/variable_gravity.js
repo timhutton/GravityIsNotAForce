@@ -330,6 +330,14 @@ function init() {
         draw();
     }
 
+    const moveAlongTrajectoryCheckbox = document.getElementById('moveAlongTrajectoryCheckbox');
+    const trajectorySlider = document.getElementById('trajectorySlider');
+    moveAlongTrajectoryCheckbox.onclick = function() {
+        verticalViewAngleSlider.disabled = moveAlongTrajectoryCheckbox.checked;
+        horizontalViewAngleSlider.disabled = moveAlongTrajectoryCheckbox.checked;
+        trajectorySlider.disabled = !moveAlongTrajectoryCheckbox.checked;
+    }
+
     const make_trajectory = (a, b, color) => {
         const trajectory = new Trajectory(a, b, color, color); // TODO: darken hover color
         [trajectory.points, trajectory.color] = getFreeFallPoints(trajectory.ends, earth_mass);
