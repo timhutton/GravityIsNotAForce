@@ -20,6 +20,7 @@ let ctx;
 let spacetime_range;
 let vertical_vertical_view_angle;
 let horizontal_vertical_view_angle;
+let trajectory_position;
 let Jonsson_embedding;
 
 let rect1;
@@ -35,6 +36,34 @@ let trajectories;
 let isDragging;
 let dragTrajectory;
 let dragEnd;
+
+class Path {
+    constructor() {
+        this.pts = [];
+        this.length_x = 0;
+    }
+    add(p) {
+        if(this.pts.length > 0) {
+            this.length_x += Math.abs(p.x - last(this.pts).x);
+        }
+        this.pts.push(p);
+    }
+    interpolate_x(u) {
+        const target = u * this.length_x;
+        let d = 0;
+        let i = 0;
+        while(target >= d && i < this.pts.length-1) {
+            const len = Math.abs(this.pts[i+1].x - this.pts[i].x);
+            if(target < d + len) {
+                const v = (target - d) / len;
+                return lerp(this.pts[i], this.pts[i+1], v);
+            }
+            d += len;
+            i += 1;
+        }
+        return last(this.pts);
+    }
+}
 
 function resetMarkers() {
     let was_hovering = false;
@@ -149,7 +178,7 @@ function last(arr) {
 }
 
 function first_or_last(arr, first) {
-    return first ? arr[0] : arr[arr.length - 1];
+    return first ? arr[0] : last(arr);
 }
 
 function getFreeFallPoints(markers, planet_mass) {
@@ -235,7 +264,7 @@ function getFreeFallPoints(markers, planet_mass) {
             throw new Error("Bad solution before peak: "+t.toFixed(4)+" (t1 ="+t1.toFixed(4)+")");
         }
     }
-    let pts = [];
+    let pts = new Path();
 
     const v_h0_times = collisionTimes(h0, v, t0, h0, earth_mass);
     if(v_h0_times.orbit=='elliptic') {
@@ -249,16 +278,17 @@ function getFreeFallPoints(markers, planet_mass) {
     const h_step = (h_max - earth_radius) / n_pts;
     for(let h = earth_radius; h < h_max; h += h_step) {
         const v_h_times = collisionTimes(h0, v, t0, h, earth_mass);
-        pts.push(new P(v_h_times.t[0], h));
+        pts.add(new P(v_h_times.t[0], h));
     }
     if(v_h0_times.orbit=='elliptic') {
         for(let h = h_max; h > earth_radius; h -= h_step) {
             const v_h_times = collisionTimes(h0, v, t0, h, earth_mass);
-            pts.push(new P(last(v_h_times.t), h));
+            pts.add(new P(last(v_h_times.t), h));
         }
     }
-    if(pts.length === 0) {
-        pts = [markers[0], markers[1]];
+    if(pts.pts.length === 0) {
+        pts.add(markers[0]);
+        pts.add(markers[1]);
     }
     return [pts, (v_h0_times.orbit==='elliptic'?'rgb(100,100,200)':'rgb(200,100,100)')];
 }
@@ -327,6 +357,18 @@ function init() {
     horizontal_view_angle = Math.PI + 2 * Math.PI * horizontalViewAngleSlider.value / 100.0;
     horizontalViewAngleSlider.oninput = function() {
         horizontal_view_angle = Math.PI + 2 * Math.PI * horizontalViewAngleSlider.value / 100.0;
+        draw();
+    }
+
+    const moveAlongTrajectoryCheckbox = document.getElementById('moveAlongTrajectoryCheckbox');
+    const trajectorySlider = document.getElementById('trajectorySlider');
+    moveAlongTrajectoryCheckbox.onclick = function() {
+        verticalViewAngleSlider.disabled = moveAlongTrajectoryCheckbox.checked;
+        horizontalViewAngleSlider.disabled = moveAlongTrajectoryCheckbox.checked;
+        draw();
+    }
+    trajectorySlider.oninput = function() {
+        trajectory_position = trajectorySlider.value / 100;
         draw();
     }
 
@@ -443,6 +485,17 @@ function drawStandardAxes(graph) {
     // draw some geodesics
     trajectories.forEach(trajectory => {
         drawTrajectory(trajectory, graph.transform.forwards, trajectory.color);
+        // show the trajectory position
+        const p = trajectory.points.interpolate_x(trajectory_position);
+        const p1 = add(graph.transform.forwards(p), new P(0, 5));
+        const p2 = add(graph.transform.forwards(p), new P(0, -5));
+        const p3 = add(graph.transform.forwards(p), new P(5, 0));
+        const p4 = add(graph.transform.forwards(p), new P(-5, 0));
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.moveTo(p3.x, p3.y);
+        ctx.lineTo(p4.x, p4.y);
+        ctx.stroke();
     });
 
     if(typeof test_geodesic != 'undefined') {
@@ -525,7 +578,7 @@ function drawStandardAxes(graph) {
 }
 
 function drawTrajectory(trajectory, transform, color) {
-    const pts = trajectory.points.map(transform);
+    const pts = trajectory.points.pts.map(transform);
     ctx.lineWidth = 1.5;
     drawLine(pts, color);
     for(let i =0; i < 2; i++) {
@@ -680,7 +733,7 @@ function add3dTrajectory(trajectory) {
     const peak = trajectory.ends[0];
 
     // add a trajectory
-    const pts = trajectory.points.map(p => Jonsson_embedding.getEmbeddingPointFromSpacetime(p));
+    const pts = trajectory.points.pts.map(p => Jonsson_embedding.getEmbeddingPointFromSpacetime(p));
     const curvePath = curvePathFromPoints(pts);
     const tube_geometry = new THREE.TubeBufferGeometry( curvePath, 500, 0.01, 8, false );
     const tube = new THREE.Mesh( tube_geometry, material );
@@ -730,13 +783,36 @@ function init3js() {
 }
 
 function draw3d() {
-    const d = 10;
-    const z = 1;
-    const theta = - Math.PI / 2 + 2 * Math.PI * horizontalViewAngleSlider.value / 100.0;
-    const phi = - Math.PI / 2 + Math.PI * verticalViewAngleSlider.value / 100.0;
-    camera1.position.set(d * Math.sin(theta) * Math.cos(phi), d * Math.cos(theta) * Math.cos(phi), z + d * Math.sin(phi));
-    camera1.up.set(0, 0, 1);
-    camera1.lookAt(0, 0, z);
+    if(document.getElementById('moveAlongTrajectoryCheckbox').checked) {
+        // lock the camera to the ant
+        const trajectory = trajectories[0];
+        const du = 0.001;
+        const sp = trajectory.points.interpolate_x(trajectory_position);
+        const p = Jonsson_embedding.getEmbeddingPointFromSpacetime(sp);
+        const n = Jonsson_embedding.getSurfaceNormalFromSpacetime(sp);
+        if(trajectory_position < 1 - du) {
+            const p2 = Jonsson_embedding.getEmbeddingPointFromSpacetime(trajectory.points.interpolate_x(trajectory_position + du));
+            var v = normalize(sub(p2, p));
+        }
+        else {
+            const p2 = Jonsson_embedding.getEmbeddingPointFromSpacetime(trajectory.points.interpolate_x(trajectory_position - du));
+            var v = normalize(sub(p, p2));
+        }
+        const cam_pos = add(add(p, scalar_mul(n, 0.4)), scalar_mul(v, -0.8));
+        const cam_look_at = p;
+        camera1.position.set(cam_pos.x, cam_pos.y, cam_pos.z);
+        camera1.up.set(n.x, n.y, n.z);
+        camera1.lookAt(cam_look_at.x, cam_look_at.y, cam_look_at.z);
+    }
+    else {
+        const d = 10;
+        const z = 1;
+        const theta = - Math.PI / 2 + 2 * Math.PI * horizontalViewAngleSlider.value / 100.0;
+        const phi = - Math.PI / 2 + Math.PI * verticalViewAngleSlider.value / 100.0;
+        camera1.position.set(d * Math.sin(theta) * Math.cos(phi), d * Math.cos(theta) * Math.cos(phi), z + d * Math.sin(phi));
+        camera1.up.set(0, 0, 1);
+        camera1.lookAt(0, 0, z);
+    }
     renderer.render( scene, camera1 );
 }
 
