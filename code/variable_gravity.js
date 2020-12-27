@@ -56,13 +56,11 @@ class Path {
             const len = Math.abs(this.pts[i+1].x - this.pts[i].x);
             if(target < d + len) {
                 const v = (target - d) / len;
-                console.log('lerping, ', u, this.length_x, i, v);
                 return lerp(this.pts[i], this.pts[i+1], v);
             }
             d += len;
             i += 1;
         }
-        console.log('returning last');
         return last(this.pts);
     }
 }
@@ -791,12 +789,23 @@ function draw3d() {
     if(trajectory_position >= 0) {
         // lock the camera to the ant
         const trajectory = trajectories[0];
-        const sp1 = trajectory.points.interpolate_x(trajectory_position);
-        //const p = Jonsson_embedding.getEmbeddingPointFromSpacetime(sp1);
-        //const n = Jonsson_embedding.getSurfaceNormalFromSpacetime(sp1);
-        //camera1.position.set(p.x, p.y-3, p.z);
-        camera1.up.set(0, 0, 1);
-        camera1.lookAt(0, 0, 0);
+        const du = 0.001;
+        const sp = trajectory.points.interpolate_x(trajectory_position);
+        const p = Jonsson_embedding.getEmbeddingPointFromSpacetime(sp);
+        const n = Jonsson_embedding.getSurfaceNormalFromSpacetime(sp);
+        if(trajectory_position < 1 - du) {
+            const p2 = Jonsson_embedding.getEmbeddingPointFromSpacetime(trajectory.points.interpolate_x(trajectory_position + du));
+            var v = normalize(sub(p2, p));
+        }
+        else {
+            const p2 = Jonsson_embedding.getEmbeddingPointFromSpacetime(trajectory.points.interpolate_x(trajectory_position - du));
+            var v = normalize(sub(p, p2));
+        }
+        const cam_pos = add(add(p, scalar_mul(n, 0.4)), scalar_mul(v, -0.8));
+        const cam_look_at = p;
+        camera1.position.set(cam_pos.x, cam_pos.y, cam_pos.z);
+        camera1.up.set(n.x, n.y, n.z);
+        camera1.lookAt(cam_look_at.x, cam_look_at.y, cam_look_at.z);
     }
     else {
         camera1.position.set(d * Math.sin(theta) * Math.cos(phi), d * Math.cos(theta) * Math.cos(phi), z + d * Math.sin(phi));
