@@ -489,8 +489,12 @@ function drawStandardAxes(graph) {
         const p = trajectory.points.interpolate_x(trajectory_position);
         const p1 = add(graph.transform.forwards(p), new P(0, 5));
         const p2 = add(graph.transform.forwards(p), new P(0, -5));
+        const p3 = add(graph.transform.forwards(p), new P(5, 0));
+        const p4 = add(graph.transform.forwards(p), new P(-5, 0));
         ctx.moveTo(p1.x, p1.y);
         ctx.lineTo(p2.x, p2.y);
+        ctx.moveTo(p3.x, p3.y);
+        ctx.lineTo(p4.x, p4.y);
         ctx.stroke();
     });
 
