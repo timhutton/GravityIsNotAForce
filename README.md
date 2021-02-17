@@ -1,10 +1,15 @@
 I'm experimenting with how to visualise the geodesics in spacetime under general relativity. Please help with suggestions!
 
 Live demo: https://timhutton.github.io/GravityIsNotAForce/
+[![image](https://user-images.githubusercontent.com/647092/108274554-f540bf80-716c-11eb-865d-a7e557a287ad.png)](https://timhutton.github.io/GravityIsNotAForce/)
 
-[![image](https://user-images.githubusercontent.com/647092/96377209-06a49b80-117c-11eb-911e-76cd16c54db4.png)](https://timhutton.github.io/GravityIsNotAForce/)
+[Version with more space dimensions:](https://timhutton.github.io/GravityIsNotAForce/constant_gravity_4d.html)
+[![image](https://user-images.githubusercontent.com/647092/108274529-ece88480-716c-11eb-827d-2c0c3d510179.png)](https://timhutton.github.io/GravityIsNotAForce/constant_gravity_4d.html)
 
-Updates:
+[Version that is accurate in a varying gravitational field:](https://timhutton.github.io/GravityIsNotAForce/variable_gravity.html)
+[![image](https://user-images.githubusercontent.com/647092/108274429-cd515c00-716c-11eb-922f-80ab98b18fd1.png)](https://timhutton.github.io/GravityIsNotAForce/variable_gravity.html)
+
+History:
 - 2020-10-19: First version released. Triggered discussions here:
     - Hacker News: [https://news.ycombinator.com/item?id=24821141](https://news.ycombinator.com/item?id=24821141)
     - Reddit r/physics: [https://www.reddit.com/r/Physics/comments/jdqlzf/gravity_is_not_a_force_freefall_parabolas_are/](https://www.reddit.com/r/Physics/comments/jdqlzf/gravity_is_not_a_force_freefall_parabolas_are/)
