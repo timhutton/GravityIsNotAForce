@@ -3,6 +3,8 @@ I'm experimenting with how to visualise the geodesics in spacetime under general
 Live demo: https://timhutton.github.io/GravityIsNotAForce/
 [![image](https://user-images.githubusercontent.com/647092/108274554-f540bf80-716c-11eb-865d-a7e557a287ad.png)](https://timhutton.github.io/GravityIsNotAForce/)
 
+**Description:** Under general relativity, gravity is not a force - instead it is a distortion of spacetime. Objects in free-fall move along geodesics (straight lines) in spacetime, as seen in the inertial frame of reference on the right. When standing on Earth we experience a frame of reference that is accelerating upwards, causing objects in free-fall to move along parabolas, as seen on the left. [More...](https://timhutton.github.io/GravityIsNotAForce/)
+
 [Version with more space dimensions:](https://timhutton.github.io/GravityIsNotAForce/constant_gravity_4d.html)
 [![image](https://user-images.githubusercontent.com/647092/108274529-ece88480-716c-11eb-827d-2c0c3d510179.png)](https://timhutton.github.io/GravityIsNotAForce/constant_gravity_4d.html)
 
